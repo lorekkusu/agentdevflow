@@ -16,6 +16,8 @@ The long-term product is a development-flow configurator and policy compiler. It
 
 See [Product direction](docs/product-direction.md) and [Architecture](docs/architecture.md) for the retained product and technical boundaries.
 
+See the [development roadmap](docs/development/roadmap.md) for the dependency-ordered plan after Phase 0. Candidate decisions in the roadmap are not stable public contracts.
+
 ## Phase 0 result
 
 Phase 0 evaluated two questions in order:
@@ -38,10 +40,13 @@ Commands:
 npm install
 npm run build
 npm test
+npm run check:repository
 npm run check
 ```
 
 The scaffold intentionally uses no CLI framework, schema library, linter, or production runtime dependency. See [Tooling decisions](docs/development/tooling.md).
+
+See [Contributing](CONTRIBUTING.md) and the [public information policy](docs/development/public-information-policy.md) before opening a change or decision proposal. Repository records preserve useful technical context without storing prompts, conversation transcripts, or private deliberation.
 
 ## Package naming
 

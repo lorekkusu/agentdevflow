@@ -9,11 +9,12 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "check:repository": "node scripts/check-repository.mjs",
     "gate:policy": "npm run build && node dist/test/fixtures/policy/run.js",
     "gate:renderer": "npm run build && node dist/src/experiments/rulesync-gate1.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test \"dist/**/*.test.js\"",
-    "check": "npm run typecheck && npm test"
+    "check": "npm run check:repository && npm run typecheck && npm test"
   },
   "devDependencies": {
     "@types/node": "22.20.1",

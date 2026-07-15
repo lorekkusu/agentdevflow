@@ -1,0 +1,66 @@
+name: Decision proposal
+description: Propose a material architecture, format, dependency, supply-chain, or safety decision.
+title: "[Decision] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Capture minimum sufficient technical context. This form is not a discussion transcript and does not make the proposal accepted.
+  - type: textarea
+    id: question
+    attributes:
+      label: Decision question
+      description: State the decision that must be made.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and constraints
+      description: Describe the public technical context, boundaries, and current evidence.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed decision
+      description: State the candidate behavior or boundary precisely.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Viable alternatives
+      description: List only realistic alternatives and their decisive trade-offs.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences and risks
+      description: Describe benefits, costs, failure modes, migration impact, and maintenance obligations.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Required evidence
+      description: Identify the experiments, fixtures, tests, or primary sources required before acceptance.
+    validations:
+      required: true
+  - type: textarea
+    id: revisit
+    attributes:
+      label: Revisit triggers
+      description: What future evidence or ecosystem change should reopen this decision?
+    validations:
+      required: true
+  - type: checkboxes
+    id: status
+    attributes:
+      label: Proposal status
+      options:
+        - label: I understand that this proposal remains a candidate until explicitly accepted.
+          required: true
+        - label: I removed private discussion, prompts, credentials, personal data, and machine-specific paths.
+          required: true

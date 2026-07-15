@@ -1,0 +1,62 @@
+name: Change proposal
+description: Propose a scoped implementation, documentation, test, or maintenance change.
+title: "[Change] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the public technical problem and evidence. Do not include prompts, private discussion, credentials, or sensitive security details.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What observable problem or missing capability should be addressed?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Intended outcome
+      description: What user-visible or technical result should exist when the work is complete?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: List the concrete files, components, or behavior in scope.
+    validations:
+      required: true
+  - type: textarea
+    id: non_goals
+    attributes:
+      label: Non-goals
+      description: What adjacent work is deliberately excluded?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Provide deterministic pass or fail conditions.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and references
+      description: Link relevant repository evidence, tests, specifications, or current primary sources.
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks and limitations
+      description: Identify compatibility, security, ownership, migration, or maintenance risks.
+  - type: checkboxes
+    id: disclosure
+    attributes:
+      label: Public information check
+      options:
+        - label: I removed private discussion, prompts, credentials, personal data, and machine-specific paths.
+          required: true
+        - label: I have not presented a candidate decision as accepted.
+          required: true
