@@ -4,7 +4,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 ## Status
 
-`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. It does not yet provide a production CLI, and its public API and configuration format are not stable.
+`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 candidate configuration specimens now provide deterministic normalization evidence, but the project does not yet provide a production CLI and its public API and configuration format are not stable.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -27,6 +27,8 @@ Phase 0 evaluated two questions in order:
 
 See [renderer evidence](docs/evidence/renderer-backend.md), [policy evidence](docs/evidence/policy-safety.md), and the [Phase 0 plan](docs/development/phase-0.md).
 
+The first Phase 1 step validates fixture-only Fast and Balanced candidate configurations without selecting a public format or schema dependency. See [candidate configuration evidence](docs/evidence/candidate-configuration.md).
+
 ## Development
 
 Requirements:
@@ -42,6 +44,7 @@ npm run build
 npm test
 npm run check:repository
 npm run check
+npm run phase1:config
 ```
 
 The scaffold intentionally uses no CLI framework, schema library, linter, or production runtime dependency. See [Tooling decisions](docs/development/tooling.md).

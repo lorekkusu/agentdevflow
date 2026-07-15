@@ -2,13 +2,15 @@
 
 ## Status
 
-Phase 0 is complete with a Go recommendation. The next objective is a read-only compiler vertical slice that connects candidate project intent, private workflow compilation, policy validation, capability validation, and deterministic staged provider output.
+Phase 0 is complete with a Go recommendation. Candidate configuration specimens and deterministic normalization are also complete. The next objective is the private compiler slice that turns those specimens into versioned private workflows and closed safety policies.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
 ## Development sequence
 
 ### 1. Candidate configuration specimens
+
+Status: **Complete.** See [candidate configuration evidence](../evidence/candidate-configuration.md).
 
 Scope:
 
@@ -26,6 +28,8 @@ Exit criteria:
 - no public filename, serialized format, or API is claimed as stable.
 
 ### 2. Private compiler slice
+
+Status: **Next.**
 
 Scope:
 
