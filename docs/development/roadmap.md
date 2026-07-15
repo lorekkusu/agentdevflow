@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0 is complete with a Go recommendation. Candidate configuration specimens and deterministic normalization are also complete. The next objective is the private compiler slice that turns those specimens into versioned private workflows and closed safety policies.
+Phase 0, candidate configuration specimens, and the private compiler slice are complete. The next objective is renderer integration hardening that carries compiler intent and source references through the existing staging-only backend boundary.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -29,7 +29,7 @@ Exit criteria:
 
 ### 2. Private compiler slice
 
-Status: **Next.**
+Status: **Complete.** See [private compiler evidence](../evidence/private-compiler.md).
 
 Scope:
 
@@ -48,6 +48,8 @@ Exit criteria:
 - the compiler plan is stable across repeated runs.
 
 ### 3. Renderer integration hardening
+
+Status: **Next.**
 
 Scope:
 

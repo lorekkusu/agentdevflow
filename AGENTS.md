@@ -41,6 +41,7 @@ npm test
 npm run check:repository
 npm run check
 npm run phase1:config
+npm run phase1:compiler
 ```
 
 `npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
