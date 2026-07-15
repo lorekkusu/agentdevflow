@@ -71,6 +71,7 @@ export interface PrivateWorkflowIR {
   readonly artifactTypes: readonly ArtifactType[];
   readonly capabilityRequirements: readonly PrivateCapabilityRequirement[];
   readonly transitions: readonly PrivateTransitionDefinition[];
+  readonly providers: NormalizedCandidateProjectConfig["providers"];
   readonly roleBindings: NormalizedCandidateProjectConfig["roles"];
   readonly tracker: NormalizedCandidateProjectConfig["tracker"];
 }

@@ -99,12 +99,12 @@ A budget is an analysis limit, not compiled semantics. Changing a passing limit 
 
 | Specimen | Definition | Nodes | Artifacts | Policies | Theoretical maximum | Explored | Compiler digest |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Fast | `builtin/fast@1` | 4 | 1 | 1 | 8 | 4 | `7913dab8ba60662d9a3454aaddea13214a7604ba97053de790014d97598e096d` |
-| Balanced | `builtin/balanced@1` | 5 | 2 | 2 | 20 | 5 | `a21739ab84e45d878e1a47aaf476243e4c5d3a2b48ce89ec1d88141883a4fdca` |
+| Fast | `builtin/fast@1` | 4 | 1 | 1 | 8 | 4 | `178d3655e56585c1ccb655e6ef036faaf2a3ba5bcf89911358a9d2c2c62f2631` |
+| Balanced | `builtin/balanced@1` | 5 | 2 | 2 | 20 | 5 | `b8c20f566071abf4fbd85058f2183d20bb4fa54fa8a554ab514325b8ebd8c9f8` |
 
 The Balanced result contains three successful advisory `project-instructions` resolutions, one for each configured provider instance. Fast contains one.
 
-Reordered candidate provider and artifact input produced deeply equal compilation output and the same compiler digest.
+Reordered candidate provider and artifact input produced deeply equal compilation output and the same compiler digest. The private workflow IR retains normalized provider instances because renderer integration must map provider-neutral compiler intent without reopening the candidate input.
 
 ## Failure fixtures
 

@@ -53,7 +53,7 @@ test("compiles the versioned Fast workflow with a review policy", () => {
   assert.equal(result.compilation.policyValidation.exploredStates, 4);
   assert.equal(
     result.compilation.compilerDigest,
-    "7913dab8ba60662d9a3454aaddea13214a7604ba97053de790014d97598e096d",
+    "178d3655e56585c1ccb655e6ef036faaf2a3ba5bcf89911358a9d2c2c62f2631",
   );
   assert.deepEqual(result.compilation.capabilityResolutions, [
     {
@@ -92,7 +92,7 @@ test("compiles a safe cyclic Balanced workflow with closed policies", () => {
   assert.equal(result.compilation.policyValidation.exploredStates, 5);
   assert.equal(
     result.compilation.compilerDigest,
-    "a21739ab84e45d878e1a47aaf476243e4c5d3a2b48ce89ec1d88141883a4fdca",
+    "b8c20f566071abf4fbd85058f2183d20bb4fa54fa8a554ab514325b8ebd8c9f8",
   );
   assert.deepEqual(result.compilation.budget, {
     nodeCount: 5,
@@ -116,7 +116,7 @@ test("keeps compiler output deterministic for reorder-equivalent intent", () => 
   assert.deepEqual(second.compilation, first.compilation);
   assert.equal(
     first.compilation.compilerDigest,
-    "a21739ab84e45d878e1a47aaf476243e4c5d3a2b48ce89ec1d88141883a4fdca",
+    "b8c20f566071abf4fbd85058f2183d20bb4fa54fa8a554ab514325b8ebd8c9f8",
   );
 });
 

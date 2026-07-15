@@ -49,7 +49,7 @@ Exit criteria:
 
 ### 3. Renderer integration hardening
 
-Status: **Next.**
+Status: **In progress.** The first compiler-to-renderer request slice is captured in [renderer integration evidence](../evidence/renderer-integration.md).
 
 Scope:
 
@@ -59,6 +59,21 @@ Scope:
 - establish an offline runtime dependency experiment;
 - derive or report output-to-source traceability honestly;
 - add upgrade and golden-output fixtures.
+
+Completed in the first slice:
+
+- retain normalized provider instances in private compiler output;
+- map provider-neutral compiler capability resolutions at the renderer boundary;
+- bind the compiler digest to a caller-supplied materialized-input digest and normalized source paths;
+- reject incomplete capability evidence and unsafe or duplicate source paths;
+- prove that the resulting request crosses a replaceable staging backend without backend types entering compiler or policy modules.
+
+Remaining before this step is complete:
+
+- define the private compiler-output materialization that produces renderer source content;
+- run the offline Rulesync runtime dependency and isolated-worker experiment;
+- capture pinned Rulesync golden output for Codex, Claude Code, and Cursor;
+- record upgrade drift and honest output-to-source traceability behavior.
 
 Exit criteria:
 

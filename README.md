@@ -31,6 +31,8 @@ The first Phase 1 step validates fixture-only Fast and Balanced candidate config
 
 The private compiler resolves those specimens into finite versioned workflows, provider-neutral capability requirements, and closed safety policies. See [private compiler evidence](docs/evidence/private-compiler.md).
 
+Renderer integration hardening is in progress. The first private bridge converts compiler results and materialized-input provenance into deterministic backend-neutral render requests. See [renderer integration evidence](docs/evidence/renderer-integration.md).
+
 ## Development
 
 Requirements:

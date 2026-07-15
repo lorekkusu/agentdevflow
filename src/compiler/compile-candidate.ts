@@ -93,6 +93,7 @@ function createPrivateWorkflowIR(
     transitions: definition.transitions
       .map(normalizeTransition)
       .sort((left, right) => compareText(left.id, right.id)),
+    providers: config.providers.map((provider) => ({ ...provider })),
     roleBindings: {
       developer: config.roles.developer,
       reviewer: config.roles.reviewer,
