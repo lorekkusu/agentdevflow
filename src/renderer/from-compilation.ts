@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { posix } from "node:path";
 
 import type { CandidateCompilation } from "../compiler/private-model.js";
@@ -12,6 +11,7 @@ import {
   validatePrivateRendererSourceMaterialization,
   type PrivateRendererSourceMaterialization,
 } from "./materialize-compilation.js";
+import { createRenderInputDigest } from "./input-digest.js";
 
 const sha256Pattern = /^[a-f0-9]{64}$/u;
 
@@ -29,10 +29,6 @@ export type MaterializedCompilationRenderRequestOptions = Omit<
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
-}
-
-function digest(value: unknown): string {
-  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
 function normalizeRelativePaths(
@@ -140,9 +136,9 @@ export function renderRequestFromCompilation(
       ),
     ),
   ].sort(compareText);
-  const inputDigest = digest({
+  const inputDigest = createRenderInputDigest({
     compilerDigest: compilation.compilerDigest,
-    materializedInputDigest: options.materializedInputDigest,
+    sourceDigest: options.materializedInputDigest,
     sourceFiles,
   });
 

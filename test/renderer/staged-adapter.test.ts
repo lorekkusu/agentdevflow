@@ -222,3 +222,26 @@ test("reports deterministic path-specific verify diagnostics", async () => {
     ],
   );
 });
+
+test("clears an ownership claim when the obsolete generated file is already absent", async () => {
+  const workspace = new MemoryWorkspace();
+  const adapter = new StagedRendererAdapter(
+    backend({ files: [], diagnostics: [] }),
+  );
+  const ownership = {
+    "obsolete.md": {
+      owner: ownershipKey,
+      digest: "0".repeat(64),
+    },
+  };
+
+  const plan = await adapter.plan(request(ownership), workspace);
+  assert.equal(plan.safeToApply, true);
+  assert.deepEqual(
+    plan.files.map(({ action, path }) => ({ action, path })),
+    [{ action: "delete", path: "obsolete.md" }],
+  );
+  const result = await adapter.render(plan, workspace);
+  assert.deepEqual(result.ownership, {});
+  assert.equal((await adapter.verify(plan, workspace)).ok, true);
+});

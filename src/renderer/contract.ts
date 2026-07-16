@@ -72,6 +72,7 @@ export interface RenderPlan {
   readonly backendVersion: string;
   readonly ownershipKey: string;
   readonly inputDigest: string;
+  readonly sourceDigest: string;
   readonly planDigest: string;
   readonly files: readonly PlannedFile[];
   readonly diagnostics: readonly RendererDiagnostic[];
@@ -87,6 +88,7 @@ export interface RenderResult {
 }
 
 export interface VerifyResult {
+  readonly planDigest: string;
   readonly ok: boolean;
   readonly diagnostics: readonly RendererDiagnostic[];
 }

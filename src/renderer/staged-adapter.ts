@@ -55,6 +55,8 @@ function createPlanDigest(
       backend: backend.name,
       backendVersion: backend.version,
       inputDigest: request.inputDigest,
+      ownershipKey: backend.ownershipKey,
+      sourceDigest: request.sourceDigest,
       files: files.map((file) => ({
         action: file.action,
         digest: file.expectedDigest,
@@ -156,10 +158,10 @@ export class StagedRendererAdapter implements RendererBackend {
         continue;
       }
       const existing = await workspace.read(path);
-      if (existing === null) {
-        continue;
-      }
-      const action = digest(existing) === claim.digest ? "delete" : "conflict";
+      const action =
+        existing === null || digest(existing) === claim.digest
+          ? "delete"
+          : "conflict";
       if (action === "conflict") {
         diagnostics.push({
           code: "OWNERSHIP_CONFLICT",
@@ -188,6 +190,7 @@ export class StagedRendererAdapter implements RendererBackend {
       backendVersion: this.backend.version,
       ownershipKey: this.backend.ownershipKey,
       inputDigest: request.inputDigest,
+      sourceDigest: request.sourceDigest,
       planDigest: createPlanDigest(this.backend, request, files),
       files,
       diagnostics,
@@ -270,6 +273,7 @@ export class StagedRendererAdapter implements RendererBackend {
 
     diagnostics.sort(compareDiagnostics);
     return {
+      planDigest: plan.planDigest,
       ok: diagnostics.length === 0,
       diagnostics,
     };
