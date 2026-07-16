@@ -28,12 +28,12 @@ The repository has executable evidence for:
 | Interruption | Current evidence | Claim |
 | --- | --- | --- |
 | Cooperative exception | Complete local suite | Temporary files are cleaned when control returns; recovery reaches the deterministic side selected by the lock anchor. |
-| Forced process termination | Darwin arm64 Node.js 24 subprocess fixtures | Stale writers block ordinary recovery; after external death confirmation and exact clearance, recovery reaches deterministic terminal bytes. |
-| Repeated recovery termination | Darwin arm64 Node.js 24 subprocess fixtures | Every instrumented rollback and roll-forward mutation boundary can be interrupted and resumed. |
-| Cleanup termination | Darwin arm64 Node.js 24 subprocess fixtures | Retirement, tombstone, receipt, and removal boundaries resume under the dedicated parent lifecycle. |
+| Forced process termination | Local Darwin arm64 Node.js 24 plus hosted Ubuntu x64 and macOS arm64 Node.js 22 and 24 | Stale writers block ordinary recovery; after external death confirmation and exact clearance, recovery reaches deterministic terminal bytes. |
+| Repeated recovery termination | Local Darwin arm64 Node.js 24 plus hosted Ubuntu x64 and macOS arm64 Node.js 22 and 24 | Every instrumented rollback and roll-forward mutation boundary can be interrupted and resumed. |
+| Cleanup termination | Local Darwin arm64 Node.js 24 plus hosted Ubuntu x64 and macOS arm64 Node.js 22 and 24 | Retirement, tombstone, receipt, and removal boundaries resume under the dedicated parent lifecycle. |
 | Foreign drift after interruption | Cooperative and Darwin subprocess fixtures | Unknown bytes or contradictory lock state fail closed. |
 
-The [candidate platform qualification](../evidence/candidate-platform-qualification.md) workflow prepares equivalent Ubuntu, macOS, and Windows evidence. A planned or unexecuted cell provides no support claim.
+The [candidate platform qualification](../evidence/candidate-platform-qualification.md) workflow provides hosted Ubuntu and macOS evidence. Its Windows cells failed the directory-synchronization prerequisite before the subprocess suite, so they provide no Windows process-termination support claim.
 
 ## Required operator boundary
 

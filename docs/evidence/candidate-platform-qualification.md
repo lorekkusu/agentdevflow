@@ -4,7 +4,7 @@ Snapshot date: 2026-07-17.
 
 ## Verdict
 
-**Prepared, not yet qualified.** The repository now contains a blocking six-cell GitHub Actions matrix and a direct platform primitive probe. Local Darwin arm64 execution passes the probe and all 170 tests with zero skips. No Linux or Windows workflow result exists in the working tree, so this document does not claim release support for either platform.
+**Partially qualified.** Hosted run [29531413592](https://github.com/lorekkusu/agentdevflow/actions/runs/29531413592) passed all four Ubuntu and macOS cells and failed both Windows cells. Each passing cell completed the direct primitive probe, all 170 tests with zero skips, and the tracked-file check. Windows remains unqualified because directory-handle synchronization failed before the test suite started.
 
 All matrix cells must pass before the corresponding operating-system and Node.js combination can become a support candidate. A failing cell is evidence to fix the implementation or defer that platform; it must not be converted into a passing result through `continue-on-error`, skipped interruption tests, or weaker synchronization behavior.
 
@@ -20,9 +20,9 @@ GitHub recommends `setup-node` for consistent Node.js selection and matrix testi
 
 | Operating system image | Architecture | Node.js lines | Current status |
 | --- | --- | --- | --- |
-| `ubuntu-24.04` | x64 | 22, 24 | Planned; no hosted result captured |
-| `macos-15` | arm64 | 22, 24 | Planned; local Darwin arm64 Node.js 24 evidence only |
-| `windows-2025` | x64 | 22, 24 | Planned; no hosted result captured |
+| `ubuntu-24.04` | x64 | 22, 24 | Qualified by run 29531413592 |
+| `macos-15` | arm64 | 22, 24 | Qualified by run 29531413592 |
+| `windows-2025` | x64 | 22, 24 | Failed directory synchronization in run 29531413592 |
 
 This is a qualification matrix, not the final public support table. Linux arm64, macOS Intel, Windows arm64, older operating-system images, network filesystems, and self-hosted runners remain outside the candidate matrix.
 
@@ -79,7 +79,22 @@ case-sensitive lookup: false
 forced termination: SIGKILL observed
 ```
 
-The complete local suite passes 170 tests with zero skips. This repeats and extends the existing Darwin evidence but does not substitute for the hosted `macos-15` cells because the image, Node.js 22 line, and filesystem may differ.
+The complete local suite passes 170 tests with zero skips. This remains useful developer evidence but does not substitute for a hosted cell because the image, Node.js line, and filesystem may differ.
+
+## Hosted observation
+
+Run [29531413592](https://github.com/lorekkusu/agentdevflow/actions/runs/29531413592) tested commit `483f3868e5d6399443e702eb9bf90ae267d19cb5` on 2026-07-16 UTC:
+
+| Runner image | Image version | Node.js | Probe | Tests | Result |
+| --- | --- | --- | --- | --- | --- |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed, including directory sync and `SIGKILL` observation | 170 passed, 0 failed, 0 skipped | Pass |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed, including directory sync and `SIGKILL` observation | 170 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed, including directory sync and `SIGKILL` observation | 170 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed, including directory sync and `SIGKILL` observation | 170 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Directory `FileHandle.sync()` returned `EPERM` | Not run | Fail |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Directory `FileHandle.sync()` returned `EPERM` | Not run | Fail |
+
+The Windows result is a capability failure, not a test skip. The workflow remained blocking, and both affected jobs stopped at the primitive probe. File-content synchronization was not the failing operation; the failure occurred while synchronizing the opened workspace directory. The Node.js filesystem API documents `FileHandle.sync()` as an `fsync(2)` request, while Windows documents file-buffer flushing through `FlushFileBuffers` on an eligible file handle ([Node.js filesystem API](https://nodejs.org/api/fs.html), [Windows `FlushFileBuffers`](https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-flushfilebuffers)). The observed hosted result is the basis for the project conclusion; the documentation links do not establish an equivalent directory-metadata primitive in Node.js on Windows.
 
 ## Pass and fail rules
 
@@ -94,7 +109,7 @@ If a cell fails:
 
 ## Limitations
 
-- The workflow has not run from this working tree and provides no Linux or Windows result yet.
+- Windows process-termination behavior remains unqualified because its cells stopped before the zero-skip suite.
 - GitHub-hosted images change over time even when their explicit labels remain stable; each qualification record must capture the resolved image metadata from the run.
 - Default runner filesystems do not represent every local or network filesystem used by future users.
 - Case-insensitive lookup is observed but case-folding and Unicode-equivalence collision policy remain unresolved.
@@ -104,4 +119,4 @@ If a cell fails:
 
 ## Recommendation
 
-Run the six blocking cells before completing transactional workspace roadmap step 4. Keep Ubuntu 24.04 x64 and macOS 15 arm64 as the initial likely support candidates. Keep Windows 2025 x64 in the same blocking matrix because cross-platform local-first behavior is valuable, but defer Windows support rather than weakening safety if directory synchronization, symlink, or forced-termination evidence fails.
+Retain Ubuntu 24.04 x64 and macOS 15 arm64 as the initial support candidates. Do not describe Windows as supported from this run. The next decision is either to defer Windows or to revise the interruption contract so that process-termination recoverability and power-loss directory durability are separate, explicitly diagnosed capabilities. A Windows-specific native durability dependency is a third option, but it would materially increase maintenance and should not be introduced without a separate architecture decision.

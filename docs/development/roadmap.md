@@ -84,7 +84,7 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
-Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, executor, Darwin subprocess-termination, single-use store cleanup, repository temporary-file ownership, and parent-lifecycle slices are complete. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), [private transaction executor evidence](../evidence/private-transaction-executor.md), [subprocess recovery evidence](../evidence/private-transaction-subprocess.md), [transaction cleanup evidence](../evidence/private-transaction-cleanup.md), [temporary-file ownership evidence](../evidence/private-temporary-file-ownership.md), and [parent-lifecycle evidence](../evidence/private-transaction-parent-lifecycle.md).
+Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, executor, subprocess-termination, single-use store cleanup, repository temporary-file ownership, and parent-lifecycle slices are complete. Ubuntu x64 and macOS arm64 qualification passes on Node.js 22 and 24; Windows remains unresolved after its directory-synchronization probe failed. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), [private transaction executor evidence](../evidence/private-transaction-executor.md), [subprocess recovery evidence](../evidence/private-transaction-subprocess.md), [transaction cleanup evidence](../evidence/private-transaction-cleanup.md), [temporary-file ownership evidence](../evidence/private-temporary-file-ownership.md), [parent-lifecycle evidence](../evidence/private-transaction-parent-lifecycle.md), and [candidate platform qualification](../evidence/candidate-platform-qualification.md).
 
 Scope:
 
@@ -212,12 +212,13 @@ Prepared in the eleventh slice:
 - add a zero-skip qualification command and fail if tracked files change;
 - audit workflow action pins, privileged triggers, and top-level permission mechanically;
 - define the private [interruption contract](interruption-contract.md), filesystem prerequisites, operator boundary, and explicit power-loss non-claims;
-- keep every hosted cell unqualified until an actual run passes and its resolved environment is recorded.
+- qualify four hosted Ubuntu and macOS cells only after run 29531413592 passed and its resolved environments were recorded;
+- retain both Windows cells as failed evidence after directory synchronization returned `EPERM` before the zero-skip suite.
 
 Remaining before this step is complete:
 
-- run and review every [candidate platform qualification](../evidence/candidate-platform-qualification.md) cell;
-- resolve or explicitly defer any platform that fails process termination, directory synchronization, hard-link, or symbolic-link evidence;
+- decide whether to defer Windows or revise the contract to separate process-termination recoverability from unsupported Windows directory durability;
+- implement and rerun the approved Windows disposition without silently weakening a claimed capability;
 - validate power-loss behavior where the platform and filesystem provide a reproducible harness;
 
 Exit criteria:
