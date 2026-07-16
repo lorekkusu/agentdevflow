@@ -8,6 +8,10 @@ import type {
   RendererCapability,
   RendererProvider,
 } from "./contract.js";
+import {
+  validatePrivateRendererSourceMaterialization,
+  type PrivateRendererSourceMaterialization,
+} from "./materialize-compilation.js";
 
 const sha256Pattern = /^[a-f0-9]{64}$/u;
 
@@ -17,6 +21,11 @@ export interface CompilationRenderRequestOptions {
   readonly ownership?: Readonly<Record<string, OwnershipClaim>>;
   readonly adoptPaths?: readonly string[];
 }
+
+export type MaterializedCompilationRenderRequestOptions = Omit<
+  CompilationRenderRequestOptions,
+  "materializedInputDigest" | "sourceFiles"
+>;
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -139,6 +148,7 @@ export function renderRequestFromCompilation(
 
   return {
     inputDigest,
+    sourceDigest: options.materializedInputDigest,
     providers,
     capabilities,
     sourceFiles,
@@ -149,4 +159,22 @@ export function renderRequestFromCompilation(
     ),
     ...(options.adoptPaths ? { adoptPaths } : {}),
   };
+}
+
+export function renderRequestFromMaterialization(
+  compilation: CandidateCompilation,
+  materialization: PrivateRendererSourceMaterialization,
+  options: MaterializedCompilationRenderRequestOptions = {},
+): RenderRequest {
+  validatePrivateRendererSourceMaterialization(materialization);
+  if (materialization.compilerDigest !== compilation.compilerDigest) {
+    throw new Error(
+      "Private renderer source materialization belongs to a different compilation.",
+    );
+  }
+  return renderRequestFromCompilation(compilation, {
+    ...options,
+    materializedInputDigest: materialization.digest,
+    sourceFiles: materialization.files.map((file) => file.path),
+  });
 }

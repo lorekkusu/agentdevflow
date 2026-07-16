@@ -52,6 +52,7 @@ function request(
 ): RenderRequest {
   return {
     inputDigest: "fixture-input",
+    sourceDigest: "fixture-source",
     providers: ["codex", "claude-code", "cursor"],
     capabilities: ["rules"],
     sourceFiles: ["rules/overview.md"],

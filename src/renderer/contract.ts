@@ -26,6 +26,7 @@ export interface StagedRender {
 
 export interface RenderRequest {
   readonly inputDigest: string;
+  readonly sourceDigest: string;
   readonly providers: readonly RendererProvider[];
   readonly capabilities: readonly RendererCapability[];
   readonly sourceFiles: readonly string[];

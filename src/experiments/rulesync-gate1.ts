@@ -71,9 +71,11 @@ const backend = new RulesyncProcessRenderer({
   version: rulesyncVersion,
 });
 const adapter = new StagedRendererAdapter(backend);
+const sourceDigest = await fixtureDigest(fixtureRoot, sourceFiles);
 const plan = await adapter.plan(
   {
-    inputDigest: await fixtureDigest(fixtureRoot, sourceFiles),
+    inputDigest: sourceDigest,
+    sourceDigest,
     providers: ["codex", "claude-code", "cursor"],
     capabilities: ["rules"],
     sourceFiles,

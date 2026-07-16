@@ -38,6 +38,7 @@ test("maps compiled provider intent to a deterministic renderer request", () => 
 
   assert.deepEqual(request.providers, ["claude-code", "codex", "cursor"]);
   assert.deepEqual(request.capabilities, ["rules"]);
+  assert.equal(request.sourceDigest, materializedInputDigest);
   assert.deepEqual(request.sourceFiles, [
     "rules/review.md",
     "rules/workflow.md",

@@ -23,6 +23,32 @@ export const fastCandidateConfig = {
   },
 } satisfies CandidateProjectConfig;
 
+export const fastThreeProviderCandidateConfig = {
+  ...fastCandidateConfig,
+  providers: [
+    {
+      id: "cursor-steward",
+      product: "cursor",
+      surface: "ide",
+    },
+    {
+      id: "codex-developer",
+      product: "codex",
+      surface: "cli",
+    },
+    {
+      id: "claude-reviewer",
+      product: "claude-code",
+      surface: "cli",
+    },
+  ],
+  roles: {
+    developer: "codex-developer",
+    reviewer: "claude-reviewer",
+    steward: "cursor-steward",
+  },
+} satisfies CandidateProjectConfig;
+
 export const balancedCandidateConfig = {
   schemaVersion: 0,
   preset: "balanced",
