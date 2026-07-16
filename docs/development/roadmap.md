@@ -84,7 +84,7 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
-Status: **In progress.** The first private in-memory lock slice is complete. See [private render lock evidence](../evidence/private-render-lock.md).
+Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, and cooperative executor slices are complete. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), and [private transaction executor evidence](../evidence/private-transaction-executor.md).
 
 Scope:
 
@@ -103,13 +103,55 @@ Completed in the first slice:
 - reject volatile fields, unsafe paths, corrupted digests, and unexpected ownership claims;
 - clear stale ownership for already-absent obsolete output.
 
+Completed in the second slice:
+
+- bind each planned path to its observed before digest and intended after digest;
+- revalidate plan integrity, base ownership, target materialization, and target lock intent before transaction preparation;
+- define deterministic `write`, `remove`, and `retain` operations without public storage paths;
+- define a strict `prepared` to `committed` write-ahead sequence with a terminal `rolled-back` recovery branch;
+- use the base and target lock digests as deterministic rollback and roll-forward anchors;
+- fail closed on foreign locks, unrecognized path states, contradictory journals, and post-commit drift;
+- exercise recovery decisions through fault injection without claiming filesystem durability.
+
+Completed in the third slice:
+
+- canonicalize an existing non-symlink repository root;
+- reject unsafe, non-normalized, escaping, and control-character project paths;
+- reject existing symbolic-link traversal, non-directory parents, and non-file leaves;
+- open reads with final-leaf no-follow behavior;
+- use exclusive same-directory temporary files, content synchronization, rename replacement, and failure cleanup for single-file writes;
+- exercise the native renderer against a temporary real repository;
+- document path-based API race limits and untested platform behavior.
+
+Completed in the fourth slice:
+
+- accept a caller-supplied private store root without selecting a public project path;
+- persist content-addressed before-and-after output and lock blobs;
+- bind required blobs through a deterministic recovery manifest;
+- acquire an exclusive opaque writer lease and verify it before every mutation;
+- publish the `prepared` journal only after canonical records and every required blob revalidate;
+- prevent journal advancement when recovery content is missing or corrupt;
+- leave stale-lease takeover, orphan cleanup, and store retention explicitly undefined.
+
+Completed in the fifth slice:
+
+- accept a caller-supplied repository lock path and reject output-path overlap;
+- verify the actual base lock and every before digest before mutation;
+- compare each path again immediately before single-file mutation;
+- avoid rewriting `retain` operations whose before and after digests match;
+- apply all changed outputs before publishing the target lock;
+- verify target outputs and lock before persisting `committed`;
+- add a terminal `rolled-back` journal branch for completed base-state recovery;
+- recover every instrumented forward boundary to exactly `rolled-back` or `committed`;
+- fail closed when interrupted state contains foreign drift.
+
 Remaining before this step is complete:
 
-- define transaction preconditions and a write-ahead journal state machine;
-- prove deterministic rollback or roll-forward behavior with fault injection;
-- implement a real filesystem workspace with root, path, and symlink safety;
-- coordinate generated files and lock persistence through recoverable multi-file apply;
-- document the exact interruption boundary without claiming cross-file atomicity.
+- run subprocess termination rather than cooperative exception injection;
+- define safe stale-lease handling and an explicit operator recovery boundary;
+- synchronize and test directory-entry durability on supported platforms;
+- define orphan blob, temporary file, completed store, and rolled-back store cleanup;
+- validate the interruption contract without claiming cross-file atomicity or untested power-loss guarantees.
 
 Exit criteria:
 

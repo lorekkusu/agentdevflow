@@ -52,6 +52,8 @@ npm run phase1:compiler
 - Put implementation code under `src/` and automated tests under `test/`.
 - Name test files `*.test.ts`; `npm test` compiles them and runs the emitted JavaScript with `node:test`.
 - Keep the renderer adapter narrow and replaceable. Do not leak backend-specific types into candidate public configuration.
+- Route renderer filesystem experiments through `src/workspace/private-filesystem-workspace.ts`; do not bypass its root, path, symlink, and regular-file checks. Its current path-based checks do not replace a writer lock or prove crash durability.
+- Route recoverable render mutations through the private transaction store and executor. Keep the repository lock caller-supplied until public discovery is decided, and do not treat cooperative fault injection as process-crash durability.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.

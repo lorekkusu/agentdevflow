@@ -63,7 +63,7 @@ Lock creation requires all of the following:
 7. every retained output has exact renderer ownership, content digest, and source references;
 8. the result contains no unexpected ownership claims.
 
-The lock is created only after apply and verification. It does not claim that writing a future serialized lock is transactionally coordinated with generated files.
+The authoritative lock is created only after apply and verification. The transaction protocol may deterministically derive the expected target lock bytes before apply, but that value is a non-authoritative intent and does not claim successful materialization. Persisting and committing a future serialized lock still requires the recoverable filesystem executor.
 
 ## Runtime validation
 
@@ -88,14 +88,14 @@ The staged adapter now emits a deterministic delete action for an obsolete owned
 
 ## Limitations
 
-- No lock is read from or written to disk.
+- The private executor reads and writes canonical lock bytes at a caller-supplied path.
 - The runtime validator is private and is not a public schema or compatibility promise.
 - There is no public filename or discovery algorithm.
 - There is no migration support between private revisions.
-- Filesystem paths have not yet been checked against real symlinks or root containment.
-- Apply, generated-file verification, and future lock persistence are not yet one recoverable multi-file transaction.
+- The private workspace checks root containment and existing symlinks, subject to documented path-based race limits.
+- The private executor coordinates outputs and lock state under cooperative fault injection, but process-kill and power-loss durability remain unverified.
 - The current private lock expects one renderer ownership domain and rejects unrelated ownership claims.
 
 ## Next experiment
 
-Define transaction preconditions, a write-ahead journal state machine, and deterministic rollback or roll-forward recovery with fault injection. The experiment must distinguish temporary partial filesystem state from a successfully committed state and must not claim impossible cross-file atomicity.
+Validate subprocess interruption, stale-lease recovery, and directory synchronization for the [private transaction executor](private-transaction-executor.md) before selecting a public lock path or format.

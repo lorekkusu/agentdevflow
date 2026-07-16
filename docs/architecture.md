@@ -87,3 +87,17 @@ User-facing strength labels are derived. Materialization may degrade only toward
 - Installation must disclose scripts, network and environment access, tools, write paths, and licensing.
 - Registry presence is not a security endorsement.
 - Prompt instructions do not constitute mechanical enforcement.
+
+## Transaction boundary
+
+Multi-file rendering must provide recoverability rather than claim cross-file atomicity. A private transaction binds every affected path to an observed before digest and intended after digest, plus base and target lock digests. The base lock is the rollback anchor until the target lock is present; the target lock is the roll-forward anchor after that point.
+
+A write-ahead journal records strict protocol progress, but recovery also inspects the observable lock and path digests. Any foreign lock or path state outside the recorded before-and-after set fails closed. A committed transaction does not silently repair subsequent drift.
+
+The private filesystem workspace canonicalizes the repository root, rejects non-canonical relative paths and existing symbolic-link traversal, and restricts leaves to regular files. Its checks use path-based Node.js APIs and do not prevent another process from replacing a parent between inspection and mutation.
+
+The caller-supplied private transaction store persists content-addressed before-and-after bytes, canonical transaction records, and journal state. It publishes `prepared` only after every required blob revalidates and uses an exclusive opaque writer lease for cooperative process exclusion. It does not automatically reclaim a stale lease.
+
+The private executor re-checks preconditions during mutation, persists the target lock last, verifies the resulting target state, and produces terminal `committed` or `rolled-back` journals under cooperative fault injection. The target lock is the point after which recovery must roll forward; before that point, recovery rolls back.
+
+The protocol does not yet establish process-kill or power-loss durability. Stale writer handling, directory synchronization, retention, cleanup, and platform-specific guarantees remain explicit prerequisites for completing the transactional workspace step.
