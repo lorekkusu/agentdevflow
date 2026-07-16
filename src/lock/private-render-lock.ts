@@ -11,6 +11,7 @@ import {
   validatePrivateRendererSourceMaterialization,
   type PrivateRendererSourceMaterialization,
 } from "../renderer/materialize-compilation.js";
+import { validateRenderPlanIntegrity } from "../renderer/staged-adapter.js";
 
 export const privateRenderLockRevision = 1;
 
@@ -47,6 +48,11 @@ export interface CreatePrivateRenderLockOptions {
   readonly plan: RenderPlan;
   readonly result: RenderResult;
   readonly verification: VerifyResult;
+}
+
+export interface DerivePrivateRenderLockIntentOptions {
+  readonly materialization: PrivateRendererSourceMaterialization;
+  readonly plan: RenderPlan;
 }
 
 const sha256Pattern = /^[a-f0-9]{64}$/u;
@@ -253,22 +259,14 @@ export function validatePrivateRenderLock(
   }
 }
 
-export function createPrivateRenderLock(
-  options: CreatePrivateRenderLockOptions,
+/** Derives expected lock bytes without claiming that the render was applied. */
+export function derivePrivateRenderLockIntent(
+  options: DerivePrivateRenderLockIntentOptions,
 ): PrivateRenderLock {
-  const { materialization, plan, result, verification } = options;
+  const { materialization, plan } = options;
   validatePrivateRendererSourceMaterialization(materialization);
   if (!plan.safeToApply) {
     throw new Error("Refusing to lock an unsafe render plan.");
-  }
-  if (result.planDigest !== plan.planDigest) {
-    throw new Error("Render result belongs to a different plan.");
-  }
-  if (verification.planDigest !== plan.planDigest) {
-    throw new Error("Render verification belongs to a different plan.");
-  }
-  if (!verification.ok || verification.diagnostics.length > 0) {
-    throw new Error("Refusing to lock an unverified render result.");
   }
   if (plan.sourceDigest !== materialization.digest) {
     throw new Error("Render plan belongs to a different source materialization.");
@@ -284,6 +282,7 @@ export function createPrivateRenderLock(
   if (plan.inputDigest !== expectedInputDigest) {
     throw new Error("Render plan input digest does not match materialization.");
   }
+  validateRenderPlanIntegrity(plan);
 
   const plannedFiles = plan.files
     .filter((file) => file.action !== "delete")
@@ -298,32 +297,13 @@ export function createPrivateRenderLock(
     if (file.sourceRefs.length === 0) {
       throw new Error(`Render plan has no source references at ${file.path}.`);
     }
-    const claim = result.ownership[file.path];
-    if (
-      !claim ||
-      claim.owner !== plan.ownershipKey ||
-      claim.digest !== file.expectedDigest
-    ) {
-      throw new Error(`Render ownership does not match planned output: ${file.path}`);
-    }
     return {
       path: file.path,
-      owner: claim.owner,
-      contentDigest: claim.digest,
+      owner: plan.ownershipKey,
+      contentDigest: file.expectedDigest,
       sourceRefs: [...new Set(file.sourceRefs)].sort(compareText),
     };
   });
-
-  const expectedOwnershipPaths = files.map((file) => file.path);
-  const actualOwnershipPaths = Object.keys(result.ownership).sort(compareText);
-  if (
-    expectedOwnershipPaths.length !== actualOwnershipPaths.length ||
-    expectedOwnershipPaths.some(
-      (path, index) => path !== actualOwnershipPaths[index],
-    )
-  ) {
-    throw new Error("Render result contains unexpected ownership claims.");
-  }
 
   const base = {
     revision: privateRenderLockRevision,
@@ -342,5 +322,43 @@ export function createPrivateRenderLock(
   } satisfies Omit<PrivateRenderLock, "digest">;
   const lock: PrivateRenderLock = { ...base, digest: lockDigest(base) };
   validatePrivateRenderLock(lock);
+  return lock;
+}
+
+export function createPrivateRenderLock(
+  options: CreatePrivateRenderLockOptions,
+): PrivateRenderLock {
+  const { materialization, plan, result, verification } = options;
+  const lock = derivePrivateRenderLockIntent({ materialization, plan });
+  if (result.planDigest !== plan.planDigest) {
+    throw new Error("Render result belongs to a different plan.");
+  }
+  if (verification.planDigest !== plan.planDigest) {
+    throw new Error("Render verification belongs to a different plan.");
+  }
+  if (!verification.ok || verification.diagnostics.length > 0) {
+    throw new Error("Refusing to lock an unverified render result.");
+  }
+
+  for (const file of lock.files) {
+    const claim = result.ownership[file.path];
+    if (
+      !claim ||
+      claim.owner !== file.owner ||
+      claim.digest !== file.contentDigest
+    ) {
+      throw new Error(`Render ownership does not match planned output: ${file.path}`);
+    }
+  }
+  const expectedOwnershipPaths = lock.files.map((file) => file.path);
+  const actualOwnershipPaths = Object.keys(result.ownership).sort(compareText);
+  if (
+    expectedOwnershipPaths.length !== actualOwnershipPaths.length ||
+    expectedOwnershipPaths.some(
+      (path, index) => path !== actualOwnershipPaths[index],
+    )
+  ) {
+    throw new Error("Render result contains unexpected ownership claims.");
+  }
   return lock;
 }

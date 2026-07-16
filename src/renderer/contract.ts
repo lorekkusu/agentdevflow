@@ -62,6 +62,7 @@ export type PlannedAction =
 export interface PlannedFile {
   readonly path: string;
   readonly action: PlannedAction;
+  readonly observedDigest: string | null;
   readonly expectedContent: string | null;
   readonly expectedDigest: string | null;
   readonly sourceRefs: readonly string[];

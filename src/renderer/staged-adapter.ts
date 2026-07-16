@@ -45,26 +45,76 @@ function compareDiagnostics(
   );
 }
 
-function createPlanDigest(
-  backend: StagingRenderer,
-  request: RenderRequest,
-  files: readonly PlannedFile[],
-): string {
+interface PlanDigestInput {
+  readonly backend: string;
+  readonly backendVersion: string;
+  readonly ownershipKey: string;
+  readonly inputDigest: string;
+  readonly sourceDigest: string;
+  readonly files: readonly PlannedFile[];
+}
+
+function createPlanDigest(input: PlanDigestInput): string {
   return digest(
     JSON.stringify({
-      backend: backend.name,
-      backendVersion: backend.version,
-      inputDigest: request.inputDigest,
-      ownershipKey: backend.ownershipKey,
-      sourceDigest: request.sourceDigest,
-      files: files.map((file) => ({
+      backend: input.backend,
+      backendVersion: input.backendVersion,
+      inputDigest: input.inputDigest,
+      ownershipKey: input.ownershipKey,
+      sourceDigest: input.sourceDigest,
+      files: input.files.map((file) => ({
         action: file.action,
         digest: file.expectedDigest,
+        observedDigest: file.observedDigest,
         path: file.path,
         sourceRefs: file.sourceRefs,
       })),
     }),
   );
+}
+
+export function validateRenderPlanIntegrity(plan: RenderPlan): void {
+  let previousPath = "";
+  for (const [index, file] of plan.files.entries()) {
+    const path = normalizeRelativePath(file.path);
+    if (path !== file.path || file.path.includes("\\")) {
+      throw new Error(`Render plan path is not canonical: ${file.path}`);
+    }
+    if (index > 0 && previousPath.localeCompare(file.path) >= 0) {
+      throw new Error("Render plan paths are not unique and sorted.");
+    }
+    previousPath = file.path;
+
+    const contentDigest =
+      file.expectedContent === null ? null : digest(file.expectedContent);
+    if (contentDigest !== file.expectedDigest) {
+      throw new Error(`Render plan content digest does not match: ${file.path}`);
+    }
+    if (
+      (file.action === "create" && file.observedDigest !== null) ||
+      (file.action === "update" &&
+        (file.observedDigest === null ||
+          file.expectedDigest === null ||
+          file.observedDigest === file.expectedDigest)) ||
+      (file.action === "unchanged" &&
+        (file.observedDigest === null ||
+          file.observedDigest !== file.expectedDigest)) ||
+      (file.action === "delete" &&
+        (file.expectedContent !== null || file.expectedDigest !== null))
+    ) {
+      throw new Error(`Render plan action state is inconsistent: ${file.path}`);
+    }
+  }
+
+  const expectedSafeToApply =
+    plan.diagnostics.every((diagnostic) => diagnostic.severity !== "error") &&
+    plan.files.every((file) => file.action !== "conflict");
+  if (plan.safeToApply !== expectedSafeToApply) {
+    throw new Error("Render plan safety flag does not match its contents.");
+  }
+  if (plan.planDigest !== createPlanDigest(plan)) {
+    throw new Error("Render plan digest does not match its contents.");
+  }
 }
 
 export class StagedRendererAdapter implements RendererBackend {
@@ -100,6 +150,7 @@ export class StagedRendererAdapter implements RendererBackend {
       left.localeCompare(right),
     )) {
       const existing = await workspace.read(path);
+      const observedDigest = existing === null ? null : digest(existing);
       const claim = request.ownership[path];
       const expectedDigest = digest(stagedFile.content);
       const sourceRefs = [...(stagedFile.sourceRefs ?? [])].sort();
@@ -122,10 +173,9 @@ export class StagedRendererAdapter implements RendererBackend {
             ? "unchanged"
             : "conflict";
       } else if (existing !== null && claim) {
-        const existingDigest = digest(existing);
-        if (existingDigest !== claim.digest) {
+        if (observedDigest !== claim.digest) {
           action = "conflict";
-        } else if (existingDigest === expectedDigest) {
+        } else if (observedDigest === expectedDigest) {
           action = "unchanged";
         } else {
           action = "update";
@@ -144,6 +194,7 @@ export class StagedRendererAdapter implements RendererBackend {
       files.push({
         path,
         action,
+        observedDigest,
         expectedContent: stagedFile.content,
         expectedDigest,
         sourceRefs,
@@ -158,8 +209,9 @@ export class StagedRendererAdapter implements RendererBackend {
         continue;
       }
       const existing = await workspace.read(path);
+      const observedDigest = existing === null ? null : digest(existing);
       const action =
-        existing === null || digest(existing) === claim.digest
+        observedDigest === null || observedDigest === claim.digest
           ? "delete"
           : "conflict";
       if (action === "conflict") {
@@ -173,6 +225,7 @@ export class StagedRendererAdapter implements RendererBackend {
       files.push({
         path,
         action,
+        observedDigest,
         expectedContent: null,
         expectedDigest: null,
         sourceRefs: [],
@@ -191,7 +244,14 @@ export class StagedRendererAdapter implements RendererBackend {
       ownershipKey: this.backend.ownershipKey,
       inputDigest: request.inputDigest,
       sourceDigest: request.sourceDigest,
-      planDigest: createPlanDigest(this.backend, request, files),
+      planDigest: createPlanDigest({
+        backend: this.backend.name,
+        backendVersion: this.backend.version,
+        ownershipKey: this.backend.ownershipKey,
+        inputDigest: request.inputDigest,
+        sourceDigest: request.sourceDigest,
+        files,
+      }),
       files,
       diagnostics,
       safeToApply,
