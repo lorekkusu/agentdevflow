@@ -1,6 +1,6 @@
 # Private render lock evidence
 
-Snapshot date: 2026-07-16.
+Snapshot date: 2026-07-17.
 
 ## Verdict
 
@@ -93,9 +93,9 @@ The staged adapter now emits a deterministic delete action for an obsolete owned
 - There is no public filename or discovery algorithm.
 - There is no migration support between private revisions.
 - The private workspace checks root containment and existing symlinks, subject to documented path-based race limits.
-- The private executor coordinates outputs and lock state under cooperative fault injection, but process-kill and power-loss durability remain unverified.
+- The private executor coordinates outputs and lock state under cooperative fault injection and Darwin subprocess termination, but power-loss and cross-platform durability remain unverified.
 - The current private lock expects one renderer ownership domain and rejects unrelated ownership claims.
 
 ## Next experiment
 
-Validate subprocess interruption, stale-lease recovery, and directory synchronization for the [private transaction executor](private-transaction-executor.md) before selecting a public lock path or format.
+Validate the [temporary-file ownership](private-temporary-file-ownership.md), [transaction cleanup](private-transaction-cleanup.md), and [parent lifecycle](private-transaction-parent-lifecycle.md) protocols on the supported release platforms before selecting a public lock path or format.

@@ -1,6 +1,9 @@
 import { createHash } from "node:crypto";
 
-import type { RenderWorkspace } from "../renderer/contract.js";
+import type {
+  PrivateOwnedTemporaryEvent,
+  PrivateTransactionalWorkspace,
+} from "../workspace/private-filesystem-workspace.js";
 import {
   advancePrivateRenderTransactionJournal,
   decidePrivateRenderTransactionRecovery,
@@ -11,6 +14,8 @@ import {
 import {
   parsePrivateRenderLockRecord,
   PrivateFilesystemTransactionStore,
+  type PrivateTransactionRetirement,
+  type PrivateTransactionWriterLease,
 } from "./private-transaction-store.js";
 
 export type PrivateTransactionExecutionStatus =
@@ -40,6 +45,20 @@ export type PrivateTransactionExecutionEvent =
   | {
       readonly kind: "state-verified";
       readonly state: "base" | "target";
+    }
+  | {
+      readonly kind: "retirement-written";
+      readonly transactionDigest: string;
+    }
+  | {
+      readonly kind: "temporary-created" | "temporary-synced";
+      readonly path: string;
+      readonly intentDigest: string;
+    }
+  | {
+      readonly kind: "temporary-reclaimed";
+      readonly path: string;
+      readonly intentDigest: string;
     };
 
 export type PrivateTransactionFaultInjector = (
@@ -48,7 +67,7 @@ export type PrivateTransactionFaultInjector = (
 
 export interface PrivateTransactionExecutorOptions {
   readonly store: PrivateFilesystemTransactionStore;
-  readonly workspace: RenderWorkspace;
+  readonly workspace: PrivateTransactionalWorkspace;
   readonly lockPath: string;
   readonly faultInjector?: PrivateTransactionFaultInjector;
 }
@@ -157,6 +176,8 @@ export class PrivateTransactionExecutor {
   }
 
   private async applyDigest(
+    lease: PrivateTransactionWriterLease,
+    transactionDigest: string,
     path: string,
     expectedCurrentDigest: string | null,
     targetDigest: string | null,
@@ -173,11 +194,15 @@ export class PrivateTransactionExecutor {
     if (expectedCurrentDigest === targetDigest) {
       return false;
     }
+    await this.options.store.verifyWriter(lease);
     if (targetDigest === null) {
       await this.options.workspace.removeAtomically(path);
     } else {
-      await this.options.workspace.writeAtomically(
+      await this.writeOwned(
+        lease,
+        transactionDigest,
         path,
+        targetDigest,
         await this.options.store.readBlob(targetDigest),
       );
     }
@@ -191,6 +216,67 @@ export class PrivateTransactionExecutor {
       );
     }
     return true;
+  }
+
+  private async writeOwned(
+    lease: PrivateTransactionWriterLease,
+    transactionDigest: string,
+    path: string,
+    targetDigest: string,
+    content: string,
+  ): Promise<void> {
+    const intent = await this.options.store.registerTemporaryIntent(lease, {
+      transactionDigest,
+      targetPath: path,
+      targetDigest,
+    });
+    await this.options.store.verifyWriter(lease);
+    await this.options.workspace.writeAtomicallyOwned(
+      intent,
+      content,
+      async (event: PrivateOwnedTemporaryEvent) => {
+        await emit(this.options.faultInjector, {
+          kind: event.kind,
+          path: event.targetPath,
+          intentDigest: intent.digest,
+        });
+      },
+    );
+  }
+
+  private async reconcileTemporaryFiles(
+    lease: PrivateTransactionWriterLease,
+    transactionDigest: string,
+  ): Promise<void> {
+    const reclaimable = await this.options.store.readReclaimableTemporaryIntents(
+      transactionDigest,
+    );
+    for (const intent of reclaimable) {
+      await this.options.store.verifyWriter(lease);
+      if ((await this.options.workspace.removeOwnedTemporary(intent)) === "removed") {
+        await emit(this.options.faultInjector, {
+          kind: "temporary-reclaimed",
+          path: intent.targetPath,
+          intentDigest: intent.digest,
+        });
+      }
+    }
+    const registry = await this.options.store.readTemporaryIntentRegistry();
+    if (registry && registry.transactionDigest !== transactionDigest) {
+      throw new PrivateTransactionExecutorError(
+        "PRIVATE_TRANSACTION_EXECUTOR_CONFLICT",
+        "Temporary intent registry does not match the prepared transaction.",
+      );
+    }
+    for (const intent of registry?.intents ?? []) {
+      if ((await this.options.workspace.inspectOwnedTemporary(intent)) === "present") {
+        throw new PrivateTransactionExecutorError(
+          "PRIVATE_TRANSACTION_EXECUTOR_CONFLICT",
+          `Repository contains an owned temporary file without reclaim authority: ${intent.temporaryPath}`,
+          intent.temporaryPath,
+        );
+      }
+    }
   }
 
   private async writeJournal(
@@ -209,6 +295,7 @@ export class PrivateTransactionExecutor {
     try {
       const recovery = await this.options.store.verifyPrepared();
       const { transaction, journal } = recovery;
+      await this.reconcileTemporaryFiles(lease, transaction.digest);
       this.assertLockPath(transaction);
       if (journal.state !== "prepared") {
         throw new PrivateTransactionExecutorError(
@@ -231,6 +318,8 @@ export class PrivateTransactionExecutor {
 
       for (const operation of transaction.operations) {
         const changed = await this.applyDigest(
+          lease,
+          transaction.digest,
           operation.path,
           operation.beforeDigest,
           operation.afterDigest,
@@ -261,8 +350,12 @@ export class PrivateTransactionExecutor {
           this.options.lockPath,
         );
       }
-      await this.options.workspace.writeAtomically(
+      await this.options.store.verifyWriter(lease);
+      await this.writeOwned(
+        lease,
+        transaction.digest,
         this.options.lockPath,
+        recovery.manifest.targetLock.blobDigest,
         targetLockContent,
       );
       if ((await this.observeLockDigest()) !== transaction.targetLockDigest) {
@@ -308,6 +401,7 @@ export class PrivateTransactionExecutor {
     try {
       const recovery = await this.options.store.verifyPrepared();
       const { transaction, journal } = recovery;
+      await this.reconcileTemporaryFiles(lease, transaction.digest);
       this.assertLockPath(transaction);
 
       if (journal.state === "prepared") {
@@ -348,6 +442,8 @@ export class PrivateTransactionExecutor {
         }
         for (const operation of decision.operations) {
           const changed = await this.applyDigest(
+            lease,
+            transaction.digest,
             operation.path,
             observed.files[operation.path] ?? null,
             operation.targetDigest,
@@ -381,6 +477,8 @@ export class PrivateTransactionExecutor {
 
       for (const operation of decision.operations) {
         const changed = await this.applyDigest(
+          lease,
+          transaction.digest,
           operation.path,
           observed.files[operation.path] ?? null,
           operation.targetDigest,
@@ -425,6 +523,44 @@ export class PrivateTransactionExecutor {
       );
       await this.writeJournal(lease, currentJournal);
       return { status: "committed", transactionDigest: transaction.digest };
+    } finally {
+      await this.options.store.releaseWriter(lease);
+    }
+  }
+
+  async prepareRetirement(): Promise<PrivateTransactionRetirement> {
+    const lease = await this.options.store.acquireWriter();
+    try {
+      const recovery = await this.options.store.verifyPrepared();
+      const { transaction, journal } = recovery;
+      await this.reconcileTemporaryFiles(lease, transaction.digest);
+      this.assertLockPath(transaction);
+      if (journal.state === "committed") {
+        await this.assertState(
+          transaction,
+          "after",
+          transaction.targetLockDigest,
+          "PRIVATE_TRANSACTION_EXECUTOR_CONFLICT",
+        );
+      } else if (journal.state === "rolled-back") {
+        await this.assertState(
+          transaction,
+          "before",
+          transaction.baseLockDigest,
+          "PRIVATE_TRANSACTION_EXECUTOR_CONFLICT",
+        );
+      } else {
+        throw new PrivateTransactionExecutorError(
+          "PRIVATE_TRANSACTION_EXECUTOR_INVALID_STATE",
+          `Cannot retire a transaction from journal state ${journal.state}.`,
+        );
+      }
+      const retirement = await this.options.store.writeRetirement(lease);
+      await emit(this.options.faultInjector, {
+        kind: "retirement-written",
+        transactionDigest: transaction.digest,
+      });
+      return retirement;
     } finally {
       await this.options.store.releaseWriter(lease);
     }

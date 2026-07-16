@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   mkdtemp,
   mkdir,
@@ -18,6 +19,7 @@ import { renderRequestFromMaterialization } from "../../src/renderer/from-compil
 import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
+import { createPrivateTemporaryMutationIntent } from "../../src/transaction/private-temporary-intent.js";
 import {
   PrivateFilesystemWorkspace,
   PrivateFilesystemWorkspaceError,
@@ -41,6 +43,19 @@ function compile(input: unknown): CandidateCompilation {
     assert.fail("Expected candidate compilation to succeed.");
   }
   return result.compilation;
+}
+
+function digest(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+function ownedIntent(content: string, targetPath = "nested/AGENTS.md") {
+  return createPrivateTemporaryMutationIntent({
+    transactionDigest: "1".repeat(64),
+    writerFingerprint: "2".repeat(64),
+    targetPath,
+    targetDigest: digest(content),
+  });
 }
 
 function rejectsWithCode(
@@ -68,6 +83,113 @@ test("writes, replaces, reads, and removes regular files within the root", async
   await workspace.removeAtomically("nested/AGENTS.md");
   await workspace.removeAtomically("nested/AGENTS.md");
   assert.equal(await workspace.read("nested/AGENTS.md"), null);
+});
+
+test("publishes registered owned temporary files atomically", async (t) => {
+  const root = await temporaryDirectory(t);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const content = "owned content\n";
+  const intent = ownedIntent(content);
+  const events: string[] = [];
+
+  await workspace.writeAtomicallyOwned(intent, content, (event) => {
+    events.push(event.kind);
+  });
+
+  assert.deepEqual(events, ["temporary-created", "temporary-synced"]);
+  assert.equal(await workspace.read(intent.targetPath), content);
+  assert.equal(await workspace.inspectOwnedTemporary(intent), "absent");
+});
+
+test("removes owned temporary files after cooperative write faults", async (t) => {
+  const root = await temporaryDirectory(t);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const content = "owned content\n";
+
+  for (const boundary of ["temporary-created", "temporary-synced"] as const) {
+    const intent = ownedIntent(content, `${boundary}/AGENTS.md`);
+    await assert.rejects(
+      () =>
+        workspace.writeAtomicallyOwned(intent, content, (event) => {
+          if (event.kind === boundary) {
+            throw new Error(`Injected fault at ${boundary}.`);
+          }
+        }),
+      /Injected fault/u,
+    );
+    assert.equal(await workspace.inspectOwnedTemporary(intent), "absent");
+    assert.equal(await workspace.read(intent.targetPath), null);
+  }
+});
+
+test("inspects and reclaims only an exact registered regular temporary file", async (t) => {
+  const root = await temporaryDirectory(t);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const intent = ownedIntent("complete content\n");
+  await mkdir(join(root, "nested"));
+  await writeFile(join(root, intent.temporaryPath), "partial", "utf8");
+
+  assert.equal(await workspace.inspectOwnedTemporary(intent), "present");
+  assert.equal(await workspace.removeOwnedTemporary(intent), "removed");
+  assert.equal(await workspace.removeOwnedTemporary(intent), "absent");
+  assert.equal(await workspace.read(intent.targetPath), null);
+});
+
+test(
+  "rejects symbolic links and directories at registered temporary paths",
+  async (t) => {
+    const root = await temporaryDirectory(t);
+    const outside = await temporaryDirectory(t);
+    const workspace = await PrivateFilesystemWorkspace.open(root);
+    const intent = ownedIntent("complete content\n");
+    await mkdir(join(root, "nested"));
+    await writeFile(join(outside, "foreign"), "foreign\n", "utf8");
+    await symlink(join(outside, "foreign"), join(root, intent.temporaryPath));
+
+    await rejectsWithCode(
+      () => workspace.removeOwnedTemporary(intent),
+      "WORKSPACE_PATH_SYMLINK",
+    );
+    assert.equal(await readFile(join(outside, "foreign"), "utf8"), "foreign\n");
+
+    await rm(join(root, intent.temporaryPath));
+    await mkdir(join(root, intent.temporaryPath));
+    await rejectsWithCode(
+      () => workspace.removeOwnedTemporary(intent),
+      "WORKSPACE_PATH_NOT_FILE",
+    );
+  },
+);
+
+test("rejects invalid owned writes and existing temporary conflicts", async (t) => {
+  const root = await temporaryDirectory(t);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const content = "owned content\n";
+  const intent = ownedIntent(content);
+
+  await rejectsWithCode(
+    () => workspace.writeAtomicallyOwned(intent, "wrong content\n"),
+    "WORKSPACE_OWNED_TEMPORARY_INVALID",
+  );
+  await rejectsWithCode(
+    () =>
+      workspace.writeAtomicallyOwned(
+        { ...intent, digest: "0".repeat(64) },
+        content,
+      ),
+    "WORKSPACE_OWNED_TEMPORARY_INVALID",
+  );
+
+  await mkdir(join(root, "nested"));
+  await writeFile(join(root, intent.temporaryPath), "foreign\n", "utf8");
+  await rejectsWithCode(
+    () => workspace.writeAtomicallyOwned(intent, content),
+    "WORKSPACE_OWNED_TEMPORARY_CONFLICT",
+  );
+  assert.equal(
+    await readFile(join(root, intent.temporaryPath), "utf8"),
+    "foreign\n",
+  );
 });
 
 test("requires an existing non-symlink directory as the workspace root", async (t) => {
@@ -142,7 +264,6 @@ test("rejects non-canonical and escaping relative paths", async (t) => {
 
 test(
   "rejects symbolic-link roots, parents, and files without touching their targets",
-  { skip: process.platform === "win32" },
   async (t) => {
     const container = await temporaryDirectory(t);
     const root = join(container, "root");

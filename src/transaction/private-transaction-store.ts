@@ -15,8 +15,22 @@ import {
   type PrivateRenderTransaction,
   type PrivateRenderTransactionJournal,
 } from "./private-render-transaction.js";
+import {
+  createPrivateTemporaryIntentRegistry,
+  createPrivateTemporaryMutationIntent,
+  createPrivateWriterClearance,
+  createPrivateWriterClearanceRegistry,
+  parsePrivateTemporaryIntentRegistry,
+  parsePrivateWriterClearanceRegistry,
+  serializePrivateTemporaryIntentRegistry,
+  serializePrivateWriterClearanceRegistry,
+  type PrivateTemporaryIntentRegistry,
+  type PrivateTemporaryMutationIntent,
+  type PrivateWriterClearanceRegistry,
+} from "./private-temporary-intent.js";
 
 export const privateRenderRecoveryManifestRevision = 1;
+export const privateTransactionRetirementRevision = 1;
 
 export interface PrivateRenderRecoveryLockBlob {
   readonly lockDigest: string;
@@ -32,8 +46,27 @@ export interface PrivateRenderRecoveryManifest {
   readonly digest: string;
 }
 
+export type PrivateTransactionTerminalState = "committed" | "rolled-back";
+
+export interface PrivateTransactionRetirement {
+  readonly revision: number;
+  readonly transactionDigest: string;
+  readonly manifestDigest: string;
+  readonly terminalState: PrivateTransactionTerminalState;
+  readonly digest: string;
+}
+
 export interface PrivateTransactionWriterLease {
   readonly token: string;
+}
+
+export interface PrivateStaleWriterEvidence {
+  readonly fingerprint: string;
+}
+
+export interface ClearPrivateStaleWriterOptions {
+  readonly evidence: PrivateStaleWriterEvidence;
+  readonly expectedTransactionDigest: string;
 }
 
 export interface PreparePrivateRenderRecoveryOptions {
@@ -57,6 +90,9 @@ export interface VerifiedPrivateRenderRecovery {
 export type PrivateTransactionStoreErrorCode =
   | "PRIVATE_TRANSACTION_WRITER_BUSY"
   | "PRIVATE_TRANSACTION_WRITER_LEASE_LOST"
+  | "PRIVATE_TRANSACTION_STALE_WRITER_INVALID"
+  | "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH"
+  | "PRIVATE_TRANSACTION_STORE_RETIRED"
   | "PRIVATE_TRANSACTION_STORE_CONFLICT"
   | "PRIVATE_TRANSACTION_BLOB_MISSING"
   | "PRIVATE_TRANSACTION_BLOB_CORRUPT"
@@ -79,7 +115,16 @@ const writerLockPath = "writer.lock";
 const transactionPath = "transaction.json";
 const manifestPath = "manifest.json";
 const journalPath = "journal.json";
+const retirementPath = "retirement.json";
+const temporaryIntentRegistryPath = "temporary-intents.json";
+const writerClearanceRegistryPath = "writer-clearances.json";
 const sha256Pattern = /^[a-f0-9]{64}$/u;
+
+function isCanonicalWriterRecord(content: string): boolean {
+  return content.length === 65 &&
+    content.endsWith("\n") &&
+    sha256Pattern.test(content.slice(0, -1));
+}
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -137,6 +182,65 @@ function manifestDigest(
       requiredBlobs: manifest.requiredBlobs,
     }),
   );
+}
+
+function retirementDigest(
+  retirement: Omit<PrivateTransactionRetirement, "digest">,
+): string {
+  return digest(
+    JSON.stringify({
+      revision: retirement.revision,
+      transactionDigest: retirement.transactionDigest,
+      manifestDigest: retirement.manifestDigest,
+      terminalState: retirement.terminalState,
+    }),
+  );
+}
+
+export function validatePrivateTransactionRetirement(
+  value: unknown,
+): asserts value is PrivateTransactionRetirement {
+  const retirement = requireRecord(value, "Private transaction retirement");
+  requireExactKeys(
+    retirement,
+    [
+      "revision",
+      "transactionDigest",
+      "manifestDigest",
+      "terminalState",
+      "digest",
+    ],
+    "Private transaction retirement",
+  );
+  if (retirement.revision !== privateTransactionRetirementRevision) {
+    throw new Error(
+      `Unsupported private transaction retirement revision: ${String(retirement.revision)}.`,
+    );
+  }
+  const transactionDigest = requireSha256(
+    retirement.transactionDigest,
+    "Private transaction retirement transaction digest",
+  );
+  const storedManifestDigest = requireSha256(
+    retirement.manifestDigest,
+    "Private transaction retirement manifest digest",
+  );
+  if (
+    retirement.terminalState !== "committed" &&
+    retirement.terminalState !== "rolled-back"
+  ) {
+    throw new Error("Private transaction retirement state must be terminal.");
+  }
+  requireSha256(retirement.digest, "Private transaction retirement digest");
+  const expectedDigest = retirementDigest({
+    revision: retirement.revision as number,
+    transactionDigest,
+    manifestDigest: storedManifestDigest,
+    terminalState: retirement.terminalState,
+  });
+  if (retirement.digest !== expectedDigest) {
+    throw new Error("Private transaction retirement digest does not match.");
+  }
 }
 
 function parseLockBlob(
@@ -246,6 +350,18 @@ function serializeJournal(journal: PrivateRenderTransactionJournal): string {
   })}\n`;
 }
 
+export function serializePrivateTransactionRetirement(
+  retirement: PrivateTransactionRetirement,
+): string {
+  return `${JSON.stringify({
+    revision: retirement.revision,
+    transactionDigest: retirement.transactionDigest,
+    manifestDigest: retirement.manifestDigest,
+    terminalState: retirement.terminalState,
+    digest: retirement.digest,
+  })}\n`;
+}
+
 export function serializePrivateRenderLockRecord(
   lock: PrivateRenderLock,
 ): string {
@@ -346,6 +462,27 @@ function parseStoredJournal(content: string): PrivateRenderTransactionJournal {
   return value;
 }
 
+function parseStoredRetirement(content: string): PrivateTransactionRetirement {
+  const value = parseJson(content, "Stored private transaction retirement");
+  try {
+    validatePrivateTransactionRetirement(value);
+  } catch (error) {
+    throw new PrivateTransactionStoreError(
+      "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+      `Stored private transaction retirement is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      retirementPath,
+    );
+  }
+  if (content !== serializePrivateTransactionRetirement(value)) {
+    throw new PrivateTransactionStoreError(
+      "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+      "Stored private transaction retirement is not canonical.",
+      retirementPath,
+    );
+  }
+  return value;
+}
+
 export function parsePrivateRenderLockRecord(
   content: string,
   path: string,
@@ -423,6 +560,13 @@ export class PrivateFilesystemTransactionStore {
   }
 
   async acquireWriter(): Promise<PrivateTransactionWriterLease> {
+    if ((await this.readRetirement()) !== null) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORE_RETIRED",
+        "Private transaction store is retired and cannot be reused.",
+        retirementPath,
+      );
+    }
     const token = digest(randomUUID());
     if (!(await this.workspace.createExclusively(writerLockPath, `${token}\n`))) {
       throw new PrivateTransactionStoreError(
@@ -434,11 +578,113 @@ export class PrivateFilesystemTransactionStore {
     return Object.freeze({ token });
   }
 
-  private async assertWriter(lease: PrivateTransactionWriterLease): Promise<void> {
+  async verifyWriter(lease: PrivateTransactionWriterLease): Promise<void> {
     if ((await this.workspace.read(writerLockPath)) !== `${lease.token}\n`) {
       throw new PrivateTransactionStoreError(
         "PRIVATE_TRANSACTION_WRITER_LEASE_LOST",
         "Private transaction writer lease is no longer active.",
+        writerLockPath,
+      );
+    }
+  }
+
+  private async verifyMutableWriter(
+    lease: PrivateTransactionWriterLease,
+  ): Promise<void> {
+    await this.verifyWriter(lease);
+    if ((await this.readRetirement()) !== null) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORE_RETIRED",
+        "Private transaction store is retired and cannot be mutated.",
+        retirementPath,
+      );
+    }
+  }
+
+  async inspectWriterForRecovery(): Promise<PrivateStaleWriterEvidence | null> {
+    const content = await this.workspace.read(writerLockPath);
+    if (content === null) {
+      return null;
+    }
+    if (!isCanonicalWriterRecord(content)) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STALE_WRITER_INVALID",
+        "Private transaction writer record is not a canonical opaque token.",
+        writerLockPath,
+      );
+    }
+    return Object.freeze({ fingerprint: digest(content) });
+  }
+
+  /**
+   * Clears one unchanged writer record after the caller has independently
+   * confirmed that its owner process has terminated. This method cannot prove
+   * process death and must never be used as automatic stale-writer takeover.
+   */
+  async clearStaleWriterForRecovery(
+    options: ClearPrivateStaleWriterOptions,
+  ): Promise<void> {
+    if (
+      !sha256Pattern.test(options.evidence.fingerprint) ||
+      !sha256Pattern.test(options.expectedTransactionDigest)
+    ) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STALE_WRITER_INVALID",
+        "Stale-writer recovery requires canonical evidence and transaction digests.",
+      );
+    }
+    const recovery = await this.verifyPrepared();
+    if (recovery.transaction.digest !== options.expectedTransactionDigest) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH",
+        "Prepared transaction does not match the stale-writer recovery request.",
+        transactionPath,
+      );
+    }
+    const content = await this.workspace.read(writerLockPath);
+    if (
+      content === null ||
+      !isCanonicalWriterRecord(content) ||
+      digest(content) !== options.evidence.fingerprint
+    ) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH",
+        "Writer record changed after stale-writer evidence was captured.",
+        writerLockPath,
+      );
+    }
+    const existingClearances = await this.readWriterClearanceRegistry();
+    if (
+      existingClearances &&
+      existingClearances.transactionDigest !== recovery.transaction.digest
+    ) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        "Writer clearance registry belongs to another transaction.",
+        writerClearanceRegistryPath,
+      );
+    }
+    const clearance = createPrivateWriterClearance(
+      recovery.transaction.digest,
+      options.evidence.fingerprint,
+    );
+    const clearances = existingClearances?.clearances.some(
+      (existing) => existing.writerFingerprint === clearance.writerFingerprint,
+    )
+      ? existingClearances.clearances
+      : [...(existingClearances?.clearances ?? []), clearance];
+    const clearanceRegistry = createPrivateWriterClearanceRegistry(
+      recovery.transaction.digest,
+      clearances,
+    );
+    await this.workspace.writeAtomically(
+      writerClearanceRegistryPath,
+      serializePrivateWriterClearanceRegistry(clearanceRegistry),
+    );
+    if (!(await this.workspace.removeIfContentMatches(writerLockPath, content))) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH",
+        "Writer record could not be cleared from unchanged stale-writer evidence.",
         writerLockPath,
       );
     }
@@ -464,7 +710,7 @@ export class PrivateFilesystemTransactionStore {
     path: string,
     content: string,
   ): Promise<void> {
-    await this.assertWriter(lease);
+    await this.verifyMutableWriter(lease);
     const existing = await this.workspace.read(path);
     if (existing === content) {
       return;
@@ -483,7 +729,7 @@ export class PrivateFilesystemTransactionStore {
     lease: PrivateTransactionWriterLease,
     content: string,
   ): Promise<string> {
-    await this.assertWriter(lease);
+    await this.verifyMutableWriter(lease);
     const blobDigest = digest(content);
     const path = `blobs/${blobDigest}`;
     const existing = await this.workspace.read(path);
@@ -546,7 +792,7 @@ export class PrivateFilesystemTransactionStore {
     journal: PrivateRenderTransactionJournal,
   ): Promise<void> {
     validatePrivateRenderTransactionJournal(journal);
-    await this.assertWriter(lease);
+    await this.verifyMutableWriter(lease);
     const existingContent = await this.workspace.read(journalPath);
     if (existingContent === null) {
       if (journal.state !== "prepared") {
@@ -603,6 +849,163 @@ export class PrivateFilesystemTransactionStore {
   async readJournal(): Promise<PrivateRenderTransactionJournal | null> {
     const content = await this.workspace.read(journalPath);
     return content === null ? null : parseStoredJournal(content);
+  }
+
+  async readRetirement(): Promise<PrivateTransactionRetirement | null> {
+    const content = await this.workspace.read(retirementPath);
+    return content === null ? null : parseStoredRetirement(content);
+  }
+
+  async readTemporaryIntentRegistry(): Promise<PrivateTemporaryIntentRegistry | null> {
+    const content = await this.workspace.read(temporaryIntentRegistryPath);
+    if (content === null) {
+      return null;
+    }
+    try {
+      return parsePrivateTemporaryIntentRegistry(content);
+    } catch (error) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        `Stored private temporary intent registry is invalid: ${error instanceof Error ? error.message : String(error)}`,
+        temporaryIntentRegistryPath,
+      );
+    }
+  }
+
+  async readWriterClearanceRegistry(): Promise<PrivateWriterClearanceRegistry | null> {
+    const content = await this.workspace.read(writerClearanceRegistryPath);
+    if (content === null) {
+      return null;
+    }
+    try {
+      return parsePrivateWriterClearanceRegistry(content);
+    } catch (error) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        `Stored private writer clearance registry is invalid: ${error instanceof Error ? error.message : String(error)}`,
+        writerClearanceRegistryPath,
+      );
+    }
+  }
+
+  async registerTemporaryIntent(
+    lease: PrivateTransactionWriterLease,
+    options: {
+      readonly transactionDigest: string;
+      readonly targetPath: string;
+      readonly targetDigest: string;
+    },
+  ): Promise<PrivateTemporaryMutationIntent> {
+    await this.verifyMutableWriter(lease);
+    const recovery = await this.verifyPrepared();
+    if (recovery.transaction.digest !== options.transactionDigest) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORE_CONFLICT",
+        "Temporary mutation intent belongs to another transaction.",
+        temporaryIntentRegistryPath,
+      );
+    }
+    const intent = createPrivateTemporaryMutationIntent({
+      transactionDigest: options.transactionDigest,
+      writerFingerprint: digest(`${lease.token}\n`),
+      targetPath: options.targetPath,
+      targetDigest: options.targetDigest,
+    });
+    const existing = await this.readTemporaryIntentRegistry();
+    if (existing && existing.transactionDigest !== recovery.transaction.digest) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        "Temporary intent registry belongs to another transaction.",
+        temporaryIntentRegistryPath,
+      );
+    }
+    if (existing?.intents.some((candidate) => candidate.digest === intent.digest)) {
+      return intent;
+    }
+    const registry = createPrivateTemporaryIntentRegistry(
+      recovery.transaction.digest,
+      [...(existing?.intents ?? []), intent],
+    );
+    await this.workspace.writeAtomically(
+      temporaryIntentRegistryPath,
+      serializePrivateTemporaryIntentRegistry(registry),
+    );
+    return intent;
+  }
+
+  async readReclaimableTemporaryIntents(
+    expectedTransactionDigest: string,
+  ): Promise<readonly PrivateTemporaryMutationIntent[]> {
+    const intents = await this.readTemporaryIntentRegistry();
+    if (!intents) {
+      return [];
+    }
+    if (intents.transactionDigest !== expectedTransactionDigest) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        "Temporary intent registry does not match the prepared transaction.",
+        temporaryIntentRegistryPath,
+      );
+    }
+    const clearances = await this.readWriterClearanceRegistry();
+    if (!clearances) {
+      return [];
+    }
+    if (
+      intents.transactionDigest !== clearances.transactionDigest ||
+      clearances.transactionDigest !== expectedTransactionDigest
+    ) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+        "Temporary ownership registries do not match the prepared transaction.",
+      );
+    }
+    const cleared = new Set(
+      clearances.clearances.map((clearance) => clearance.writerFingerprint),
+    );
+    return Object.freeze(
+      intents.intents.filter((intent) => cleared.has(intent.writerFingerprint)),
+    );
+  }
+
+  async writeRetirement(
+    lease: PrivateTransactionWriterLease,
+  ): Promise<PrivateTransactionRetirement> {
+    await this.verifyWriter(lease);
+    const recovery = await this.verifyPrepared();
+    if (
+      recovery.journal.state !== "committed" &&
+      recovery.journal.state !== "rolled-back"
+    ) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORE_CONFLICT",
+        `Private transaction store cannot retire from journal state ${recovery.journal.state}.`,
+        journalPath,
+      );
+    }
+    const retirementWithoutDigest = {
+      revision: privateTransactionRetirementRevision,
+      transactionDigest: recovery.transaction.digest,
+      manifestDigest: recovery.manifest.digest,
+      terminalState: recovery.journal.state,
+    } as const;
+    const retirement = Object.freeze({
+      ...retirementWithoutDigest,
+      digest: retirementDigest(retirementWithoutDigest),
+    });
+    const content = serializePrivateTransactionRetirement(retirement);
+    const existing = await this.workspace.read(retirementPath);
+    if (existing !== null && existing !== content) {
+      throw new PrivateTransactionStoreError(
+        "PRIVATE_TRANSACTION_STORE_CONFLICT",
+        "Private transaction store contains a different retirement record.",
+        retirementPath,
+      );
+    }
+    if (existing === null) {
+      await this.workspace.writeAtomically(retirementPath, content);
+    }
+    return retirement;
   }
 
   private async verifyRecoveryRecords(): Promise<{

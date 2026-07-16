@@ -1,12 +1,12 @@
 # Private render transaction evidence
 
-Snapshot date: 2026-07-16.
+Snapshot date: 2026-07-17.
 
 ## Verdict
 
 **Pass for the private transaction protocol slice.** A render plan can now be converted into deterministic before-and-after preconditions, a target lock intent, a write-ahead journal state machine, and fail-closed recovery decisions.
 
-This document validates the in-memory protocol. The [private transaction store](private-transaction-store.md) persists recovery content and journal state, and the [private transaction executor](private-transaction-executor.md) coordinates generated outputs with the target lock under cooperative fault injection. Roadmap step 4 remains in progress.
+This document validates the in-memory protocol. The [private transaction store](private-transaction-store.md) persists recovery content and journal state, and the [private transaction executor](private-transaction-executor.md) coordinates generated outputs with the target lock under cooperative faults and [Darwin subprocess termination](private-transaction-subprocess.md). Roadmap step 4 remains in progress.
 
 ## Reproduction
 
@@ -30,7 +30,7 @@ npm install
 npm run check
 ```
 
-The transaction-specific suite contains eight tests. The complete suite contains 94 tests at this snapshot.
+The transaction-specific suite contains eight tests. The complete suite contains 170 tests at this snapshot.
 
 ## Transaction model
 
@@ -118,13 +118,13 @@ Automated tests cover:
 
 - A private executor consumes the store, re-checks actual state, applies outputs, publishes the target lock last, and persists a terminal outcome.
 - The protocol does not select public lock, journal, staging, backup, or transaction paths.
-- The private store has an exclusive cooperative writer lease, but no operating-system advisory lock or stale-lease takeover policy exists.
+- The private store has an exclusive cooperative writer lease and explicit evidence-matched stale-writer removal, but no operating-system advisory lock or automatic takeover exists.
 - A private filesystem workspace now executes transaction mutations with root containment and existing-symlink checks. Hard links, case folding, and other platform-specific path behavior remain unevaluated.
-- Single-file writes synchronize temporary-file content and use same-directory replacement, but directory synchronization and power-loss behavior remain untested.
+- Single-file writes synchronize temporary-file content and affected directory entries on the tested Darwin filesystem, but power-loss and cross-platform behavior remain unverified.
 - There is no garbage collection or retention policy for recovery blobs.
 - There is no public schema, migration promise, CLI behavior, or configuration syntax.
 - The current protocol coordinates one private renderer ownership domain.
 
 ## Next experiment
 
-Run subprocess termination and directory-synchronization experiments for the [private transaction executor](private-transaction-executor.md), then define stale-lease recovery and store cleanup without weakening fail-closed behavior.
+Repeat the experiment on each supported release platform without weakening the [temporary-file ownership](private-temporary-file-ownership.md), [transaction cleanup](private-transaction-cleanup.md), or [parent lifecycle](private-transaction-parent-lifecycle.md) fail-closed behavior.

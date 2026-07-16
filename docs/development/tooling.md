@@ -4,7 +4,7 @@ These choices keep Phase 0 reproducible while avoiding premature production arch
 
 | Decision | Phase 0 choice | Rationale | Revisit trigger |
 | --- | --- | --- | --- |
-| Minimum Node.js | Node.js 22 | Node.js 20 is end-of-life; 22 and 24 are supported LTS lines as of 2026-07-13. | Before the first public release, using the then-current support schedule and user evidence. |
+| Minimum Node.js | Node.js 22 | Node.js 20 is end-of-life; 22 and 24 are supported LTS lines as of 2026-07-17. | Before the first public release, using the then-current support schedule and user evidence. |
 | Repository package manager | npm | npm is already required by the intended distribution path and adds no second package-manager requirement. | A workspace or release requirement that npm cannot meet simply. |
 | Module system | ESM | ESM matches modern Node.js and keeps the Phase 0 source direct. No dual-package surface is needed. | Evidence that a public programmatic API needs CommonJS compatibility. |
 | TypeScript | `tsc`, pinned in the lockfile | The target ecosystem requires TypeScript; the official compiler is the minimum build dependency. | A measured build or packaging need. |
@@ -16,3 +16,5 @@ These choices keep Phase 0 reproducible while avoiding premature production arch
 | Public configuration | Deferred | Syntax, filenames, and lock format require ownership and migration evidence. | After Phase 0 and before freezing any user-facing format. |
 
 The Node.js support status is based on the [official Node.js release table](https://nodejs.org/en/about/previous-releases). The native project-instructions renderer adds no runtime dependency.
+
+The candidate qualification matrix uses explicit `ubuntu-24.04` x64, `macos-15` arm64, and `windows-2025` x64 GitHub-hosted runner labels with Node.js 22 and 24. These cells are test candidates rather than accepted public support. See [candidate platform qualification](../evidence/candidate-platform-qualification.md).

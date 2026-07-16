@@ -23,6 +23,7 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/development/phase-0.md` defines gate order and pass/fail criteria.
 - `docs/development/roadmap.md` defines the current development sequence, scope, exit criteria, candidates, and stop conditions.
 - `docs/development/tooling.md` records current reversible tooling choices.
+- `docs/development/interruption-contract.md` defines tested recoverability claims and explicit durability non-claims.
 - `docs/development/public-information-policy.md` defines what public technical context to retain and what private or transient material to exclude.
 - `docs/decisions/` contains accepted or proposed material architecture decisions and the reusable ADR template.
 - `docs/evidence/` contains public, reproducible technical evidence and gate conclusions.
@@ -40,11 +41,12 @@ npm run build
 npm test
 npm run check:repository
 npm run check
+npm run check:qualification
 npm run phase1:config
 npm run phase1:compiler
 ```
 
-`npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
+`npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. `npm run check:qualification` performs the same categories for the candidate platform matrix and additionally fails if any test is skipped. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
 
 ## Code and tests
 

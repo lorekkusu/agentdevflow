@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "check:qualification": "npm run check:repository && npm run typecheck && npm run build && node scripts/run-platform-tests.mjs",
     "check:repository": "node scripts/check-repository.mjs",
     "gate:policy": "npm run build && node dist/test/fixtures/policy/run.js",
     "gate:renderer": "npm run build && node dist/src/experiments/rulesync-gate1.js",

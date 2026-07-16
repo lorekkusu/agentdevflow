@@ -29,6 +29,11 @@ import {
   type PrivateRenderTransaction,
 } from "../../src/transaction/private-render-transaction.js";
 import {
+  createPrivateTemporaryIntentRegistry,
+  createPrivateTemporaryMutationIntent,
+  serializePrivateTemporaryIntentRegistry,
+} from "../../src/transaction/private-temporary-intent.js";
+import {
   preparePrivateRenderRecovery,
   PrivateFilesystemTransactionStore,
   PrivateTransactionStoreError,
@@ -252,6 +257,168 @@ test("excludes concurrent writers and rejects a released lease", async (t) => {
 
   const secondLease = await secondStore.acquireWriter();
   await secondStore.releaseWriter(secondLease);
+});
+
+test("requires explicit unchanged evidence before clearing a stale writer", async (t) => {
+  const fixture = await storeFixture(t);
+  await prepareFixture(fixture);
+  const lease = await fixture.store.acquireWriter();
+  const intent = await fixture.store.registerTemporaryIntent(lease, {
+    transactionDigest: fixture.transaction.digest,
+    targetPath: "AGENTS.md",
+    targetDigest: fixture.transaction.operations[0]?.afterDigest ??
+      assert.fail("Expected a transaction operation."),
+  });
+  const evidence = await fixture.store.inspectWriterForRecovery();
+  assert.notEqual(evidence, null);
+  assert.notEqual(evidence?.fingerprint, lease.token);
+  assert.equal(evidence?.fingerprint, intent.writerFingerprint);
+
+  await rejectsWithCode(
+    () =>
+      fixture.store.clearStaleWriterForRecovery({
+        evidence: { fingerprint: "0".repeat(64) },
+        expectedTransactionDigest: fixture.transaction.digest,
+      }),
+    "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH",
+  );
+  await rejectsWithCode(
+    () =>
+      fixture.store.clearStaleWriterForRecovery({
+        evidence: evidence ?? assert.fail("Expected writer evidence."),
+        expectedTransactionDigest: "f".repeat(64),
+      }),
+    "PRIVATE_TRANSACTION_STALE_WRITER_EVIDENCE_MISMATCH",
+  );
+  await fixture.store.verifyWriter(lease);
+  assert.equal(await fixture.store.readWriterClearanceRegistry(), null);
+
+  await fixture.store.clearStaleWriterForRecovery({
+    evidence: evidence ?? assert.fail("Expected writer evidence."),
+    expectedTransactionDigest: fixture.transaction.digest,
+  });
+  assert.equal(await fixture.store.inspectWriterForRecovery(), null);
+  assert.deepEqual(
+    (await fixture.store.readWriterClearanceRegistry())?.clearances.map(
+      (clearance) => clearance.writerFingerprint,
+    ),
+    [intent.writerFingerprint],
+  );
+  assert.deepEqual(
+    await fixture.store.readReclaimableTemporaryIntents(
+      fixture.transaction.digest,
+    ),
+    [intent],
+  );
+  await rejectsWithCode(
+    () => fixture.store.verifyWriter(lease),
+    "PRIVATE_TRANSACTION_WRITER_LEASE_LOST",
+  );
+
+  const replacement = await fixture.store.acquireWriter();
+  await fixture.store.releaseWriter(replacement);
+});
+
+test("persists deterministic temporary intents before repository mutation", async (t) => {
+  const fixture = await storeFixture(t);
+  await prepareFixture(fixture);
+  const operation = fixture.transaction.operations[0];
+  assert.ok(operation?.afterDigest);
+
+  const firstLease = await fixture.store.acquireWriter();
+  const first = await fixture.store.registerTemporaryIntent(firstLease, {
+    transactionDigest: fixture.transaction.digest,
+    targetPath: operation.path,
+    targetDigest: operation.afterDigest,
+  });
+  const duplicate = await fixture.store.registerTemporaryIntent(firstLease, {
+    transactionDigest: fixture.transaction.digest,
+    targetPath: operation.path,
+    targetDigest: operation.afterDigest,
+  });
+  assert.deepEqual(duplicate, first);
+  assert.deepEqual((await fixture.store.readTemporaryIntentRegistry())?.intents, [
+    first,
+  ]);
+  assert.equal(await fixture.workspace.inspectOwnedTemporary(first), "absent");
+  await fixture.store.releaseWriter(firstLease);
+
+  const secondLease = await fixture.store.acquireWriter();
+  const second = await fixture.store.registerTemporaryIntent(secondLease, {
+    transactionDigest: fixture.transaction.digest,
+    targetPath: operation.path,
+    targetDigest: operation.afterDigest,
+  });
+  assert.notEqual(second.writerFingerprint, first.writerFingerprint);
+  assert.notEqual(second.temporaryPath, first.temporaryPath);
+  assert.equal(
+    (await fixture.store.readTemporaryIntentRegistry())?.intents.length,
+    2,
+  );
+  await fixture.store.releaseWriter(secondLease);
+});
+
+test("fails closed on corrupt temporary ownership registries", async (t) => {
+  const fixture = await storeFixture(t);
+  await prepareFixture(fixture);
+  await writeFile(
+    join(fixture.storeRoot, "temporary-intents.json"),
+    "not-json\n",
+    "utf8",
+  );
+  await rejectsWithCode(
+    () => fixture.store.readTemporaryIntentRegistry(),
+    "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+  );
+
+  await rm(join(fixture.storeRoot, "temporary-intents.json"));
+  await writeFile(
+    join(fixture.storeRoot, "writer-clearances.json"),
+    "{}\n",
+    "utf8",
+  );
+  await rejectsWithCode(
+    () => fixture.store.readWriterClearanceRegistry(),
+    "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+  );
+});
+
+test("rejects a canonical temporary registry for another transaction", async (t) => {
+  const fixture = await storeFixture(t);
+  await prepareFixture(fixture);
+  const otherTransactionDigest = "f".repeat(64);
+  const intent = createPrivateTemporaryMutationIntent({
+    transactionDigest: otherTransactionDigest,
+    writerFingerprint: "e".repeat(64),
+    targetPath: "AGENTS.md",
+    targetDigest: "d".repeat(64),
+  });
+  const registry = createPrivateTemporaryIntentRegistry(
+    otherTransactionDigest,
+    [intent],
+  );
+  await writeFile(
+    join(fixture.storeRoot, "temporary-intents.json"),
+    serializePrivateTemporaryIntentRegistry(registry),
+    "utf8",
+  );
+
+  await rejectsWithCode(
+    () =>
+      fixture.store.readReclaimableTemporaryIntents(
+        fixture.transaction.digest,
+      ),
+    "PRIVATE_TRANSACTION_STORED_DATA_INVALID",
+  );
+});
+
+test("fails closed on a malformed stale writer record", async (t) => {
+  const fixture = await storeFixture(t);
+  await writeFile(join(fixture.storeRoot, "writer.lock"), "not-a-token\n", "utf8");
+  await rejectsWithCode(
+    () => fixture.store.inspectWriterForRecovery(),
+    "PRIVATE_TRANSACTION_STALE_WRITER_INVALID",
+  );
 });
 
 test("detects corrupt and missing content-addressed recovery blobs", async (t) => {

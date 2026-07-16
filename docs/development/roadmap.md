@@ -84,7 +84,7 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
-Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, and cooperative executor slices are complete. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), and [private transaction executor evidence](../evidence/private-transaction-executor.md).
+Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, executor, Darwin subprocess-termination, single-use store cleanup, repository temporary-file ownership, and parent-lifecycle slices are complete. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), [private transaction executor evidence](../evidence/private-transaction-executor.md), [subprocess recovery evidence](../evidence/private-transaction-subprocess.md), [transaction cleanup evidence](../evidence/private-transaction-cleanup.md), [temporary-file ownership evidence](../evidence/private-temporary-file-ownership.md), and [parent-lifecycle evidence](../evidence/private-transaction-parent-lifecycle.md).
 
 Scope:
 
@@ -145,19 +145,86 @@ Completed in the fifth slice:
 - recover every instrumented forward boundary to exactly `rolled-back` or `committed`;
 - fail closed when interrupted state contains foreign drift.
 
+Completed in the sixth slice:
+
+- terminate a real child process with `SIGKILL` at every forward execution boundary on Darwin;
+- confirm that an ordinary recovery attempt refuses the stale writer record;
+- require external process-death confirmation plus unchanged writer evidence and the expected transaction digest before explicit writer-record removal;
+- verify the writer lease immediately before every project mutation;
+- recover all pre-lock termination boundaries to exact base bytes and `rolled-back`;
+- recover all post-lock termination boundaries to exact target bytes and `committed`;
+- synchronize affected directory entries after directory creation, rename, hard-link publication, temporary-file cleanup, and unlink;
+- fail workspace opening when the current filesystem cannot perform the directory synchronization probe.
+
+Completed in the seventh slice:
+
+- require exact terminal repository and lock state before writing a retirement marker;
+- make retirement an immutable barrier that prevents writer acquisition and in-place store reuse;
+- keep each prepared store single-use and caller-owned without selecting a public parent or transaction path;
+- atomically rename a retired store to a deterministic tombstone and synchronize the parent directory;
+- publish a canonical cleanup receipt with the authorized file inventory before tombstone removal so absence is distinguishable from an unknown store;
+- audit required recovery records, valid content-addressed orphan blobs, recognized private temporary files, and symbolic-link absence before recursive removal;
+- refuse unknown entries, corrupt orphan blobs, symbolic links, and active or stale writer records;
+- resume cleanup idempotently after cooperative faults and Darwin `SIGKILL` at retirement, tombstone, receipt, and removal boundaries;
+- resume a partially removed tombstone only when every remaining path and byte digest matches the receipt inventory.
+
+Completed in the eighth slice:
+
+- construct deterministic base-anchor rollback and target-anchor roll-forward recovery fixtures;
+- keep the target-anchor partial fixture explicit as a valid recovery input rather than normal execution output;
+- interrupt all three rollback output mutations, base verification, and `rolled-back` journal persistence;
+- interrupt all three roll-forward output mutations, `lock-written` persistence, target verification, and `committed` persistence;
+- repeat all eleven recovery mutation boundaries with cooperative faults and Darwin `SIGKILL`;
+- require explicit stale-writer evidence removal after every terminated recovery process;
+- recover each boundary to exact base bytes and `rolled-back` or exact target bytes and `committed`;
+- fail closed when foreign drift appears after recovery-process termination.
+
+Completed in the ninth slice:
+
+- persist a canonical digest-bound mutation intent before creating each transaction-owned repository temporary file;
+- derive the exact same-directory temporary path from transaction, writer, target path, and target content digests without PID, time, or age heuristics;
+- persist exact writer clearance before removing an unchanged stale writer record after external process-death confirmation;
+- reclaim only intent paths whose writer fingerprint has matching clearance and refuse every uncleared recorded temporary file;
+- keep cooperative write failures self-cleaning while retaining empty or synchronized partial-file evidence after `SIGKILL`;
+- verify creation and synchronization termination boundaries through a real child process on Darwin;
+- reject symbolic links, directories, malformed records, unknown paths, and conflicting temporary paths;
+- include intent and clearance registries in terminal store verification and cleanup inventory;
+- document that hostile regular-file replacement at an exact authorized path remains indistinguishable from owned partial bytes.
+
+Completed in the tenth slice:
+
+- require an existing empty dedicated parent before private lifecycle initialization;
+- publish and revalidate a canonical owner record before cleanup mutation or disposal inspection;
+- define immutable cleanup-receipt retention for the full parent lifetime without time, count, or size heuristics;
+- refuse unclaimed, non-empty, changed, malformed, extended, or non-canonical parent ownership;
+- produce a deterministic read-only disposal snapshot only when the parent contains no active store or tombstone;
+- bind the disposal snapshot to the owner record and every sorted canonical receipt identity and digest;
+- reject symbolic links, directories, foreign files, invalid receipts, and unexpected receipt filenames from disposal readiness;
+- leave whole-parent deletion as a future explicitly authorized administrative action rather than deleting retained evidence automatically.
+
+Prepared in the eleventh slice:
+
+- verify current Node.js release and GitHub-hosted runner facts from official primary sources;
+- define blocking Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 cells for Node.js 22 and 24;
+- use explicit runner labels, read-only workflow permission, disabled credential persistence, disabled package caching, and full-SHA action pins;
+- probe directory synchronization, synchronized rename, hard links, symbolic links, case sensitivity, and forced child termination before the full suite;
+- remove Windows skips from transaction interruption and symbolic-link tests;
+- add a zero-skip qualification command and fail if tracked files change;
+- audit workflow action pins, privileged triggers, and top-level permission mechanically;
+- define the private [interruption contract](interruption-contract.md), filesystem prerequisites, operator boundary, and explicit power-loss non-claims;
+- keep every hosted cell unqualified until an actual run passes and its resolved environment is recorded.
+
 Remaining before this step is complete:
 
-- run subprocess termination rather than cooperative exception injection;
-- define safe stale-lease handling and an explicit operator recovery boundary;
-- synchronize and test directory-entry durability on supported platforms;
-- define orphan blob, temporary file, completed store, and rolled-back store cleanup;
-- validate the interruption contract without claiming cross-file atomicity or untested power-loss guarantees.
+- run and review every [candidate platform qualification](../evidence/candidate-platform-qualification.md) cell;
+- resolve or explicitly defer any platform that fails process termination, directory synchronization, hard-link, or symbolic-link evidence;
+- validate power-loss behavior where the platform and filesystem provide a reproducible harness;
 
 Exit criteria:
 
 - a repeated render is a no-op;
 - drift, ownership conflicts, deletions, and adoption are explicit;
-- interruption cannot leave a partially updated artifact set and lock;
+- an interrupted apply can be restored deterministically without accepting a partially updated artifact set and contradictory lock;
 - volatile machine data and secrets never enter the lock.
 
 ### 5. Command services and thin CLI

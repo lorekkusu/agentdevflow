@@ -33,6 +33,10 @@ The private compiler resolves those specimens into finite versioned workflows, p
 
 Renderer integration hardening now includes deterministic private materialization, native output for the initial three providers, exact source references, fail-closed capability diagnostics, and six golden fixtures. See [renderer integration evidence](docs/evidence/renderer-integration.md) and [ADR 0001](docs/decisions/0001-native-project-instructions-renderer.md).
 
+Transactional workspace hardening now covers private lock and provenance records, recoverable multi-file execution, explicit stale-writer handling, exact repository temporary-file ownership, single-use store cleanup, and dedicated parent-lifetime receipt ownership on the tested Darwin environment. Public storage paths and formats remain intentionally unselected. See the [transaction executor](docs/evidence/private-transaction-executor.md), [temporary-file ownership](docs/evidence/private-temporary-file-ownership.md), [cleanup](docs/evidence/private-transaction-cleanup.md), and [parent lifecycle](docs/evidence/private-transaction-parent-lifecycle.md) evidence.
+
+A blocking six-cell GitHub Actions matrix is prepared for Ubuntu, macOS, and Windows across Node.js 22 and 24. It is a qualification mechanism, not a support claim; Linux and Windows remain unqualified until hosted runs pass and are reviewed. See [candidate platform qualification](docs/evidence/candidate-platform-qualification.md).
+
 ## Development
 
 Requirements:
@@ -48,6 +52,7 @@ npm run build
 npm test
 npm run check:repository
 npm run check
+npm run check:qualification
 npm run phase1:config
 npm run phase1:compiler
 ```

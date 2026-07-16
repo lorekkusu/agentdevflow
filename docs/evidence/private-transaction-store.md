@@ -1,18 +1,19 @@
 # Private transaction store evidence
 
-Snapshot date: 2026-07-16.
+Snapshot date: 2026-07-17.
 
 ## Verdict
 
-**Pass for persistent recovery preparation.** A caller-supplied private store can now persist every before-and-after output, base and target lock bytes, a canonical transaction, a recovery manifest, and a `prepared` journal under one exclusive writer lease.
+**Pass for persistent recovery preparation and repository temporary-file ownership records.** A caller-supplied private store can persist every before-and-after output, base and target lock bytes, a canonical transaction, a recovery manifest, a `prepared` journal, deterministic repository mutation intents, and explicit stale-writer clearances under one exclusive writer lease.
 
-The prepared journal is written only after the store re-reads and verifies every required content-addressed blob and both lock records. This establishes the recovery-material prerequisite for a future executor. It does not yet apply generated outputs or the target lock.
+The prepared journal is written only after the store re-reads and verifies every required content-addressed blob and both lock records. The separate private executor consumes this state to apply generated outputs and the target lock; the store remains responsible only for durable recovery material, writer authority, and private ownership records.
 
 ## Reproduction
 
 Implementation:
 
 - `src/transaction/private-transaction-store.ts`;
+- `src/transaction/private-temporary-intent.ts`;
 - `src/transaction/private-render-transaction.ts`;
 - `src/workspace/private-filesystem-workspace.ts`.
 
@@ -29,7 +30,7 @@ npm install
 npm run check
 ```
 
-The store-specific suite contains six tests. The complete suite contains 94 tests at this snapshot.
+The store-specific suite contains twelve tests. The complete suite contains 170 tests at this snapshot.
 
 ## Storage boundary
 
@@ -52,6 +53,8 @@ The Balanced-to-Fast fixture produces this deterministic manifest digest:
 ```
 
 Transaction, manifest, journal, and lock records use strict deterministic private JSON serialization with one trailing newline. Reordered, extended, malformed, or digest-invalid records fail validation.
+
+Temporary intent and writer-clearance registries follow the same strict canonical storage rules. Each intent binds the prepared transaction, opaque writer fingerprint, repository target path, target content digest, deterministic same-directory temporary path, and its own digest. A clearance binds one exact writer fingerprint to the prepared transaction. These private records do not select a public store path or compatibility format.
 
 ## Preparation order
 
@@ -76,9 +79,9 @@ Every later journal transition also revalidates the complete recovery record and
 
 The store creates an exclusive writer record through a synchronized temporary file and atomic hard-link publication. The record contains only an opaque random token; it does not contain a hostname, process identifier, username, timestamp, credential, or render-lock field.
 
-Every store mutation verifies the caller's token. A second store instance cannot acquire the lease concurrently, a released lease cannot mutate the store, and lease release removes the record only when its content still matches the owner token.
+Every store mutation verifies the caller's token. The executor also verifies the lease immediately before every project mutation. A second store instance cannot acquire the lease concurrently, a released lease cannot mutate the store, and lease release removes the record only when its content still matches the owner token.
 
-This is a cooperative lock-file protocol, not an operating-system advisory lock. There is intentionally no automatic stale-lease takeover yet.
+This is a cooperative lock-file protocol, not an operating-system advisory lock. There is intentionally no automatic stale-lease takeover. After independently confirming that the writer process terminated, an operator may inspect an opaque fingerprint and clear the record only if that exact record and the expected prepared transaction remain unchanged. The store first persists matching writer clearance, then removes the unchanged writer record. The store cannot determine process death itself.
 
 ## Observations
 
@@ -88,6 +91,11 @@ Automated tests demonstrate:
 - persisted transaction, manifest, journal, base lock, and target lock round-trip exactly;
 - a changed project path fails preparation without publishing recovery records;
 - concurrent writer acquisition fails and a released lease loses mutation authority;
+- repeated registration by one writer produces one deterministic mutation intent before any repository temporary file exists;
+- another writer receives a different fingerprint and temporary path for the same target bytes;
+- wrong stale-writer evidence persists no clearance, while exact evidence makes only matching intents reclaimable;
+- corrupt intent and clearance registries fail closed;
+- a canonical intent registry for another transaction is rejected before any reclamation;
 - corrupt and missing blobs fail verification;
 - a missing blob prevents journal advancement;
 - skipped journal states are rejected while only explicit commit and rollback transitions persist;
@@ -96,14 +104,14 @@ Automated tests demonstrate:
 ## Limitations
 
 - The private executor consumes the prepared store and checks the caller-supplied repository lock path, but public discovery remains undefined.
-- A process crash can leave a stale writer record; no safe takeover or operator recovery policy exists.
+- A process crash can leave a stale writer record. Recovery requires external process-death confirmation and exact evidence; the store provides no automatic takeover or liveness proof.
 - The lock-file protocol does not exclude a hostile process that directly edits the store.
-- Store directory synchronization, power-loss behavior, network filesystems, and platform-specific hard-link behavior are untested.
+- Store file and directory synchronization succeeds in the Darwin subprocess fixture, but power-loss behavior, network filesystems, and other platform-specific hard-link behavior are untested.
 - Orphaned pre-preparation blobs are not garbage-collected.
-- Completed transaction retention and cleanup are undefined.
+- A separate lifecycle removes retired single-use stores under a dedicated parent and retains immutable cleanup receipts for the parent lifetime.
 - Internal filenames and private revision 1 are implementation details, not public compatibility promises.
 - No public store path, lock filename, schema, configuration, or CLI behavior is selected.
 
 ## Next experiment
 
-Use the [private transaction executor evidence](private-transaction-executor.md) to design subprocess termination, stale-lease recovery, retention, and cleanup experiments without making the internal store layout public.
+Retain the [transaction cleanup](private-transaction-cleanup.md), [parent lifecycle](private-transaction-parent-lifecycle.md), and [temporary-file ownership](private-temporary-file-ownership.md) protocols while qualifying additional platforms without making the internal store layout public.

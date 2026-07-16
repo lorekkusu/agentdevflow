@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { constants, type Stats } from "node:fs";
 import {
   lstat,
@@ -17,6 +18,10 @@ import {
 } from "node:path";
 
 import type { RenderWorkspace } from "../renderer/contract.js";
+import {
+  validatePrivateTemporaryMutationIntent,
+  type PrivateTemporaryMutationIntent,
+} from "../transaction/private-temporary-intent.js";
 
 export type PrivateFilesystemWorkspaceErrorCode =
   | "UNSAFE_WORKSPACE_PATH"
@@ -25,6 +30,9 @@ export type PrivateFilesystemWorkspaceErrorCode =
   | "WORKSPACE_PATH_SYMLINK"
   | "WORKSPACE_PATH_NOT_FILE"
   | "WORKSPACE_PARENT_NOT_DIRECTORY"
+  | "WORKSPACE_DIRECTORY_SYNC_UNSUPPORTED"
+  | "WORKSPACE_OWNED_TEMPORARY_CONFLICT"
+  | "WORKSPACE_OWNED_TEMPORARY_INVALID"
   | "WORKSPACE_PATH_ESCAPES_ROOT";
 
 export class PrivateFilesystemWorkspaceError extends Error {
@@ -50,6 +58,28 @@ interface TemporaryFile {
   readonly handle: Awaited<ReturnType<typeof open>>;
 }
 
+export type PrivateOwnedTemporaryEvent =
+  | { readonly kind: "temporary-created"; readonly targetPath: string }
+  | { readonly kind: "temporary-synced"; readonly targetPath: string };
+
+export type PrivateOwnedTemporaryFaultInjector = (
+  event: PrivateOwnedTemporaryEvent,
+) => void | Promise<void>;
+
+export interface PrivateTransactionalWorkspace extends RenderWorkspace {
+  writeAtomicallyOwned(
+    intent: PrivateTemporaryMutationIntent,
+    content: string,
+    faultInjector?: PrivateOwnedTemporaryFaultInjector,
+  ): Promise<void>;
+  inspectOwnedTemporary(
+    intent: PrivateTemporaryMutationIntent,
+  ): Promise<"absent" | "present">;
+  removeOwnedTemporary(
+    intent: PrivateTemporaryMutationIntent,
+  ): Promise<"absent" | "removed">;
+}
+
 let temporaryFileSequence = 0;
 
 function isNodeErrorWithCode(
@@ -59,6 +89,12 @@ function isNodeErrorWithCode(
   return error instanceof Error &&
     "code" in error &&
     error.code === code;
+}
+
+function nodeErrorCode(error: unknown): string {
+  return error instanceof Error && "code" in error && typeof error.code === "string"
+    ? error.code
+    : "UNKNOWN";
 }
 
 function pathIsWithinRoot(root: string, candidate: string): boolean {
@@ -89,7 +125,7 @@ function notRegularFile(path: string): never {
   );
 }
 
-export class PrivateFilesystemWorkspace implements RenderWorkspace {
+export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace {
   private constructor(private readonly canonicalRoot: string) {}
 
   static async open(root: string): Promise<PrivateFilesystemWorkspace> {
@@ -120,7 +156,39 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
     }
 
     const canonicalRoot = await realpath(requestedRoot);
-    return new PrivateFilesystemWorkspace(canonicalRoot);
+    const workspace = new PrivateFilesystemWorkspace(canonicalRoot);
+    await workspace.syncDirectory(canonicalRoot);
+    return workspace;
+  }
+
+  private async syncDirectory(path: string): Promise<void> {
+    let handle: Awaited<ReturnType<typeof open>>;
+    try {
+      handle = await open(path, constants.O_RDONLY);
+    } catch (error) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_DIRECTORY_SYNC_UNSUPPORTED",
+        `Workspace filesystem cannot open a directory for synchronization (${nodeErrorCode(error)}).`,
+      );
+    }
+    try {
+      if (!(await handle.stat()).isDirectory()) {
+        throw new PrivateFilesystemWorkspaceError(
+          "WORKSPACE_DIRECTORY_SYNC_UNSUPPORTED",
+          "Workspace directory synchronization target is not a directory.",
+        );
+      }
+      try {
+        await handle.sync();
+      } catch (error) {
+        throw new PrivateFilesystemWorkspaceError(
+          "WORKSPACE_DIRECTORY_SYNC_UNSUPPORTED",
+          `Workspace filesystem cannot synchronize a directory (${nodeErrorCode(error)}).`,
+        );
+      }
+    } finally {
+      await handle.close();
+    }
   }
 
   private resolvePath(path: string): SafeWorkspacePath {
@@ -157,6 +225,7 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
     let current = this.canonicalRoot;
     const parentSegments = safePath.segments.slice(0, -1);
     for (const [index, segment] of parentSegments.entries()) {
+      const previous = current;
       current = join(current, segment);
       const displayedPath = parentSegments.slice(0, index + 1).join("/");
       let entry: Stats;
@@ -169,14 +238,20 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
         if (!create) {
           return null;
         }
+        let created = false;
         try {
           await mkdir(current, { mode: 0o755 });
+          created = true;
         } catch (mkdirError) {
           if (!isNodeErrorWithCode(mkdirError, "EEXIST")) {
             throw mkdirError;
           }
         }
         entry = await lstat(current);
+        if (created) {
+          await this.syncDirectory(current);
+          await this.syncDirectory(previous);
+        }
       }
 
       if (entry.isSymbolicLink()) {
@@ -308,6 +383,7 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
       await this.inspectLeaf(safePath);
       await rename(temporary.path, safePath.absolutePath);
       temporaryExists = false;
+      await this.syncDirectory(parent);
     } finally {
       if (handleOpen) {
         await temporary.handle.close();
@@ -315,6 +391,7 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
       if (temporaryExists) {
         try {
           await unlink(temporary.path);
+          await this.syncDirectory(parent);
         } catch (error) {
           if (!isNodeErrorWithCode(error, "ENOENT")) {
             throw error;
@@ -322,6 +399,137 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
         }
       }
     }
+  }
+
+  private ownedPaths(intent: PrivateTemporaryMutationIntent): {
+    readonly target: SafeWorkspacePath;
+    readonly temporary: SafeWorkspacePath;
+  } {
+    try {
+      validatePrivateTemporaryMutationIntent(intent);
+    } catch (error) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        `Owned temporary intent is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    const target = this.resolvePath(intent.targetPath);
+    const temporary = this.resolvePath(intent.temporaryPath);
+    if (
+      posix.dirname(target.relativePath) !==
+      posix.dirname(temporary.relativePath)
+    ) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Owned temporary file must share its target directory.",
+        intent.targetPath,
+      );
+    }
+    return { target, temporary };
+  }
+
+  async writeAtomicallyOwned(
+    intent: PrivateTemporaryMutationIntent,
+    content: string,
+    faultInjector?: PrivateOwnedTemporaryFaultInjector,
+  ): Promise<void> {
+    const paths = this.ownedPaths(intent);
+    if (createHash("sha256").update(content).digest("hex") !== intent.targetDigest) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Owned temporary content does not match its target digest.",
+        intent.targetPath,
+      );
+    }
+    const parent = await this.ensureParent(paths.target, true);
+    if (parent === null) {
+      throw new Error("Workspace parent creation did not complete.");
+    }
+    const temporaryParent = await this.ensureParent(paths.temporary, false);
+    if (temporaryParent !== parent) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Owned temporary parent does not match the target parent.",
+        intent.targetPath,
+      );
+    }
+    const existing = await this.inspectLeaf(paths.target);
+    let handle: Awaited<ReturnType<typeof open>>;
+    try {
+      handle = await open(
+        paths.temporary.absolutePath,
+        constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+        existing?.mode === undefined ? 0o666 : existing.mode & 0o777,
+      );
+    } catch (error) {
+      if (isNodeErrorWithCode(error, "EEXIST")) {
+        throw new PrivateFilesystemWorkspaceError(
+          "WORKSPACE_OWNED_TEMPORARY_CONFLICT",
+          "Owned temporary path already exists.",
+          intent.temporaryPath,
+        );
+      }
+      throw error;
+    }
+    let handleOpen = true;
+    let temporaryExists = true;
+    try {
+      await faultInjector?.({
+        kind: "temporary-created",
+        targetPath: intent.targetPath,
+      });
+      await handle.writeFile(content, "utf8");
+      await handle.sync();
+      await faultInjector?.({
+        kind: "temporary-synced",
+        targetPath: intent.targetPath,
+      });
+      await handle.close();
+      handleOpen = false;
+
+      await this.ensureParent(paths.target, false);
+      await this.inspectLeaf(paths.target);
+      await rename(paths.temporary.absolutePath, paths.target.absolutePath);
+      temporaryExists = false;
+      await this.syncDirectory(parent);
+    } finally {
+      if (handleOpen) {
+        await handle.close();
+      }
+      if (temporaryExists) {
+        try {
+          await unlink(paths.temporary.absolutePath);
+          await this.syncDirectory(parent);
+        } catch (error) {
+          if (!isNodeErrorWithCode(error, "ENOENT")) {
+            throw error;
+          }
+        }
+      }
+    }
+  }
+
+  async inspectOwnedTemporary(
+    intent: PrivateTemporaryMutationIntent,
+  ): Promise<"absent" | "present"> {
+    const { temporary } = this.ownedPaths(intent);
+    if ((await this.ensureParent(temporary, false)) === null) {
+      return "absent";
+    }
+    return (await this.inspectLeaf(temporary)) === null ? "absent" : "present";
+  }
+
+  async removeOwnedTemporary(
+    intent: PrivateTemporaryMutationIntent,
+  ): Promise<"absent" | "removed"> {
+    const { temporary } = this.ownedPaths(intent);
+    const parent = await this.ensureParent(temporary, false);
+    if (parent === null || (await this.inspectLeaf(temporary)) === null) {
+      return "absent";
+    }
+    await unlink(temporary.absolutePath);
+    await this.syncDirectory(parent);
+    return "removed";
   }
 
   async createExclusively(path: string, content: string): Promise<boolean> {
@@ -367,6 +575,7 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
       }
       try {
         await unlink(temporary.path);
+        await this.syncDirectory(parent);
       } catch (error) {
         if (!isNodeErrorWithCode(error, "ENOENT")) {
           throw error;
@@ -398,5 +607,10 @@ export class PrivateFilesystemWorkspace implements RenderWorkspace {
       return;
     }
     await unlink(safePath.absolutePath);
+    const parent = await this.ensureParent(safePath, false);
+    if (parent === null) {
+      throw new Error("Workspace parent disappeared after file removal.");
+    }
+    await this.syncDirectory(parent);
   }
 }

@@ -152,6 +152,68 @@ function inspectDisclosure(relativePath, content) {
   return diagnostics;
 }
 
+function inspectWorkflowSecurity(relativePath, content) {
+  if (!relativePath.startsWith(".github/workflows/")) {
+    return [];
+  }
+  const diagnostics = [];
+  const actionReferencePattern = /^\s*uses:\s*[^\s@]+@([^\s#]+).*$/gmu;
+  for (const match of content.matchAll(actionReferencePattern)) {
+    const reference = match[1];
+    if (
+      reference &&
+      !/^[a-f0-9]{40}$/u.test(reference) &&
+      match.index !== undefined
+    ) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "WORKFLOW_ACTION_NOT_PINNED",
+        message: "Pin every workflow action to a full commit SHA.",
+      });
+    }
+  }
+  if (/^\s*pull_request_target\s*:/mu.test(content)) {
+    diagnostics.push({
+      path: relativePath,
+      line: lineNumberAt(content, content.search(/^\s*pull_request_target\s*:/mu)),
+      code: "WORKFLOW_PRIVILEGED_TRIGGER",
+      message: "Do not run repository code through pull_request_target.",
+    });
+  }
+  const continueOnErrorIndex = content.search(
+    /^\s*continue-on-error:\s*true\s*$/mu,
+  );
+  if (continueOnErrorIndex >= 0) {
+    diagnostics.push({
+      path: relativePath,
+      line: lineNumberAt(content, continueOnErrorIndex),
+      code: "WORKFLOW_FAILURE_HIDDEN",
+      message: "Do not hide workflow failures with continue-on-error.",
+    });
+  }
+  const writePermissionIndex = content.search(
+    /^\s+[a-z-]+:\s+write\s*$/mu,
+  );
+  if (writePermissionIndex >= 0) {
+    diagnostics.push({
+      path: relativePath,
+      line: lineNumberAt(content, writePermissionIndex),
+      code: "WORKFLOW_WRITE_PERMISSION",
+      message: "Qualification workflows must not request write permission.",
+    });
+  }
+  if (!/^permissions:\s*\n\s+contents:\s+read\s*$/mu.test(content)) {
+    diagnostics.push({
+      path: relativePath,
+      line: 1,
+      code: "WORKFLOW_PERMISSIONS_MISSING",
+      message: "Declare top-level read-only contents permission.",
+    });
+  }
+  return diagnostics;
+}
+
 function markdownLinkTargets(content) {
   const targets = [];
   const pattern = /\[[^\]]*\]\((<[^>]+>|[^)\s]+)(?:\s+"[^"]*")?\)/gu;
@@ -222,6 +284,7 @@ for (const absolutePath of files) {
     continue;
   }
   diagnostics.push(...inspectDisclosure(relativePath, content));
+  diagnostics.push(...inspectWorkflowSecurity(relativePath, content));
   if (extname(absolutePath) === ".md") {
     diagnostics.push(
       ...(await inspectMarkdownLinks(absolutePath, relativePath, content)),

@@ -1,12 +1,12 @@
 # Private filesystem workspace evidence
 
-Snapshot date: 2026-07-16.
+Snapshot date: 2026-07-17.
 
 ## Verdict
 
 **Pass for the real filesystem path-safety slice.** The renderer workspace contract now has a private Node.js filesystem implementation that confines canonical relative paths to a canonical repository root, rejects existing symbolic-link traversal, requires regular-file leaves, and replaces files through same-directory temporary files.
 
-This verdict does not cover concurrent hostile mutation, transaction execution, power-loss durability, or cross-platform release support. A separate private store now uses the workspace for cooperative writer exclusion and recovery persistence. Roadmap step 4 remains in progress.
+This verdict does not cover concurrent hostile mutation, power-loss durability, or cross-platform release support. A separate private store and executor use the workspace for process-termination recovery on the tested Darwin environment. Roadmap step 4 remains in progress.
 
 ## Reproduction
 
@@ -28,7 +28,7 @@ npm install
 npm run check
 ```
 
-The workspace-specific suite contains seven tests. The complete suite contains 94 tests at this snapshot.
+The workspace-specific suite contains twelve tests. The complete suite contains 170 tests at this snapshot.
 
 ## Root and path rules
 
@@ -65,15 +65,24 @@ Writes:
 2. write and synchronize the temporary file contents;
 3. re-inspect the parent and target paths;
 4. rename the temporary file over the target;
-5. remove the temporary file if the operation fails before rename.
+5. synchronize the containing directory after rename;
+6. remove the temporary file if the operation fails before rename and synchronize that removal.
 
 Using the target directory avoids cross-filesystem rename. Existing file permission bits are retained; new files use the process umask applied to mode `0666`.
 
 Removals only unlink an inspected regular-file leaf. Removing an absent path is a no-op.
 
-Exclusive creation synchronizes a temporary file and publishes it through a same-directory hard link, which fails if the destination already exists. Owner-matched removal reads the content twice and refuses to remove a value that does not match the caller's expected ownership token.
+Exclusive creation synchronizes a temporary file and publishes it through a same-directory hard link, which fails if the destination already exists. It removes the temporary link and synchronizes the final directory state before returning. Owner-matched removal reads the content twice and refuses to remove a value that does not match the caller's expected ownership token.
 
-These methods satisfy the existing `RenderWorkspace` contract for single-process experiments. The method names do not imply a durable multi-file transaction.
+Workspace opening performs a directory synchronization probe and fails before mutation if the current filesystem cannot support it. Newly created directories and their parents are synchronized, as are containing directories after rename, hard-link publication, temporary-file cleanup, and unlink. Node.js documents `FileHandle.sync()` as forcing queued I/O to synchronized completion and `fsPromises.open()` as the source of the handle; the durability semantics still depend on the operating system and filesystem ([Node.js filesystem API](https://nodejs.org/api/fs.html)).
+
+These methods satisfy the existing `RenderWorkspace` contract. The method names do not imply a durable multi-file transaction; transaction ordering and recovery remain executor responsibilities.
+
+## Transaction-owned temporary files
+
+The private transaction workspace additionally accepts a validated mutation intent whose transaction, writer, target path, target digest, deterministic temporary path, and intent digest were persisted before repository mutation. It exclusively creates that exact same-directory path, verifies the content digest, emits creation and synchronization boundaries, and then follows the same rename and directory-synchronization behavior.
+
+Inspection and reclamation also require the complete intent. They never scan the repository or infer ownership from a filename, PID, timestamp, or age. Only a regular file at the exact path can be removed; a symbolic link or directory fails closed. The transaction executor separately proves that the intent's writer has durable clearance before calling removal. See [temporary-file ownership evidence](private-temporary-file-ownership.md).
 
 ## Observations
 
@@ -81,6 +90,10 @@ Automated tests demonstrate:
 
 - nested directory creation, first write, replacement, read, removal, and repeated removal;
 - no temporary file remains after successful replacement;
+- deterministic owned writes emit creation and synchronization boundaries and leave no temporary file after success;
+- cooperative faults at both owned-write boundaries remove the temporary file;
+- an exact registered partial regular file can be inspected and removed;
+- symbolic links, directories, invalid intents, digest mismatches, and existing exact-path conflicts are rejected;
 - exclusive creation refuses an existing writer record and owner-matched removal refuses another token;
 - missing and regular-file roots are rejected;
 - absolute, parent-traversing, non-normalized, backslash, whitespace-padded, and control-character paths are rejected;
@@ -89,19 +102,21 @@ Automated tests demonstrate:
 - a regular file cannot be traversed as a parent directory;
 - the native Codex, Claude Code, and Cursor renderer completes plan, render, and verify in a temporary repository.
 
-The symbolic-link fixture passed on the current macOS experiment host and is explicitly skipped on Windows until platform-specific behavior is tested.
+The symbolic-link fixture passed on the current macOS experiment host. It is no longer skipped on Windows, but no Windows runner result has been captured yet.
 
 ## Limitations
 
 - Path inspection and mutation use path-based Node.js APIs, not directory-handle-relative `openat` operations. Another process can change a parent between checks.
 - The transaction store has a cooperative exclusive writer record, but there is no repository-wide operating-system lock or comparison-and-swap apply service.
-- The temporary file content is synchronized, but the containing directory is not synchronized after rename or unlink.
-- A crash can leave an untracked temporary file; startup cleanup is not implemented.
+- Directory synchronization succeeded under Node.js 24.14.0 on Darwin arm64; other operating systems and filesystems are not yet release-qualified.
+- Successful synchronization calls do not by themselves prove behavior under sudden power loss.
+- Ordinary non-transactional workspace writes can still leave an untracked temporary file after abrupt process termination. Transaction-owned writes use the separate intent-and-clearance protocol.
+- A hostile regular file placed at an exact cleared intent path is indistinguishable from owned partial bytes. The protocol assumes cooperative writers and fails closed for symbolic links and non-regular leaves.
 - Hard-link ownership, case-folding collisions, Unicode normalization collisions, filesystem aliases, and network filesystems have not been evaluated.
 - Windows and Linux behavior have not been validated in this slice.
-- The workspace backs private persistence and executor mutations, but process-kill and power-loss durability remain unverified.
+- Process-kill recovery is verified only on the recorded Darwin environment; power-loss durability remains unverified.
 - No public path, lock filename, transaction directory, schema, or CLI behavior is selected.
 
 ## Next experiment
 
-Run subprocess termination and platform synchronization experiments for the [private transaction executor](private-transaction-executor.md), including stale writer records and temporary-file cleanup.
+Run the [candidate platform qualification](candidate-platform-qualification.md) matrix before promoting any additional operating system to supported status.
