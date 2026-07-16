@@ -84,6 +84,8 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
+Status: **In progress.** The first private in-memory lock slice is complete. See [private render lock evidence](../evidence/private-render-lock.md).
+
 Scope:
 
 - an internal, experimental lock model;
@@ -91,6 +93,23 @@ Scope:
 - artifact revision-consistency checks;
 - a real filesystem workspace with path and symlink safety;
 - transactional multi-file apply and failure recovery.
+
+Completed in the first slice:
+
+- define a private versioned lock without selecting a public filename or serialized format;
+- bind compiler, source materialization, renderer, ownership, content digests, and source references;
+- require matching applied-result and verification plan digests before lock creation;
+- keep the lock stable across reordered intent and no-op rendering;
+- reject volatile fields, unsafe paths, corrupted digests, and unexpected ownership claims;
+- clear stale ownership for already-absent obsolete output.
+
+Remaining before this step is complete:
+
+- define transaction preconditions and a write-ahead journal state machine;
+- prove deterministic rollback or roll-forward behavior with fault injection;
+- implement a real filesystem workspace with root, path, and symlink safety;
+- coordinate generated files and lock persistence through recoverable multi-file apply;
+- document the exact interruption boundary without claiming cross-file atomicity.
 
 Exit criteria:
 

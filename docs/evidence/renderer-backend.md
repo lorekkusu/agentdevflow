@@ -117,7 +117,7 @@ The staging adapter makes the backend safe enough for further validation:
 - Verify reports deterministic, path-specific drift.
 - Missing source mapping remains an explicit warning rather than invented provenance.
 
-The harness produced four deterministic create actions with input digest `ef17003427a67f76e6538215743d70579f92307c356c7b5586c9bfac870b3493` and plan digest `3f72abd1b5a7ae2dc0c550cf74ff2dc995df6220385a2c7a58b772feed5c5f99` on two runs.
+The initial harness revision produced four deterministic create actions with input digest `ef17003427a67f76e6538215743d70579f92307c356c7b5586c9bfac870b3493` and plan digest `3f72abd1b5a7ae2dc0c550cf74ff2dc995df6220385a2c7a58b772feed5c5f99` on two runs. The current plan digest additionally binds the source digest and ownership key, so this historical plan digest is not a current compatibility snapshot.
 
 The prototype does not establish a public ownership format, implement import merging, or claim atomic filesystem semantics for a future production CLI. It validates the replacement boundary only.
 
