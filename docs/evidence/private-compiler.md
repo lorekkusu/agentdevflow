@@ -142,10 +142,8 @@ Reordered candidate provider and artifact input produced deeply equal compilatio
 - Only `project-instructions` is modeled; procedures, skills, hooks, permissions, and tracker capabilities remain uncompiled.
 - The state budget uses a conservative theoretical bound without reduction.
 - The compiler accepts only the closed finite artifact-presence model from Phase 0.
-- There is no render request, source mapping, ownership, lock state, filesystem apply, CLI, or runtime.
+- This compiler slice does not itself own rendering, ownership, lock state, filesystem apply, CLI, or runtime behavior. Later renderer evidence covers the private bridge and native staging implementation.
 
-## Next recommendation
+## Subsequent result
 
-Proceed to renderer integration hardening. Translate private compiler output into backend-neutral render requests, preserve the provider-neutral capability requirement until the adapter boundary, add exact source references, and prove deterministic staged output from the compiler slice.
-
-The Rulesync runtime distribution remains a Candidate decision. Before adding it as a production dependency, run the documented offline installation, package-content, dependency, and isolated-worker experiment and obtain explicit approval for the dependency change.
+Renderer integration now translates private compiler output into backend-neutral render requests, retains the provider-neutral capability until the adapter boundary, carries exact source references, and produces deterministic native staged output. See [renderer integration evidence](renderer-integration.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md).

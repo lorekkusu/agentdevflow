@@ -4,21 +4,24 @@ Snapshot date: 2026-07-16.
 
 ## Verdict
 
-**Pass for the first roadmap step 3 slice; renderer integration hardening remains in progress.** Private compiler output now retains normalized provider instances and converts into the existing backend-neutral render request without reopening candidate input or importing renderer types into the compiler and policy modules.
+**Pass. Renderer integration hardening is complete for one project-wide instruction document and the initial three providers.** Private compiler output now materializes deterministic agent-facing instructions, binds them to machine provenance, and stages native Codex, Claude Code, and Cursor output behind the ownership-aware renderer contract.
 
-The bridge requires a digest of the materialized renderer input. It does not claim that compiler semantics alone identify generated source content. Incomplete capability evidence, malformed digests, unsafe source paths, and duplicate normalized source paths fail before a backend starts.
-
-No Rulesync runtime dependency, public configuration contract, public workflow DSL, lock format, or production CLI is introduced.
+The implementation introduces no Rulesync runtime dependency, public configuration contract, public workflow DSL, lock format, production CLI, global instructions, nested scope, or additional capability surface.
 
 ## Reproduction
 
-The implementation is in:
+Implementation:
 
-- `src/compiler/private-model.ts`;
-- `src/compiler/compile-candidate.ts`;
-- `src/renderer/from-compilation.ts`.
+- `src/renderer/materialize-compilation.ts`;
+- `src/renderer/from-compilation.ts`;
+- `src/renderer/native/`;
+- `src/renderer/staged-adapter.ts`.
 
-Automated coverage is in `test/renderer/from-compilation.test.ts`.
+Automated coverage and expected output:
+
+- `test/renderer/materialize-compilation.test.ts`;
+- `test/renderer/native-project-instructions.test.ts`;
+- `test/fixtures/renderer/native/`.
 
 Run:
 
@@ -27,62 +30,77 @@ npm install
 npm run check
 ```
 
-## Boundary
+## Private materialization
 
-The private workflow IR now carries the normalized provider instances that were part of candidate intent. This avoids passing the original candidate object beside the compilation or resolving provider products from role names.
+The private materialization revision contains:
 
-The renderer bridge performs these deterministic operations:
+- the compiler digest that owns the materialization;
+- one logical `project-instructions/development-flow.md` document;
+- its capability, content digest, and exact source references;
+- an overall digest over revision, compiler ownership, file metadata, and source references.
 
-1. verify that every workflow capability requirement has one resolution for every provider instance;
-2. map private `project-instructions` capability evidence to the renderer contract's `rules` capability at the boundary;
-3. deduplicate and sort provider products, so multiple instances of one product remain one render target;
-4. normalize and sort materialized source paths;
-5. combine compiler digest, materialized-input digest, and normalized source paths into the render input digest;
-6. carry ownership and explicit adoption paths without granting write authority.
+Agent-facing content contains operational responsibilities, transitions, typed artifact production and invalidation, safety requirements, and an explicit advisory enforcement boundary. Compiler digests, configuration digests, definition revisions, and capability evidence remain machine metadata rather than being embedded wholesale in provider instructions.
 
-The materialized-input digest must be lowercase SHA-256. It represents the content supplied to the staging backend. Source path names alone are not treated as content provenance.
+Unsafe compilations, unsupported materialization revisions, duplicate logical paths, content-digest mismatches, overall-digest mismatches, and cross-compilation reuse are rejected.
 
-## Captured results
-
-The Balanced specimen produces these renderer targets:
+For the Balanced specimen:
 
 ```text
-claude-code
-codex
-cursor
+source content digest: ba17b89e57423ced99d5dda357e83b48bc4f208ed68272508c401b73839e04ff
+materialization digest: 25f907fa0e8c7b6ae5094aba4573c0c2fd5b61f7b42fef18924a36db0465990e
+render input digest: 974fc2bef7d4dc80fc9c491df0fee4aada49d921d1570730f77cb733983dcca2
 ```
 
-Its resolved private `project-instructions` requirement maps to the renderer `rules` capability. With materialized source paths `rules/review.md` and `rules/workflow.md`, the deterministic render input digest is:
+Reordered candidate intent produces a deeply equal materialization and render request.
 
-```text
-8602d77a95295d20e9d4f43e8c13d4991b02165cd02a68766528306f039f78ee
-```
+## Native provider output
 
-Reordered candidate providers, candidate artifacts, materialized source paths, ownership entries, and adoption paths produce a deeply equal request.
+| Provider | Output | Scope |
+| --- | --- | --- |
+| Codex | `AGENTS.md` | Root, project-wide |
+| Claude Code | `CLAUDE.md` | Root, project-wide |
+| Cursor | `.cursor/rules/agentdevflow.mdc` | Project rule with `alwaysApply: true` |
 
-A replaceable fixture staging backend receives the request and creates a safe deterministic plan for `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules/agentdevflow.mdc`. Each planned output retains the two supplied source paths.
+The Claude output is self-contained and does not depend on Codex also being selected. Each staged file carries the logical source path plus the underlying candidate configuration and workflow-definition references.
+
+Six golden files cover Fast and Balanced output for all three providers. Tests also cover deterministic target deduplication, LF normalization, trailing newline behavior, Cursor frontmatter, ownership planning, apply, verification, and modified-output drift.
 
 ## Failure results
 
 | Condition | Result |
 | --- | --- |
-| Missing per-provider capability resolution | Reject before backend invocation |
-| Non-SHA-256 materialized-input digest | Reject before backend invocation |
-| Empty materialized source set | Reject before backend invocation |
-| Absolute or parent-traversing source path | Reject before backend invocation |
-| Duplicate source path after separator normalization | Reject before backend invocation |
+| Unsafe policy compilation | Reject before materialization |
+| Corrupted materialized content or digest | Reject before renderer construction |
+| Compilation and materialization mismatch | Reject before request construction |
+| Request source digest or path-set mismatch | `SOURCE_MATERIALIZATION_MISMATCH` error and no files |
+| Missing required `rules` render capability | `MISSING_RENDER_CAPABILITY` error and no files |
+| Capability other than project instructions | Per-provider `UNSUPPORTED_CAPABILITY` errors and no files |
+| More than one source document or another source capability | `UNSUPPORTED_SOURCE_LAYOUT` error and no files |
+| Existing unowned output | Ownership conflict unless explicit byte-exact adoption is requested |
+| Modified owned output | Ownership conflict; apply is refused |
+| Post-apply content drift | Deterministic path-specific verification error |
+
+## Provider evidence
+
+The emitted root and project-rule formats are based on current primary documentation:
+
+- [Codex `AGENTS.md` discovery and scope](https://learn.chatgpt.com/docs/agent-configuration/agents-md);
+- [Claude Code `CLAUDE.md` discovery and project instructions](https://code.claude.com/docs/en/memory);
+- [Cursor project rules and rule types](https://docs.cursor.com/context/rules).
+
+Provider instructions remain advisory context. They do not authenticate a responsible role, authorize a transition, or establish semantic truth.
 
 ## Limitations
 
-- The bridge is private and is not a stable user API.
-- The compiler does not yet materialize renderer source content. The caller must supply its digest and paths.
-- The current renderer contract uses `rules` as its instruction capability. Only the renderer boundary maps the compiler's provider-neutral name to it.
-- The fixture staging backend proves replaceability and request propagation, not Rulesync output compatibility.
-- The existing Rulesync staging process still reports missing source mapping unless the backend can establish it.
-- There is no offline production dependency, isolated worker, lock state, transactional filesystem, or public ownership format.
+- The materialization, emitter revision, render request, and golden format are private implementation contracts.
+- Only one project-wide instruction document is supported.
+- Nested, path-scoped, global, manual, and agent-requested rules are unsupported.
+- Commands, skills, hooks, MCP configuration, permissions, ignore files, import, and conversion are unsupported.
+- Transactional filesystem behavior, symlink safety, lock persistence, and crash recovery remain roadmap step 4.
+- Provider documentation and golden fixtures must be reviewed when discovery or file formats change.
 
-## Next experiment
+## Decision
 
-Define a deterministic private materialization from compiled workflow and policy intent to renderer source content. Then evaluate pinned Rulesync as an exact offline runtime dependency in an isolated process, capture package and dependency observations, and compare golden output for the initial three providers.
+[ADR 0001](../decisions/0001-native-project-instructions-renderer.md) accepts the minimal native renderer. Rulesync remains a pinned external experimental oracle and is neither a production nor test runtime dependency.
 
-Adding Rulesync as a production dependency remains a material dependency decision and requires explicit approval after the experiment evidence is available.
+Proceed to the internal lock, provenance, and transactional workspace slice. Do not expand renderer scope as part of that work.

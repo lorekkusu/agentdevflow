@@ -10,7 +10,7 @@ This document records public technical evidence that affects the product boundar
 
 ## Renderer tools
 
-[Rulesync](https://github.com/dyoshikawa/rulesync) generates configuration for many coding-agent products and exposes rules, commands, MCP, subagent, skill, hook, and permission surfaces. Its released programmatic API includes generate, import, convert, dry-run, and check operations. It is therefore the primary renderer candidate and a material dependency risk rather than a component to reimplement by default.
+[Rulesync](https://github.com/dyoshikawa/rulesync) generates configuration for many coding-agent products and exposes rules, commands, MCP, subagent, skill, hook, and permission surfaces. Its released programmatic API includes generate, import, convert, dry-run, and check operations. It remains a useful external oracle and a material dependency benchmark; [ADR 0001](../decisions/0001-native-project-instructions-renderer.md) selects a deliberately smaller native renderer instead of adopting or broadly reimplementing it.
 
 [Ruler](https://github.com/intellectronica/ruler) also centralizes agent instructions and related configuration. Together these tools make a rules-only synchronizer an insufficient product distinction.
 

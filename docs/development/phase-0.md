@@ -14,7 +14,7 @@ Gate 1 must complete before Gate 6 begins.
 
 ## Gate status
 
-- Gate 1: complete, conditional Pass with a staging-only Rulesync integration. See [renderer backend evidence](../evidence/renderer-backend.md).
+- Gate 1: complete, Pass. The staging boundary was validated with Rulesync and the accepted implementation is a minimal native renderer. See [renderer backend evidence](../evidence/renderer-backend.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md).
 - Gate 6: complete, Pass. See [policy safety evidence](../evidence/policy-safety.md).
 - Phase 0 exit: Go. Keep policy compilation as the core and retain the staging-only renderer boundary.
 

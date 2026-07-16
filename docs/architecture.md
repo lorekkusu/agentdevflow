@@ -28,11 +28,13 @@ Policy validation must not depend on a renderer, provider SDK, tracker, or runti
 
 The renderer backend is replaceable behind a narrow contract that separates planning, rendering, and verification. The contract must make writes, conflicts, unsupported capabilities, and ownership decisions explicit.
 
-Phase 0 compares:
+Gate 1 compared:
 
 1. adopting Rulesync as released;
 2. patching or forking Rulesync;
 3. building the smallest renderer for Codex, Claude Code, and Cursor.
+
+[ADR 0001](decisions/0001-native-project-instructions-renderer.md) selects the third strategy for one project-wide instruction document. Rulesync remains an external experimental oracle rather than a production or test runtime dependency. The native emitters remain behind the same staging contract and must not expand into a broad configuration synchronizer without a new decision.
 
 Roadmaps and open issues are risk indicators, not automatic rejection criteria. A pivot is warranted if released tools already absorb the policy, provenance, and ownership layer, or if adapter maintenance is uneconomic.
 

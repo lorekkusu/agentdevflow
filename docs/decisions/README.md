@@ -35,3 +35,7 @@ Rejected alternatives are recorded only when their decisive trade-off is likely 
 ADR filenames use `NNNN-short-title.md`. Sequence numbers identify records; they do not imply priority.
 
 See the [public information policy](../development/public-information-policy.md) for publication rules and [template.md](template.md) for the required structure.
+
+## Records
+
+- [0001: Native project-instructions renderer](0001-native-project-instructions-renderer.md) — Accepted.

@@ -4,7 +4,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 ## Status
 
-`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 now includes deterministic candidate configuration normalization and a private compiler with versioned Fast and Balanced definitions, capability diagnostics, closed policy compilation, and explicit state-space budgets. The project does not yet provide a production CLI, and its public API and configuration format are not stable.
+`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 now includes deterministic candidate configuration normalization, a private compiler with versioned Fast and Balanced definitions, and a minimal native project-instructions renderer for Codex, Claude Code, and Cursor. The project does not yet provide a production CLI, and its public API and configuration format are not stable.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -22,7 +22,7 @@ See the [development roadmap](docs/development/roadmap.md) for the dependency-or
 
 Phase 0 evaluated two questions in order:
 
-1. Rulesync 9.6.3 can serve only as a pinned staging renderer behind an `agentdevflow` ownership and verification adapter.
+1. A narrow staging boundary can safely isolate renderer output; the accepted implementation is a minimal native project-instructions renderer for Codex, Claude Code, and Cursor, with Rulesync retained only as an external experimental oracle.
 2. A small finite-state validator detects direct and stale-evidence bypasses while accepting safe unbounded review cycles.
 
 See [renderer evidence](docs/evidence/renderer-backend.md), [policy evidence](docs/evidence/policy-safety.md), and the [Phase 0 plan](docs/development/phase-0.md).
@@ -31,7 +31,7 @@ The first Phase 1 step validates fixture-only Fast and Balanced candidate config
 
 The private compiler resolves those specimens into finite versioned workflows, provider-neutral capability requirements, and closed safety policies. See [private compiler evidence](docs/evidence/private-compiler.md).
 
-Renderer integration hardening is in progress. The first private bridge converts compiler results and materialized-input provenance into deterministic backend-neutral render requests. See [renderer integration evidence](docs/evidence/renderer-integration.md).
+Renderer integration hardening now includes deterministic private materialization, native output for the initial three providers, exact source references, fail-closed capability diagnostics, and six golden fixtures. See [renderer integration evidence](docs/evidence/renderer-integration.md) and [ADR 0001](docs/decisions/0001-native-project-instructions-renderer.md).
 
 ## Development
 

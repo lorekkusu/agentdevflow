@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, and the private compiler slice are complete. The next objective is renderer integration hardening that carries compiler intent and source references through the existing staging-only backend boundary.
+Phase 0, candidate configuration specimens, the private compiler slice, and renderer integration hardening are complete. The next objective is an internal lock, provenance, and transactional workspace slice.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -49,31 +49,31 @@ Exit criteria:
 
 ### 3. Renderer integration hardening
 
-Status: **In progress.** The first compiler-to-renderer request slice is captured in [renderer integration evidence](../evidence/renderer-integration.md).
+Status: **Complete.** See [renderer integration evidence](../evidence/renderer-integration.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md).
 
 Scope:
 
 - convert compiler output into backend-neutral render requests;
-- retain Rulesync as an isolated staging backend candidate;
+- retain Rulesync only as an external experimental oracle;
 - validate rules for the initial three providers;
-- establish an offline runtime dependency experiment;
+- evaluate the Rulesync runtime and dependency surface without adopting it;
 - derive or report output-to-source traceability honestly;
 - add upgrade and golden-output fixtures.
 
-Completed in the first slice:
+Completed:
 
 - retain normalized provider instances in private compiler output;
 - map provider-neutral compiler capability resolutions at the renderer boundary;
 - bind the compiler digest to a caller-supplied materialized-input digest and normalized source paths;
 - reject incomplete capability evidence and unsafe or duplicate source paths;
 - prove that the resulting request crosses a replaceable staging backend without backend types entering compiler or policy modules.
-
-Remaining before this step is complete:
-
 - define the private compiler-output materialization that produces renderer source content;
-- run the offline Rulesync runtime dependency and isolated-worker experiment;
-- capture pinned Rulesync golden output for Codex, Claude Code, and Cursor;
-- record upgrade drift and honest output-to-source traceability behavior.
+- separate agent-facing instructions from machine provenance;
+- evaluate pinned Rulesync 9.6.3 and 11.0.0 distributions and cross-version output;
+- implement a minimal native renderer for Codex, Claude Code, and Cursor;
+- capture six native Fast and Balanced golden outputs;
+- reject unsupported capabilities and mismatched materializations before staging;
+- carry exact source references into ownership-aware plans.
 
 Exit criteria:
 
@@ -177,7 +177,6 @@ The following recommendations are candidates, not accepted public contracts:
 | CLI parser | Node.js `parseArgs` without a third-party framework | Complete option matrix for the five candidate commands |
 | Configuration format | JSONC with `agentdevflow.config.jsonc` as the candidate root filename | Discovery, migration, editor, and non-interactive round-trip fixtures |
 | Lock format | Strict deterministic JSON with `agentdevflow.lock.json` as the candidate filename | Ownership, provenance, transaction, and migration fixtures |
-| Rulesync distribution | Exact vetted runtime dependency used through an isolated worker | Offline package installation, dependency audit, package-size observation, golden renders |
 | First release | Prerelease on a non-default npm tag before a stable `0.1.0` | Package tarball, clean-install, provenance, and release authorization |
 
 Accepting a major dependency, public filename, schema, lock contract, or publication flow requires an explicit decision and the relevant evidence.
