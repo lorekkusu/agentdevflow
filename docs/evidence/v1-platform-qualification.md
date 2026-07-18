@@ -1,10 +1,10 @@
 # V1 platform qualification
 
-Snapshot date: 2026-07-17.
+Snapshot date: 2026-07-18.
 
 ## Verdict
 
-**Prepared, not hosted-qualified.** The repository contains a dedicated six-cell qualification workflow for the accepted V1 forward-convergent apply path. The local candidate suite passes, but no hosted result exists for the current working tree. No operating-system and Node.js combination should be described as V1-qualified until an authorized pushed commit completes the hosted matrix and the resolved environments are recorded here.
+**Four cells qualified; Windows repair pending.** Hosted run [29643493317](https://github.com/lorekkusu/agentdevflow/actions/runs/29643493317) passed both Ubuntu and both macOS cells. Both Windows cells passed the V1 primitive probe but failed the selected test suite. Windows remains unqualified until a replacement hosted run validates the focused portability fixes.
 
 This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
 
@@ -12,9 +12,9 @@ This qualification is intentionally separate from the stronger experimental writ
 
 | Operating-system image | Architecture | Node.js lines | Current status |
 | --- | --- | --- | --- |
-| `ubuntu-24.04` | x64 | 22, 24 | Prepared; hosted result required |
-| `macos-15` | arm64 | 22, 24 | Prepared; hosted result required |
-| `windows-2025` | x64 | 22, 24 | Prepared; hosted result required |
+| `ubuntu-24.04` | x64 | 22, 24 | Qualified by run 29643493317 |
+| `macos-15` | arm64 | 22, 24 | Qualified by run 29643493317 |
+| `windows-2025` | x64 | 22, 24 | Failed selected tests in run 29643493317; repair pending |
 
 The matrix is a release-candidate experiment, not a public support table. Linux arm64, macOS Intel, Windows arm64, older operating-system images, network filesystems, and self-hosted runners remain outside its scope.
 
@@ -23,6 +23,7 @@ The matrix is a release-candidate experiment, not a public support table. Linux 
 Implementation:
 
 - `.github/workflows/v1-platform-qualification.yml`;
+- `.gitattributes`;
 - `scripts/v1-platform-probe.mjs`;
 - `scripts/run-v1-platform-tests.mjs`;
 - `test/renderer/private-convergent-apply.test.ts`;
@@ -100,6 +101,26 @@ hard link required: false
 ```
 
 The selected V1 suite discovered 14 compiled test files and passed 103 tests with zero failures and zero skips. The complete local repository suite also passed 202 tests with zero failures and zero skips. These observations are developer evidence only; they do not substitute for hosted cells with recorded runner images and Node.js versions.
+
+## First hosted observation
+
+Run [29643493317](https://github.com/lorekkusu/agentdevflow/actions/runs/29643493317) tested commit `df150c7dd57955fb8b415aaaee14d50436030058` on 2026-07-18 UTC:
+
+| Runner image | Image version | Node.js | Probe | Selected tests | Result |
+| --- | --- | --- | --- | --- | --- |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped; complete 202-test regression also passed | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 86 passed, 17 failed, 0 skipped | Fail |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 86 passed, 17 failed, 0 skipped | Fail |
+
+The Windows failures had two observed causes:
+
+- reopening a retained regular temporary file with `O_NOFOLLOW` returned `EINVAL`; the fresh exclusive-create path and the direct primitive probe succeeded;
+- Git checkout converted golden Markdown fixtures to CRLF while the renderer correctly produced deterministic LF output.
+
+The focused repair removes the unsupported reopen operation by unlinking an inspected regular temporary file and recreating it with exclusive creation. A symbolic link or non-file still fails during inspection, and a competing creation still fails closed through `O_EXCL`. Repository text checkout is fixed to LF through `.gitattributes`. These changes remain candidates until a replacement hosted run passes.
 
 ## Hosted evidence required
 

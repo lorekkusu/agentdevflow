@@ -636,18 +636,17 @@ export class PrivateFilesystemWorkspace
     }
     const existing = await this.inspectLeaf(paths.target);
     const temporary = await this.inspectLeaf(paths.temporary);
+    if (temporary !== null) {
+      await unlink(paths.temporary.absolutePath);
+      await this.maybeSyncDirectory(parent);
+    }
     let handle: Awaited<ReturnType<typeof open>>;
     try {
-      handle = temporary
-        ? await open(
-            paths.temporary.absolutePath,
-            constants.O_WRONLY | constants.O_TRUNC | constants.O_NOFOLLOW,
-          )
-        : await open(
-            paths.temporary.absolutePath,
-            constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
-            existing?.mode === undefined ? 0o666 : existing.mode & 0o777,
-          );
+      handle = await open(
+        paths.temporary.absolutePath,
+        constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+        existing?.mode === undefined ? 0o666 : existing.mode & 0o777,
+      );
     } catch (error) {
       if (isNodeErrorWithCode(error, "ELOOP")) {
         return symlinkPath(intent.temporaryPath);

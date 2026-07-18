@@ -18,7 +18,7 @@ The caller must retain or reproduce the exact plan after interruption. Changed i
 
 ## Single-file replacement
 
-Writes use a same-directory temporary file whose name is derived from the plan digest, target path, and target digest. The temporary file is synchronized before rename replacement. A regular file at that exact reserved path is treated as resumable staging owned by the exact plan; a symbolic link or non-file entry fails closed.
+Writes use a same-directory temporary file whose name is derived from the plan digest, target path, and target digest. The temporary file is synchronized before rename replacement. A regular file at that exact reserved path is treated as resumable staging owned by the exact plan, removed, and recreated exclusively; a symbolic link or non-file entry fails closed, as does a competing creation.
 
 Deletes converge from the before digest to absence. Other processes may observe mixed before and after files during apply. This is recoverability by rerun, not cross-file atomic visibility.
 

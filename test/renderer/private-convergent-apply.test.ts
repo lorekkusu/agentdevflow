@@ -167,6 +167,7 @@ test("reclaims only a regular deterministic temporary path", async (t) => {
   const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(root);
   await applyPrivateConvergentRenderPlan(plan, workspace);
   assert.deepEqual(await privateTemporaryPaths(root), []);
+  assert.equal(await workspace.read(first.path), first.expectedContent);
 
   const otherRoot = await temporaryDirectory(t);
   const otherPlan = (await createPlan(otherRoot)).plan;

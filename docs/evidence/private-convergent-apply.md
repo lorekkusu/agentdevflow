@@ -1,6 +1,6 @@
 # Private forward-convergent apply evidence
 
-Snapshot date: 2026-07-17.
+Snapshot date: 2026-07-18.
 
 ## Verdict
 
@@ -35,7 +35,7 @@ The complete local suite contains 202 tests at this snapshot.
 
 The fixture renders native Codex, Claude Code, and Cursor project instructions. For each target, cooperative and child-process fixtures interrupt:
 
-1. after deterministic temporary-file creation or truncation;
+1. after deterministic temporary-file exclusive creation or recreation;
 2. after target content and file synchronization;
 3. after same-directory rename replacement;
 4. after target digest verification.
@@ -52,7 +52,7 @@ Each path is read again before its mutation. A cooperative concurrent change can
 
 ## Temporary ownership
 
-The temporary path is a deterministic function of private revision, plan digest, target path, and target digest. A regular partial file at that exact reserved path is truncated and rebuilt from the plan. A symbolic link at the same path is rejected without following it.
+The temporary path is a deterministic function of private revision, plan digest, target path, and target digest. A regular partial file at that exact reserved path is removed and recreated exclusively from the plan. A symbolic link at the same path is rejected without following it, and a competing creation fails closed.
 
 This is cooperative namespace ownership. It cannot distinguish a hostile regular-file replacement at the exact reserved path from interrupted staging. The threat is outside the accepted V1 contract.
 
