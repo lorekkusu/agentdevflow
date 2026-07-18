@@ -17,4 +17,4 @@ These choices keep Phase 0 reproducible while avoiding premature production arch
 
 The Node.js support status is based on the [official Node.js release table](https://nodejs.org/en/about/previous-releases). The native project-instructions renderer adds no runtime dependency.
 
-The candidate qualification matrix uses explicit `ubuntu-24.04` x64, `macos-15` arm64, and `windows-2025` x64 GitHub-hosted runner labels with Node.js 22 and 24. These cells are test candidates rather than accepted public support. See [candidate platform qualification](../evidence/candidate-platform-qualification.md).
+The current V1 candidate qualification uses explicit `ubuntu-24.04` x64, `macos-15` arm64, and `windows-2025` x64 GitHub-hosted runner labels with Node.js 22 and 24. These cells are test candidates rather than accepted public support. See [V1 platform qualification](../evidence/v1-platform-qualification.md). The stronger write-ahead experiment remains available through a manual workflow and separate [experimental evidence](../evidence/candidate-platform-qualification.md).

@@ -23,7 +23,8 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/development/phase-0.md` defines gate order and pass/fail criteria.
 - `docs/development/roadmap.md` defines the current development sequence, scope, exit criteria, candidates, and stop conditions.
 - `docs/development/tooling.md` records current reversible tooling choices.
-- `docs/development/interruption-contract.md` defines tested recoverability claims and explicit durability non-claims.
+- `docs/development/v1-recovery-contract.md` defines the accepted forward-convergence behavior and non-claims.
+- `docs/development/interruption-contract.md` defines the stronger experimental write-ahead behavior.
 - `docs/development/public-information-policy.md` defines what public technical context to retain and what private or transient material to exclude.
 - `docs/decisions/` contains accepted or proposed material architecture decisions and the reusable ADR template.
 - `docs/evidence/` contains public, reproducible technical evidence and gate conclusions.
@@ -41,12 +42,15 @@ npm run build
 npm test
 npm run check:repository
 npm run check
+npm run check:v1-qualification
 npm run check:qualification
+npm run experiment:recovery
 npm run phase1:config
 npm run phase1:compiler
+npm run test:v1-recovery
 ```
 
-`npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. `npm run check:qualification` performs the same categories for the candidate platform matrix and additionally fails if any test is skipped. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
+`npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. `npm run check:v1-qualification` runs the explicitly selected V1 platform suite and fails if any selected test is skipped. `npm run check:qualification` runs the complete stronger write-ahead suite, requires directory synchronization, and also fails on skips. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
 
 ## Code and tests
 
@@ -54,8 +58,9 @@ npm run phase1:compiler
 - Put implementation code under `src/` and automated tests under `test/`.
 - Name test files `*.test.ts`; `npm test` compiles them and runs the emitted JavaScript with `node:test`.
 - Keep the renderer adapter narrow and replaceable. Do not leak backend-specific types into candidate public configuration.
-- Route renderer filesystem experiments through `src/workspace/private-filesystem-workspace.ts`; do not bypass its root, path, symlink, and regular-file checks. Its current path-based checks do not replace a writer lock or prove crash durability.
-- Route recoverable render mutations through the private transaction store and executor. Keep the repository lock caller-supplied until public discovery is decided, and do not treat cooperative fault injection as process-crash durability.
+- Route renderer filesystem experiments through `src/workspace/private-filesystem-workspace.ts`; do not bypass its root, path, symlink, and regular-file checks. Use its process-termination mode only with `applyPrivateConvergentRenderPlan`; it does not prove directory or power-loss durability.
+- Use staged before-or-after digest convergence as the V1 apply path. Keep the exact plan caller-supplied until discovery and storage are decided. Never authorize mutation from repository-wide Git cleanliness or run reset, clean, stash, commit, or branch operations automatically.
+- Keep the private transaction store and executor as a stronger non-default experiment. Do not extend or expose it without a material requirement and accepted decision.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.

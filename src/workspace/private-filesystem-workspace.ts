@@ -22,6 +22,10 @@ import {
   validatePrivateTemporaryMutationIntent,
   type PrivateTemporaryMutationIntent,
 } from "../transaction/private-temporary-intent.js";
+import {
+  validatePrivateConvergentMutationIntent,
+  type PrivateConvergentMutationIntent,
+} from "./private-convergent-intent.js";
 
 export type PrivateFilesystemWorkspaceErrorCode =
   | "UNSAFE_WORKSPACE_PATH"
@@ -66,6 +70,15 @@ export type PrivateOwnedTemporaryFaultInjector = (
   event: PrivateOwnedTemporaryEvent,
 ) => void | Promise<void>;
 
+export type PrivateConvergentWriteEvent =
+  | { readonly kind: "temporary-ready"; readonly targetPath: string }
+  | { readonly kind: "temporary-synced"; readonly targetPath: string }
+  | { readonly kind: "target-replaced"; readonly targetPath: string };
+
+export type PrivateConvergentWriteFaultInjector = (
+  event: PrivateConvergentWriteEvent,
+) => void | Promise<void>;
+
 export interface PrivateTransactionalWorkspace extends RenderWorkspace {
   writeAtomicallyOwned(
     intent: PrivateTemporaryMutationIntent,
@@ -77,6 +90,17 @@ export interface PrivateTransactionalWorkspace extends RenderWorkspace {
   ): Promise<"absent" | "present">;
   removeOwnedTemporary(
     intent: PrivateTemporaryMutationIntent,
+  ): Promise<"absent" | "removed">;
+}
+
+export interface PrivateConvergentWorkspace extends RenderWorkspace {
+  writeConvergently(
+    intent: PrivateConvergentMutationIntent,
+    content: string,
+    faultInjector?: PrivateConvergentWriteFaultInjector,
+  ): Promise<void>;
+  discardConvergentTemporary(
+    intent: PrivateConvergentMutationIntent,
   ): Promise<"absent" | "removed">;
 }
 
@@ -125,10 +149,28 @@ function notRegularFile(path: string): never {
   );
 }
 
-export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace {
-  private constructor(private readonly canonicalRoot: string) {}
+export class PrivateFilesystemWorkspace
+  implements PrivateTransactionalWorkspace, PrivateConvergentWorkspace
+{
+  private constructor(
+    private readonly canonicalRoot: string,
+    private readonly synchronizeDirectories: boolean,
+  ) {}
 
   static async open(root: string): Promise<PrivateFilesystemWorkspace> {
+    return PrivateFilesystemWorkspace.openWithDirectorySync(root, true);
+  }
+
+  static async openForProcessTermination(
+    root: string,
+  ): Promise<PrivateFilesystemWorkspace> {
+    return PrivateFilesystemWorkspace.openWithDirectorySync(root, false);
+  }
+
+  private static async openWithDirectorySync(
+    root: string,
+    synchronizeDirectories: boolean,
+  ): Promise<PrivateFilesystemWorkspace> {
     const requestedRoot = resolve(root);
     let rootStat: Stats;
     try {
@@ -156,9 +198,18 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
     }
 
     const canonicalRoot = await realpath(requestedRoot);
-    const workspace = new PrivateFilesystemWorkspace(canonicalRoot);
-    await workspace.syncDirectory(canonicalRoot);
+    const workspace = new PrivateFilesystemWorkspace(
+      canonicalRoot,
+      synchronizeDirectories,
+    );
+    await workspace.maybeSyncDirectory(canonicalRoot);
     return workspace;
+  }
+
+  private async maybeSyncDirectory(path: string): Promise<void> {
+    if (this.synchronizeDirectories) {
+      await this.syncDirectory(path);
+    }
   }
 
   private async syncDirectory(path: string): Promise<void> {
@@ -249,8 +300,8 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
         }
         entry = await lstat(current);
         if (created) {
-          await this.syncDirectory(current);
-          await this.syncDirectory(previous);
+          await this.maybeSyncDirectory(current);
+          await this.maybeSyncDirectory(previous);
         }
       }
 
@@ -383,7 +434,7 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       await this.inspectLeaf(safePath);
       await rename(temporary.path, safePath.absolutePath);
       temporaryExists = false;
-      await this.syncDirectory(parent);
+      await this.maybeSyncDirectory(parent);
     } finally {
       if (handleOpen) {
         await temporary.handle.close();
@@ -391,7 +442,7 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       if (temporaryExists) {
         try {
           await unlink(temporary.path);
-          await this.syncDirectory(parent);
+          await this.maybeSyncDirectory(parent);
         } catch (error) {
           if (!isNodeErrorWithCode(error, "ENOENT")) {
             throw error;
@@ -491,7 +542,7 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       await this.inspectLeaf(paths.target);
       await rename(paths.temporary.absolutePath, paths.target.absolutePath);
       temporaryExists = false;
-      await this.syncDirectory(parent);
+      await this.maybeSyncDirectory(parent);
     } finally {
       if (handleOpen) {
         await handle.close();
@@ -499,7 +550,7 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       if (temporaryExists) {
         try {
           await unlink(paths.temporary.absolutePath);
-          await this.syncDirectory(parent);
+          await this.maybeSyncDirectory(parent);
         } catch (error) {
           if (!isNodeErrorWithCode(error, "ENOENT")) {
             throw error;
@@ -528,7 +579,128 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       return "absent";
     }
     await unlink(temporary.absolutePath);
-    await this.syncDirectory(parent);
+    await this.maybeSyncDirectory(parent);
+    return "removed";
+  }
+
+  private convergentPaths(intent: PrivateConvergentMutationIntent): {
+    readonly target: SafeWorkspacePath;
+    readonly temporary: SafeWorkspacePath;
+  } {
+    try {
+      validatePrivateConvergentMutationIntent(intent);
+    } catch (error) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        `Convergent temporary intent is invalid: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    const target = this.resolvePath(intent.targetPath);
+    const temporary = this.resolvePath(intent.temporaryPath);
+    if (
+      posix.dirname(target.relativePath) !==
+      posix.dirname(temporary.relativePath)
+    ) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Convergent temporary file must share its target directory.",
+        intent.targetPath,
+      );
+    }
+    return { target, temporary };
+  }
+
+  async writeConvergently(
+    intent: PrivateConvergentMutationIntent,
+    content: string,
+    faultInjector?: PrivateConvergentWriteFaultInjector,
+  ): Promise<void> {
+    const paths = this.convergentPaths(intent);
+    if (createHash("sha256").update(content).digest("hex") !== intent.targetDigest) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Convergent temporary content does not match its target digest.",
+        intent.targetPath,
+      );
+    }
+    const parent = await this.ensureParent(paths.target, true);
+    if (parent === null) {
+      throw new Error("Workspace parent creation did not complete.");
+    }
+    if ((await this.ensureParent(paths.temporary, false)) !== parent) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_OWNED_TEMPORARY_INVALID",
+        "Convergent temporary parent does not match the target parent.",
+        intent.targetPath,
+      );
+    }
+    const existing = await this.inspectLeaf(paths.target);
+    const temporary = await this.inspectLeaf(paths.temporary);
+    let handle: Awaited<ReturnType<typeof open>>;
+    try {
+      handle = temporary
+        ? await open(
+            paths.temporary.absolutePath,
+            constants.O_WRONLY | constants.O_TRUNC | constants.O_NOFOLLOW,
+          )
+        : await open(
+            paths.temporary.absolutePath,
+            constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+            existing?.mode === undefined ? 0o666 : existing.mode & 0o777,
+          );
+    } catch (error) {
+      if (isNodeErrorWithCode(error, "ELOOP")) {
+        return symlinkPath(intent.temporaryPath);
+      }
+      if (isNodeErrorWithCode(error, "EEXIST")) {
+        throw new PrivateFilesystemWorkspaceError(
+          "WORKSPACE_OWNED_TEMPORARY_CONFLICT",
+          "Convergent temporary path changed during acquisition.",
+          intent.temporaryPath,
+        );
+      }
+      throw error;
+    }
+
+    let handleOpen = true;
+    try {
+      await faultInjector?.({
+        kind: "temporary-ready",
+        targetPath: intent.targetPath,
+      });
+      await handle.writeFile(content, "utf8");
+      await handle.sync();
+      await faultInjector?.({
+        kind: "temporary-synced",
+        targetPath: intent.targetPath,
+      });
+      await handle.close();
+      handleOpen = false;
+      await this.ensureParent(paths.target, false);
+      await this.inspectLeaf(paths.target);
+      await rename(paths.temporary.absolutePath, paths.target.absolutePath);
+      await this.maybeSyncDirectory(parent);
+      await faultInjector?.({
+        kind: "target-replaced",
+        targetPath: intent.targetPath,
+      });
+    } finally {
+      if (handleOpen) {
+        await handle.close();
+      }
+    }
+  }
+
+  async discardConvergentTemporary(
+    intent: PrivateConvergentMutationIntent,
+  ): Promise<"absent" | "removed"> {
+    const { temporary } = this.convergentPaths(intent);
+    const parent = await this.ensureParent(temporary, false);
+    if (parent === null || (await this.inspectLeaf(temporary)) === null) {
+      return "absent";
+    }
+    await unlink(temporary.absolutePath);
+    await this.maybeSyncDirectory(parent);
     return "removed";
   }
 
@@ -575,7 +747,7 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
       }
       try {
         await unlink(temporary.path);
-        await this.syncDirectory(parent);
+        await this.maybeSyncDirectory(parent);
       } catch (error) {
         if (!isNodeErrorWithCode(error, "ENOENT")) {
           throw error;
@@ -611,6 +783,6 @@ export class PrivateFilesystemWorkspace implements PrivateTransactionalWorkspace
     if (parent === null) {
       throw new Error("Workspace parent disappeared after file removal.");
     }
-    await this.syncDirectory(parent);
+    await this.maybeSyncDirectory(parent);
   }
 }

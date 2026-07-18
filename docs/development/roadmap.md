@@ -84,7 +84,7 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
-Status: **In progress.** The private lock, transaction protocol, filesystem path-safety, persistent recovery store, executor, subprocess-termination, single-use store cleanup, repository temporary-file ownership, and parent-lifecycle slices are complete. Ubuntu x64 and macOS arm64 qualification passes on Node.js 22 and 24; Windows remains unresolved after its directory-synchronization probe failed. See [private render lock evidence](../evidence/private-render-lock.md), [private transaction evidence](../evidence/private-render-transaction.md), [private filesystem workspace evidence](../evidence/private-filesystem-workspace.md), [private transaction store evidence](../evidence/private-transaction-store.md), [private transaction executor evidence](../evidence/private-transaction-executor.md), [subprocess recovery evidence](../evidence/private-transaction-subprocess.md), [transaction cleanup evidence](../evidence/private-transaction-cleanup.md), [temporary-file ownership evidence](../evidence/private-temporary-file-ownership.md), [parent-lifecycle evidence](../evidence/private-transaction-parent-lifecycle.md), and [candidate platform qualification](../evidence/candidate-platform-qualification.md).
+Status: **In progress.** [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) accepts staged digest-aware forward convergence as the V1 default. The private executor, deterministic temporary ownership, cooperative fault coverage, and local subprocess-termination coverage are complete. The stronger write-ahead transaction, recovery store, cleanup, and parent-lifecycle implementation remains non-default experimental evidence; its Ubuntu and macOS qualification does not qualify the smaller V1 path on Windows. See [forward-convergent apply evidence](../evidence/private-convergent-apply.md), [recovery-strategy comparison](../evidence/workspace-recovery-strategy-comparison.md), [private transaction evidence](../evidence/private-render-transaction.md), and [candidate platform qualification](../evidence/candidate-platform-qualification.md).
 
 Scope:
 
@@ -92,7 +92,7 @@ Scope:
 - ownership, content digests, source references, and resolved versions;
 - artifact revision-consistency checks;
 - a real filesystem workspace with path and symlink safety;
-- transactional multi-file apply and failure recovery.
+- recoverable multi-file apply and failure recovery.
 
 Completed in the first slice:
 
@@ -215,11 +215,36 @@ Prepared in the eleventh slice:
 - qualify four hosted Ubuntu and macOS cells only after run 29531413592 passed and its resolved environments were recorded;
 - retain both Windows cells as failed evidence after directory synchronization returned `EPERM` before the zero-skip suite.
 
+Completed in the twelfth slice:
+
+- compare clean-Git reset, digest-aware rerun, and the write-ahead journal at one reproducible complete-file failure boundary;
+- reject automatic Git reset as the default because it loses concurrent tracked work and does not restore ignored or untracked managed paths;
+- accept staged before-or-after digest convergence as the V1 default in ADR 0002;
+- derive a deterministic same-directory temporary path from the plan, target path, and target digest;
+- retain safe-path, symbolic-link, and regular-file checks while separating process-termination recovery from directory durability;
+- recheck every managed path before mutation and fail closed on foreign content;
+- converge creates, updates, deletes, repeated apply, regular partial temporary files, and mixed before-and-after targets;
+- terminate real child processes with `SIGKILL` at all twelve provider write boundaries and resume to exact target bytes;
+- keep the exact plan caller-supplied without selecting a public storage path or serialized recovery format.
+
+Prepared in the thirteenth slice:
+
+- separate V1 qualification from the stronger write-ahead directory-durability experiment;
+- define six blocking Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 cells for Node.js 22 and 24;
+- probe synchronized file content, rename replacement, symbolic-link handling, and forced process termination without requiring directory synchronization or hard links;
+- select 14 V1-compatible compiled test files and pass 103 local tests with zero failures and zero skips;
+- exclude exactly five complete strong-transaction test files and mechanically require the V1 apply and subprocess suites;
+- run the complete 202-test stronger suite in one designated Ubuntu 24.04 and Node.js 24 regression cell;
+- retain the stronger write-ahead workflow as a manually dispatched experiment;
+- use read-only workflow permissions, full-SHA action references, disabled credential persistence, and tracked-file cleanliness checks.
+
 Remaining before this step is complete:
 
-- decide whether to defer Windows or revise the contract to separate process-termination recoverability from unsupported Windows directory durability;
-- implement and rerun the approved Windows disposition without silently weakening a claimed capability;
-- validate power-loss behavior where the platform and filesystem provide a reproducible harness;
+- bind exact-plan retention or deterministic regeneration to the future render command service without freezing a public path;
+- integrate private lock publication with forward convergence without reintroducing a multi-state journal by accident;
+- run the V1 hosted matrix from an explicitly authorized pushed commit and record its resolved environments and results;
+- retain the write-ahead implementation until command-service integration proves that V1 needs no stronger recovery property;
+- resume directory-durability or power-loss work only if a later accepted decision claims those properties;
 
 Exit criteria:
 

@@ -1,6 +1,10 @@
-name: Experimental write-ahead platform qualification
+name: V1 platform qualification
 
 on:
+  pull_request:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -20,31 +24,37 @@ jobs:
             platform: linux
             architecture: x64
             node: "22"
+            run_full_suite: false
           - name: Ubuntu 24.04 x64 / Node 24
             runner: ubuntu-24.04
             platform: linux
             architecture: x64
             node: "24"
+            run_full_suite: true
           - name: macOS 15 arm64 / Node 22
             runner: macos-15
             platform: darwin
             architecture: arm64
             node: "22"
+            run_full_suite: false
           - name: macOS 15 arm64 / Node 24
             runner: macos-15
             platform: darwin
             architecture: arm64
             node: "24"
+            run_full_suite: false
           - name: Windows 2025 x64 / Node 22
             runner: windows-2025
             platform: win32
             architecture: x64
             node: "22"
+            run_full_suite: false
           - name: Windows 2025 x64 / Node 24
             runner: windows-2025
             platform: win32
             architecture: x64
             node: "24"
+            run_full_suite: false
     steps:
       - name: Check out repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -58,13 +68,16 @@ jobs:
           package-manager-cache: false
       - name: Install dependencies without lifecycle scripts
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Probe platform primitives
+      - name: Probe V1 platform primitives
         run: >-
-          node scripts/platform-probe.mjs
+          node scripts/v1-platform-probe.mjs
           --expected-platform ${{ matrix.platform }}
           --expected-architecture ${{ matrix.architecture }}
           --expected-node-major ${{ matrix.node }}
-      - name: Run complete zero-skip verification
+      - name: Run V1 zero-skip qualification
+        run: npm run check:v1-qualification
+      - name: Run complete strong-contract suite
+        if: matrix.run_full_suite
         run: npm run check:qualification
       - name: Verify tracked files remain unchanged
         run: git diff --exit-code

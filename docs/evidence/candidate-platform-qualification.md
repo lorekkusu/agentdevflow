@@ -1,10 +1,12 @@
-# Candidate platform qualification
+# Experimental write-ahead platform qualification
 
 Snapshot date: 2026-07-17.
 
 ## Verdict
 
-**Partially qualified.** Hosted run [29531413592](https://github.com/lorekkusu/agentdevflow/actions/runs/29531413592) passed all four Ubuntu and macOS cells and failed both Windows cells. Each passing cell completed the direct primitive probe, all 170 tests with zero skips, and the tracked-file check. Windows remains unqualified because directory-handle synchronization failed before the test suite started.
+**Partially qualified for the stronger non-default contract.** Hosted run [29531413592](https://github.com/lorekkusu/agentdevflow/actions/runs/29531413592) passed all four Ubuntu and macOS cells and failed both Windows cells. Each passing cell completed the direct primitive probe, all 170 tests with zero skips, and the tracked-file check. Windows remains unqualified because directory-handle synchronization failed before the test suite started.
+
+This evidence applies to the experimental write-ahead transaction and its directory-durability prerequisite. [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) selected a smaller forward-convergent V1 default with a separate [V1 platform qualification](v1-platform-qualification.md).
 
 All matrix cells must pass before the corresponding operating-system and Node.js combination can become a support candidate. A failing cell is evidence to fix the implementation or defer that platform; it must not be converted into a passing result through `continue-on-error`, skipped interruption tests, or weaker synchronization behavior.
 
@@ -37,7 +39,7 @@ Implementation:
 - `test/workspace/private-filesystem-workspace.test.ts`;
 - `test/transaction/private-transaction-store-lifecycle.test.ts`.
 
-Every matrix cell:
+The workflow is retained as a manually dispatched experiment. Every matrix cell:
 
 1. checks out one shallow revision without persisting credentials;
 2. sets up the exact Node.js major line without package-manager caching;
@@ -119,4 +121,4 @@ If a cell fails:
 
 ## Recommendation
 
-Retain Ubuntu 24.04 x64 and macOS 15 arm64 as the initial support candidates. Do not describe Windows as supported from this run. The next decision is either to defer Windows or to revise the interruption contract so that process-termination recoverability and power-loss directory durability are separate, explicitly diagnosed capabilities. A Windows-specific native durability dependency is a third option, but it would materially increase maintenance and should not be introduced without a separate architecture decision.
+Retain this run as evidence for the stronger write-ahead option, including its Windows limitation. Do not use it as the release-candidate support decision for the smaller V1 path. Use the dedicated V1 matrix to qualify process-termination convergence without silently claiming directory or power-loss durability. A Windows-specific native durability dependency would materially increase maintenance and should not be introduced without a separate architecture decision.

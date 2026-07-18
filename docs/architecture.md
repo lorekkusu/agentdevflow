@@ -88,7 +88,13 @@ User-facing strength labels are derived. Materialization may degrade only toward
 - Registry presence is not a security endorsement.
 - Prompt instructions do not constitute mechanical enforcement.
 
-## Transaction boundary
+## Render apply and recovery boundaries
+
+V1 uses staged, digest-aware forward convergence as defined by [ADR 0002](decisions/0002-v1-forward-convergent-render-apply.md). Every managed path must match its exact plan-bound before or after digest before apply, and is checked again before mutation. Paths at the before state advance; paths already at the after state remain unchanged; foreign states fail closed. The exact plan must be retained or reproduced after interruption.
+
+Single-file writes synchronize content in a deterministic same-directory temporary file and publish by rename. The temporary identity binds the plan, target path, and target digest. This supports rerun after tested process termination without requiring a clean Git worktree or authorizing automatic reset, clean, stash, commit, or branch mutation. It does not provide rollback, cross-file atomic visibility, hostile-writer exclusion, directory durability, or power-loss guarantees. See the [V1 recovery contract](development/v1-recovery-contract.md).
+
+### Experimental write-ahead prototype
 
 Multi-file rendering must provide recoverability rather than claim cross-file atomicity. A private transaction binds every affected path to an observed before digest and intended after digest, plus base and target lock digests. The base lock is the rollback anchor until the target lock is present; the target lock is the roll-forward anchor after that point.
 
@@ -112,4 +118,4 @@ Recovery is also process-termination tolerant on the tested Darwin environment. 
 
 A blocking candidate matrix is prepared for explicit Ubuntu, macOS, and Windows GitHub-hosted images on Node.js 22 and 24. It probes required filesystem primitives and runs the entire suite with zero skips. These are qualification candidates rather than support claims; only the local Darwin arm64 Node.js 24 cell has observed evidence in the working tree. See [candidate platform qualification](evidence/candidate-platform-qualification.md).
 
-The durable [interruption contract](development/interruption-contract.md) separates tested recoverability from cross-file atomicity and power-loss durability. Platform qualification cannot widen that claim without new evidence.
+The experimental [write-ahead interruption contract](development/interruption-contract.md) separates its tested recoverability from cross-file atomicity and power-loss durability. It is stronger than the accepted V1 contract and is not the default apply path. Platform qualification cannot widen either claim without new evidence.

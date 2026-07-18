@@ -11,10 +11,13 @@
     "build": "tsc -p tsconfig.json",
     "check:qualification": "npm run check:repository && npm run typecheck && npm run build && node scripts/run-platform-tests.mjs",
     "check:repository": "node scripts/check-repository.mjs",
+    "check:v1-qualification": "npm run check:repository && npm run typecheck && npm run build && node scripts/run-v1-platform-tests.mjs",
+    "experiment:recovery": "npm run build && node dist/src/experiments/recovery-strategy-comparison.js",
     "gate:policy": "npm run build && node dist/test/fixtures/policy/run.js",
     "gate:renderer": "npm run build && node dist/src/experiments/rulesync-gate1.js",
     "phase1:config": "npm run build && node dist/test/fixtures/config/run.js",
     "phase1:compiler": "npm run build && node dist/test/fixtures/compiler/run.js",
+    "test:v1-recovery": "npm run build && node --test dist/test/renderer/private-convergent-apply.test.js dist/test/renderer/private-convergent-subprocess.test.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test \"dist/**/*.test.js\"",
     "check": "npm run check:repository && npm run typecheck && npm test"

@@ -2,7 +2,9 @@
 
 ## Status
 
-This document defines the private transactional workspace claim boundary. It does not freeze a public API, storage path, lock format, supported operating-system list, or CLI behavior.
+This document defines the stronger experimental write-ahead transactional workspace claim boundary. It is not the V1 default selected by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md). See the accepted [V1 recovery contract](v1-recovery-contract.md) for default render behavior.
+
+This document does not freeze a public API, storage path, lock format, supported operating-system list, or CLI behavior.
 
 `agentdevflow` provides recoverability across a tested set of interruptions. It does not provide cross-file atomicity and must not describe a multi-file render as an atomic filesystem transaction.
 
