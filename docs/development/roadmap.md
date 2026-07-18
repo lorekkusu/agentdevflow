@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private read-only `check` service are complete. The next objective is a private read-only `diff` service.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, and mutating `render` semantic services are complete. The next objective is a private read-only `doctor` service.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -263,7 +263,7 @@ Exit criteria:
 
 ### 5. Command services and thin CLI
 
-Status: **In progress.** The private mutating render composition and private read-only `check` service are available. No public command handler, discovery rule, stable exit-code contract, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md).
+Status: **In progress.** The private `check`, `diff`, and mutating `render` semantic services are available. No public command handler, discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), and [private render evidence](../evidence/private-render-command-service.md).
 
 Development order:
 
@@ -285,6 +285,17 @@ Completed in the fifteenth slice:
 - fail closed with structured diagnostics for malformed snapshots, malformed base locks, foreign lock bytes, and contradictory target-lock state;
 - sort diagnostics deterministically and prove repeated checks return identical results;
 - prove the service has no mutation-capable workspace interface and leaves repository bytes unchanged.
+
+Completed in the sixteenth slice:
+
+- build exact-byte diff only after the private check service reports non-blocked state;
+- return deterministic create, update, delete, and render-lock entries with before and target digests and content;
+- omit managed outputs already at target during partial forward convergence;
+- reread and revalidate every planned path and the lock before returning exact entries;
+- discard every accumulated entry if a post-check observation becomes foreign or contradictory;
+- read no path outside the exact plan and caller-supplied lock path;
+- preserve a read-only workspace interface and prove repeated diff leaves repository bytes unchanged;
+- defer line formatting, terminal disclosure, redaction, truncation, machine output, and public compatibility.
 
 Exit criteria:
 
