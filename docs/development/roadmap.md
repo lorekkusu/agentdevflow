@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, and mutating `render` semantic services are complete. The next objective is a private read-only `doctor` service.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, `render`, and `doctor` semantic services are complete. The next objective is a non-interactive private `init` proposal with explicit adoption, import, or abort outcomes.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -263,7 +263,7 @@ Exit criteria:
 
 ### 5. Command services and thin CLI
 
-Status: **In progress.** The private `check`, `diff`, and mutating `render` semantic services are available. No public command handler, discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), and [private render evidence](../evidence/private-render-command-service.md).
+Status: **In progress.** The private `check`, `diff`, mutating `render`, and provider-neutral `doctor` semantic services are available. No public command handler, probe adapter, discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), [private render evidence](../evidence/private-render-command-service.md), and [private doctor evidence](../evidence/private-doctor-command-service.md).
 
 Development order:
 
@@ -296,6 +296,17 @@ Completed in the sixteenth slice:
 - read no path outside the exact plan and caller-supplied lock path;
 - preserve a read-only workspace interface and prove repeated diff leaves repository bytes unchanged;
 - defer line formatting, terminal disclosure, redaction, truncation, machine output, and public compatibility.
+
+Completed in the seventeenth slice:
+
+- validate one closed revisioned envelope of provider and environment observations;
+- bind provider observations to configured instance id, product, and surface;
+- retain observed version, execution context, principal, capability, strength, mechanism, evidence source, reference, and freshness;
+- classify healthy, degraded, and blocked evidence with candidate exit codes;
+- reject stale, unknown-freshness, missing, mismatched, duplicate, unavailable, or insufficient required evidence;
+- derive compiler-compatible capability availability only for a non-blocked result;
+- keep the semantic service deterministic and free of provider execution, network access, credentials, and environment inspection;
+- defer probe adapters, version support, authentication claims, persistence, redaction, and public output.
 
 Exit criteria:
 
