@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, and the private lock and workspace slice are complete. The next objective is a read-only `check` command service, followed by `diff`.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private read-only `check` service are complete. The next objective is a private read-only `diff` service.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -263,7 +263,7 @@ Exit criteria:
 
 ### 5. Command services and thin CLI
 
-Status: **Not started.** The private mutating render composition is available, but no public command handler, discovery rule, exit-code contract, or CLI parser has been selected.
+Status: **In progress.** The private mutating render composition and private read-only `check` service are available. No public command handler, discovery rule, stable exit-code contract, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md).
 
 Development order:
 
@@ -274,6 +274,17 @@ Development order:
 5. `init`.
 
 Command handlers must remain thin wrappers around testable services. Read-only commands precede mutating commands, and safe ownership behavior precedes existing-file initialization.
+
+Completed in the fifteenth slice:
+
+- accept only caller-supplied private materialization, exact plan snapshot, expected base lock, lock path, and read-only workspace;
+- classify exact observations as `clean`, `changes-required`, or `blocked`;
+- retain candidate exit codes `0`, `1`, and `2` without accepting a public compatibility contract;
+- distinguish recognized before-state changes from foreign drift;
+- retain renderer ownership and unsupported-capability diagnostics;
+- fail closed with structured diagnostics for malformed snapshots, malformed base locks, foreign lock bytes, and contradictory target-lock state;
+- sort diagnostics deterministically and prove repeated checks return identical results;
+- prove the service has no mutation-capable workspace interface and leaves repository bytes unchanged.
 
 Exit criteria:
 
