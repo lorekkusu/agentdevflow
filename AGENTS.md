@@ -70,6 +70,7 @@ npm run test:v1-recovery
 - Route future diff behavior through the private diff command service. Do not return partial entries for blocked or foreign state, and defer public formatting and disclosure policy.
 - Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. Add probe adapters only with narrow permission and evidence contracts.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
+- Keep private initialization read-only and non-interactive. Exact adoption, import assessment, and abort decisions must bind observed bytes to the candidate configuration; never infer ownership from Git cleanliness.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.
 - Make diagnostics and counterexample traces deterministic.

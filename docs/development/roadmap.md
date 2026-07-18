@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, `render`, and `doctor` semantic services are complete. The next objective is a non-interactive private `init` proposal with explicit adoption, import, or abort outcomes.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, `render`, `doctor`, and non-interactive `init` proposal semantic services are complete. The next objective is a narrow project-instructions import analyzer that can produce real digest-bound assessments for the initial provider paths without freezing public configuration syntax.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -263,7 +263,7 @@ Exit criteria:
 
 ### 5. Command services and thin CLI
 
-Status: **In progress.** The private `check`, `diff`, mutating `render`, and provider-neutral `doctor` semantic services are available. No public command handler, probe adapter, discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), [private render evidence](../evidence/private-render-command-service.md), and [private doctor evidence](../evidence/private-doctor-command-service.md).
+Status: **In progress.** The private `check`, `diff`, mutating `render`, provider-neutral `doctor`, and read-only non-interactive `init` proposal semantic services are available. No public command handler, probe adapter, extensible discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), [private render evidence](../evidence/private-render-command-service.md), [private doctor evidence](../evidence/private-doctor-command-service.md), and [private init evidence](../evidence/private-init-command-service.md).
 
 Development order:
 
@@ -308,6 +308,18 @@ Completed in the seventeenth slice:
 - keep the semantic service deterministic and free of provider execution, network access, credentials, and environment inspection;
 - defer probe adapters, version support, authentication claims, persistence, redaction, and public output.
 
+Completed in the eighteenth slice:
+
+- observe only the fixed project-level instruction paths already validated for Codex, Claude Code, and Cursor;
+- require exactly one deterministic target for every configured provider product;
+- expose the normalized candidate configuration, canonical JSON, digest, exact target bytes, and source references before apply;
+- classify absent paths as `create` and only byte-exact existing content as `adopt`;
+- accept import proposals only from assessments bound to current observed bytes, the same candidate configuration digest, and exact target bytes;
+- retain complete asserted information-loss entries for lossy import proposals;
+- classify absent, stale, unsupported, mismatched, or unreadable import evidence as explicit `abort` outcomes;
+- keep foreign existing bytes out of the result and prove that a temporary repository remains unchanged;
+- defer provider parsing, managed-region syntax, public discovery, interactive prompts, output formatting, and all mutation.
+
 Exit criteria:
 
 - stable structured diagnostics and candidate exit-code behavior;
@@ -316,6 +328,8 @@ Exit criteria:
 - `render` accepts only a verified, conflict-free plan.
 
 ### 6. Adoption and initialization
+
+Status: **In progress.** The private proposal core and fixed initial path discovery are available. Provider-specific import analyzers, managed-region adoption, apply integration, and reproducible file or flag representations for future interactive choices remain open.
 
 Scope:
 
