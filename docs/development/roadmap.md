@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, and renderer integration hardening are complete. The next objective is an internal lock, provenance, and transactional workspace slice.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, and the private lock and workspace slice are complete. The next objective is a read-only `check` command service, followed by `diff`.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -84,7 +84,7 @@ Exit criteria:
 
 ### 4. Lock, provenance, and transactional workspace
 
-Status: **In progress.** [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) accepts staged digest-aware forward convergence as the V1 default. The private executor, deterministic temporary ownership, cooperative fault coverage, and local subprocess-termination coverage are complete. The stronger write-ahead transaction, recovery store, cleanup, and parent-lifecycle implementation remains non-default experimental evidence; its Ubuntu and macOS qualification does not qualify the smaller V1 path on Windows. See [forward-convergent apply evidence](../evidence/private-convergent-apply.md), [recovery-strategy comparison](../evidence/workspace-recovery-strategy-comparison.md), [private transaction evidence](../evidence/private-render-transaction.md), and [candidate platform qualification](../evidence/candidate-platform-qualification.md).
+Status: **Complete.** [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) accepts staged digest-aware forward convergence as the V1 default. The private command service binds an exact plan snapshot, base-lock ownership, convergent apply, verification, and lock publication. The stronger write-ahead transaction remains non-default experimental evidence. See [private render command evidence](../evidence/private-render-command-service.md), [forward-convergent apply evidence](../evidence/private-convergent-apply.md), [recovery-strategy comparison](../evidence/workspace-recovery-strategy-comparison.md), and [private transaction evidence](../evidence/private-render-transaction.md).
 
 Scope:
 
@@ -240,12 +240,19 @@ Completed in the thirteenth slice:
 - qualify all six hosted cells with 103 selected tests and zero skips after retaining the first Windows failure as diagnostic evidence;
 - pass the complete 202-test stronger regression in the designated Ubuntu 24.04 and Node.js 24 cell.
 
-Remaining before this step is complete:
+Completed in the fourteenth slice:
 
-- bind exact-plan retention or deterministic regeneration to the future render command service without freezing a public path;
-- integrate private lock publication with forward convergence without reintroducing a multi-state journal by accident;
-- retain the write-ahead implementation until command-service integration proves that V1 needs no stronger recovery property;
-- resume directory-durability or power-loss work only if a later accepted decision claims those properties;
+- bind all known plan fields, diagnostics, target bytes, and previous ownership into a closed private exact-plan snapshot;
+- reject snapshot extensions, corruption, malformed ownership, and plan-digest mismatch before mutation;
+- require plan previous ownership to equal ownership derived from the caller-supplied base lock;
+- derive the target lock before mutation without selecting a public path or serialized contract;
+- reject lock and temporary-path overlap with managed outputs;
+- accept only exact base or target lock bytes and reject a target lock paired with incomplete outputs;
+- apply and verify exact output targets before convergently publishing the lock;
+- recover through cooperative faults and real process termination before and after lock publication;
+- prove repeated exact execution is an output and lock no-op;
+- retain the write-ahead implementation as non-default evidence without extending it;
+- leave directory durability and power-loss work deferred until a separately accepted property requires it.
 
 Exit criteria:
 
@@ -255,6 +262,8 @@ Exit criteria:
 - volatile machine data and secrets never enter the lock.
 
 ### 5. Command services and thin CLI
+
+Status: **Not started.** The private mutating render composition is available, but no public command handler, discovery rule, exit-code contract, or CLI parser has been selected.
 
 Development order:
 

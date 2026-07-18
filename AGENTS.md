@@ -24,6 +24,7 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/development/roadmap.md` defines the current development sequence, scope, exit criteria, candidates, and stop conditions.
 - `docs/development/tooling.md` records current reversible tooling choices.
 - `docs/development/v1-recovery-contract.md` defines the accepted forward-convergence behavior and non-claims.
+- `docs/development/private-render-command-contract.md` defines exact-plan and private lock publication behavior.
 - `docs/development/interruption-contract.md` defines the stronger experimental write-ahead behavior.
 - `docs/development/public-information-policy.md` defines what public technical context to retain and what private or transient material to exclude.
 - `docs/decisions/` contains accepted or proposed material architecture decisions and the reusable ADR template.
@@ -61,6 +62,7 @@ npm run test:v1-recovery
 - Route renderer filesystem experiments through `src/workspace/private-filesystem-workspace.ts`; do not bypass its root, path, symlink, and regular-file checks. Use its process-termination mode only with `applyPrivateConvergentRenderPlan`; it does not prove directory or power-loss durability.
 - Use staged before-or-after digest convergence as the V1 apply path. Keep the exact plan caller-supplied until discovery and storage are decided. Never authorize mutation from repository-wide Git cleanliness or run reset, clean, stash, commit, or branch operations automatically.
 - Keep the private transaction store and executor as a stronger non-default experiment. Do not extend or expose it without a material requirement and accepted decision.
+- Route future mutating render behavior through the private render command service. Keep its snapshot and lock paths caller-supplied until public discovery and migration contracts are accepted.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.

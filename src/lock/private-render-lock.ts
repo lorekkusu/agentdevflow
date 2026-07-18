@@ -362,3 +362,28 @@ export function createPrivateRenderLock(
   }
   return lock;
 }
+
+export function serializePrivateRenderLock(lock: PrivateRenderLock): string {
+  validatePrivateRenderLock(lock);
+  return `${JSON.stringify({
+    revision: lock.revision,
+    compilerDigest: lock.compilerDigest,
+    source: {
+      revision: lock.source.revision,
+      digest: lock.source.digest,
+    },
+    renderer: {
+      name: lock.renderer.name,
+      version: lock.renderer.version,
+      ownershipKey: lock.renderer.ownershipKey,
+      inputDigest: lock.renderer.inputDigest,
+    },
+    files: lock.files.map((file) => ({
+      path: file.path,
+      owner: file.owner,
+      contentDigest: file.contentDigest,
+      sourceRefs: file.sourceRefs,
+    })),
+    digest: lock.digest,
+  })}\n`;
+}

@@ -117,6 +117,47 @@ export function validateRenderPlanIntegrity(plan: RenderPlan): void {
   }
 }
 
+export async function verifyRenderPlan(
+  plan: RenderPlan,
+  workspace: RenderWorkspace,
+): Promise<VerifyResult> {
+  validateRenderPlanIntegrity(plan);
+  const diagnostics: RendererDiagnostic[] = [];
+
+  for (const file of plan.files) {
+    if (file.action === "conflict") {
+      diagnostics.push({
+        code: "PLAN_CONFLICT",
+        severity: "error",
+        message: `The plan contains an unresolved conflict at ${file.path}.`,
+        path: file.path,
+      });
+      continue;
+    }
+
+    const existing = await workspace.read(file.path);
+    const matches =
+      file.action === "delete"
+        ? existing === null
+        : existing !== null && digest(existing) === file.expectedDigest;
+    if (!matches) {
+      diagnostics.push({
+        code: "GENERATED_FILE_DRIFT",
+        severity: "error",
+        message: `Generated file drift detected at ${file.path}.`,
+        path: file.path,
+      });
+    }
+  }
+
+  diagnostics.sort(compareDiagnostics);
+  return {
+    planDigest: plan.planDigest,
+    ok: diagnostics.length === 0,
+    diagnostics,
+  };
+}
+
 export class StagedRendererAdapter implements RendererBackend {
   constructor(private readonly backend: StagingRenderer) {}
 
@@ -303,39 +344,6 @@ export class StagedRendererAdapter implements RendererBackend {
     plan: RenderPlan,
     workspace: RenderWorkspace,
   ): Promise<VerifyResult> {
-    const diagnostics: RendererDiagnostic[] = [];
-
-    for (const file of plan.files) {
-      if (file.action === "conflict") {
-        diagnostics.push({
-          code: "PLAN_CONFLICT",
-          severity: "error",
-          message: `The plan contains an unresolved conflict at ${file.path}.`,
-          path: file.path,
-        });
-        continue;
-      }
-
-      const existing = await workspace.read(file.path);
-      const matches =
-        file.action === "delete"
-          ? existing === null
-          : existing !== null && digest(existing) === file.expectedDigest;
-      if (!matches) {
-        diagnostics.push({
-          code: "GENERATED_FILE_DRIFT",
-          severity: "error",
-          message: `Generated file drift detected at ${file.path}.`,
-          path: file.path,
-        });
-      }
-    }
-
-    diagnostics.sort(compareDiagnostics);
-    return {
-      planDigest: plan.planDigest,
-      ok: diagnostics.length === 0,
-      diagnostics,
-    };
+    return verifyRenderPlan(plan, workspace);
   }
 }
