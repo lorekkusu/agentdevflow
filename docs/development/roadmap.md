@@ -227,7 +227,7 @@ Completed in the twelfth slice:
 - terminate real child processes with `SIGKILL` at all twelve provider write boundaries and resume to exact target bytes;
 - keep the exact plan caller-supplied without selecting a public storage path or serialized recovery format.
 
-Prepared in the thirteenth slice:
+Completed in the thirteenth slice:
 
 - separate V1 qualification from the stronger write-ahead directory-durability experiment;
 - define six blocking Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 cells for Node.js 22 and 24;
@@ -237,12 +237,13 @@ Prepared in the thirteenth slice:
 - run the complete 202-test stronger suite in one designated Ubuntu 24.04 and Node.js 24 regression cell;
 - retain the stronger write-ahead workflow as a manually dispatched experiment;
 - use read-only workflow permissions, full-SHA action references, disabled credential persistence, and tracked-file cleanliness checks.
+- qualify all six hosted cells with 103 selected tests and zero skips after retaining the first Windows failure as diagnostic evidence;
+- pass the complete 202-test stronger regression in the designated Ubuntu 24.04 and Node.js 24 cell.
 
 Remaining before this step is complete:
 
 - bind exact-plan retention or deterministic regeneration to the future render command service without freezing a public path;
 - integrate private lock publication with forward convergence without reintroducing a multi-state journal by accident;
-- run the V1 hosted matrix from an explicitly authorized pushed commit and record its resolved environments and results;
 - retain the write-ahead implementation until command-service integration proves that V1 needs no stronger recovery property;
 - resume directory-durability or power-loss work only if a later accepted decision claims those properties;
 

@@ -4,9 +4,9 @@ Snapshot date: 2026-07-18.
 
 ## Verdict
 
-**Pass on the tested local Darwin environment.** The accepted V1 executor applies exact staged render plans through before-or-after digest convergence, deterministic same-directory temporary files, synchronized file content, and rename replacement. It converges after cooperative faults and real `SIGKILL` termination at every instrumented write boundary, handles deletes before and after unlink, and fails closed on foreign managed-path content.
+**Pass locally and across the V1 candidate matrix.** The accepted V1 executor applies exact staged render plans through before-or-after digest convergence, deterministic same-directory temporary files, synchronized file content, and rename replacement. It converges after cooperative faults and real forced process termination at every instrumented write boundary, handles deletes before and after unlink, and fails closed on foreign managed-path content.
 
-This evidence does not qualify Windows or Linux and does not claim directory durability or power-loss behavior.
+The dedicated V1 matrix qualified Ubuntu, macOS, and Windows candidates on Node.js 22 and 24. This evidence does not claim directory durability or power-loss behavior.
 
 ## Reproduction
 
@@ -64,4 +64,4 @@ The evidence establishes recovery after observed process termination on the loca
 
 ## Recommendation
 
-Use this executor for the future V1 render service. Keep the exact plan private and caller-supplied until plan discovery, lock publication, and storage placement are designed together. Add a separate V1 platform matrix before claiming Windows, Linux, or release support. Retain the write-ahead implementation as non-default evidence until command-service integration proves that no stronger requirement is missing.
+Use this executor for the future V1 render service. Keep the exact plan private and caller-supplied until plan discovery, lock publication, and storage placement are designed together. Treat the qualified matrix as candidate evidence rather than a frozen public release policy. Retain the write-ahead implementation as non-default evidence until command-service integration proves that no stronger requirement is missing.

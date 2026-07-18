@@ -4,7 +4,7 @@ Snapshot date: 2026-07-18.
 
 ## Verdict
 
-**Four cells qualified; Windows repair pending.** Hosted run [29643493317](https://github.com/lorekkusu/agentdevflow/actions/runs/29643493317) passed both Ubuntu and both macOS cells. Both Windows cells passed the V1 primitive probe but failed the selected test suite. Windows remains unqualified until a replacement hosted run validates the focused portability fixes.
+**All six candidate cells qualified.** Hosted run [29643865692](https://github.com/lorekkusu/agentdevflow/actions/runs/29643865692) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed its V1 primitive probe, 103 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 202-test stronger regression suite.
 
 This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
 
@@ -12,9 +12,9 @@ This qualification is intentionally separate from the stronger experimental writ
 
 | Operating-system image | Architecture | Node.js lines | Current status |
 | --- | --- | --- | --- |
-| `ubuntu-24.04` | x64 | 22, 24 | Qualified by run 29643493317 |
-| `macos-15` | arm64 | 22, 24 | Qualified by run 29643493317 |
-| `windows-2025` | x64 | 22, 24 | Failed selected tests in run 29643493317; repair pending |
+| `ubuntu-24.04` | x64 | 22, 24 | Qualified by run 29643865692 |
+| `macos-15` | arm64 | 22, 24 | Qualified by run 29643865692 |
+| `windows-2025` | x64 | 22, 24 | Qualified by run 29643865692 |
 
 The matrix is a release-candidate experiment, not a public support table. Linux arm64, macOS Intel, Windows arm64, older operating-system images, network filesystems, and self-hosted runners remain outside its scope.
 
@@ -120,9 +120,24 @@ The Windows failures had two observed causes:
 - reopening a retained regular temporary file with `O_NOFOLLOW` returned `EINVAL`; the fresh exclusive-create path and the direct primitive probe succeeded;
 - Git checkout converted golden Markdown fixtures to CRLF while the renderer correctly produced deterministic LF output.
 
-The focused repair removes the unsupported reopen operation by unlinking an inspected regular temporary file and recreating it with exclusive creation. A symbolic link or non-file still fails during inspection, and a competing creation still fails closed through `O_EXCL`. Repository text checkout is fixed to LF through `.gitattributes`. These changes remain candidates until a replacement hosted run passes.
+The focused repair removes the unsupported reopen operation by unlinking an inspected regular temporary file and recreating it with exclusive creation. A symbolic link or non-file still fails during inspection, and a competing creation still fails closed through `O_EXCL`. Repository text checkout is fixed to LF through `.gitattributes`.
 
-## Hosted evidence required
+## Replacement hosted observation
+
+Run [29643865692](https://github.com/lorekkusu/agentdevflow/actions/runs/29643865692) tested repair commit `43e89f185d82d6ac08d2931264ba0c359e3c4b4b` on 2026-07-18 UTC:
+
+| Runner image | Image version | Node.js | Probe | Selected tests | Result |
+| --- | --- | --- | --- | --- | --- |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped; complete 202-test regression also passed with zero skips | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 103 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 103 passed, 0 failed, 0 skipped | Pass |
+
+The replacement run confirms both focused portability repairs without skipping a V1 recovery test or weakening the primitive contract. The first failed run remains recorded because it explains the evidence-backed implementation change.
+
+## Qualification record requirements
 
 For each cell, record:
 
@@ -147,4 +162,4 @@ A cell passes only when all required steps succeed in one run. A failure must re
 
 ## Recommendation
 
-Run the matrix from one explicitly authorized pushed commit and record the six hosted outcomes before selecting the initial V1 support candidates. If Windows fails a required V1 primitive, diagnose or defer Windows explicitly. Do not reintroduce the stronger directory-durability contract merely to preserve a predetermined provider or platform claim.
+Use the six qualified cells as the initial V1 support candidates for command-service development. Keep the public release support policy open until packaging and CLI evidence exists, and requalify after material filesystem, recovery, Node.js-range, or runner changes. Do not reintroduce the stronger directory-durability contract without a separately accepted requirement.
