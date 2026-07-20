@@ -4,7 +4,16 @@ import type {
   NormalizedCandidateProjectConfig,
 } from "../config/candidate.js";
 import { normalizeCandidateProjectConfig } from "../config/normalize-candidate.js";
+import type {
+  PrivateInitImportAssessment,
+  PrivateInitImportClassification,
+} from "../import/private-assessment.js";
 import type { RendererProvider } from "../renderer/contract.js";
+
+export type {
+  PrivateInitImportAssessment,
+  PrivateInitImportClassification,
+} from "../import/private-assessment.js";
 
 export const privateInitProposalRevision = 1;
 
@@ -18,20 +27,6 @@ export interface PrivateInitTarget {
   readonly provider: RendererProvider;
   readonly content: string;
   readonly sourceRefs: readonly string[];
-}
-
-export type PrivateInitImportClassification =
-  | "lossless"
-  | "lossy"
-  | "unsupported";
-
-export interface PrivateInitImportAssessment {
-  readonly provider: RendererProvider;
-  readonly observedDigest: string;
-  readonly classification: PrivateInitImportClassification;
-  readonly proposedConfigurationDigest: string | null;
-  readonly proposedTargetDigest: string | null;
-  readonly informationLoss: readonly string[];
 }
 
 export interface PrivateInitReadWorkspace {

@@ -46,7 +46,7 @@ Exact byte equality is the only adoption rule. Repository-wide Git cleanliness i
 
 An assessment records provider product, observed content digest, `lossless`, `lossy`, or `unsupported` classification, proposed configuration and target-content digests when supported, and a complete list of known information loss.
 
-The semantic core verifies shape, digest binding, classification consistency, and agreement with the proposed configuration. It does not parse provider files or prove that an assessment is semantically correct or complete. Future provider-specific import analyzers must be narrow, deterministic, separately tested, and able to explain every unsupported or lossy construct. Until such an analyzer exists, differing existing content without an assessment aborts.
+The semantic core verifies shape, digest binding, classification consistency, and agreement with the proposed configuration. It does not parse provider files or prove that an assessment is semantically correct or complete. The [private project-instructions analyzer](private-project-instructions-import-contract.md) produces lossless assessments for the narrow content forms already represented by the native renderer. Other provider-specific analyzers must be deterministic, separately tested, and able to explain every unsupported or lossy construct. Differing existing content without an assessment aborts.
 
 Lossy import remains a reviewable proposal with a warning; it is not apply authorization. Unsupported analysis always aborts.
 

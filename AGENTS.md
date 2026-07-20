@@ -71,6 +71,7 @@ npm run test:v1-recovery
 - Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. Add probe adapters only with narrow permission and evidence contracts.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Keep private initialization read-only and non-interactive. Exact adoption, import assessment, and abort decisions must bind observed bytes to the candidate configuration; never infer ownership from Git cleanliness.
+- Keep project-instructions import limited to deterministic logical equivalence with exact observed, configuration, and target digests. Do not invent merges or infer provider semantics from natural language.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.
 - Make diagnostics and counterexample traces deterministic.

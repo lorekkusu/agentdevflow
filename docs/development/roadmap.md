@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, and the private `check`, `diff`, `render`, `doctor`, and non-interactive `init` proposal semantic services are complete. The next objective is a narrow project-instructions import analyzer that can produce real digest-bound assessments for the initial provider paths without freezing public configuration syntax.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, and narrow project-instructions import analysis are complete. The next objective is an explicitly approved init-to-render bridge that converts exact adoption or lossless import proposals into the normal digest-bound render plan without adding a general overwrite escape hatch.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -329,7 +329,7 @@ Exit criteria:
 
 ### 6. Adoption and initialization
 
-Status: **In progress.** The private proposal core and fixed initial path discovery are available. Provider-specific import analyzers, managed-region adoption, apply integration, and reproducible file or flag representations for future interactive choices remain open.
+Status: **In progress.** The private proposal core, fixed initial path discovery, and narrow logical-equivalence analyzer for all three initial project-instructions formats are available. Managed-region adoption, approved apply integration, broader import representation, and reproducible file or flag representations for future interactive choices remain open.
 
 Scope:
 
@@ -337,6 +337,17 @@ Scope:
 - explicit exact adoption, import proposal, or abort outcomes;
 - complete information-loss diagnostics;
 - reproducible non-interactive initialization before an interactive wizard.
+
+Completed in the nineteenth slice:
+
+- extract the import-assessment shape from the command service into a private shared model;
+- require canonical native target output and a valid candidate-configuration digest;
+- recognize plain or generated Codex and Claude Code project instructions with deterministic line-ending normalization;
+- recognize only the exact validated Cursor project-wide `alwaysApply: true` frontmatter;
+- classify equal normalized logical bodies as lossless and bind exact observed, configuration, and target digests;
+- classify content differences, unknown Cursor frontmatter, and malformed generated notices as unsupported;
+- feed a real analyzer result through the private init proposal service;
+- defer merging, semantic inference, arbitrary YAML, managed-region ownership, apply authorization, and public import behavior.
 
 Exit criteria:
 
