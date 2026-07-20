@@ -2,442 +2,220 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, narrow project-instructions import analysis, the private approved init-to-render bridge, and hosted qualification of that path are complete. The next objective is to evaluate a public configuration and CLI representation without freezing the current private shapes prematurely.
+Phase 0 is complete with a Go recommendation. The repository has validated a provider-neutral finite-state policy core, a replaceable native renderer for the initial three providers, generated-file ownership, deterministic lock state, and staged forward-convergent apply.
 
-This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
+Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-## Development sequence
+These components do not yet form a user-operable product. The package remains private, has no executable `bin`, and has two private project-configuration paths that have not converged into one application pipeline. The completed closure checkpoint froze horizontal research and reconciled the current product state. The current objective is one experimental local CLI path before another provider integration or evidence boundary.
 
-### 1. Candidate configuration specimens
+See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
-Status: **Complete.** See [candidate configuration evidence](../evidence/candidate-configuration.md).
+## Completed foundations
 
-Scope:
+| Foundation | Status | Durable evidence or decision |
+| --- | --- | --- |
+| Phase 0 renderer backend gate | Complete | [Renderer backend evidence](../evidence/renderer-backend.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md) |
+| Phase 0 finite-state policy gate | Complete | [Policy safety evidence](../evidence/policy-safety.md) |
+| Candidate configuration and private compiler | Complete as private prototypes | [Candidate configuration](../evidence/candidate-configuration.md) and [private compiler](../evidence/private-compiler.md) |
+| Native project-instructions renderer | Complete for project-wide Codex, Claude Code, and Cursor output | [Renderer integration](../evidence/renderer-integration.md) |
+| Ownership, lock, drift, and conflict behavior | Complete as private boundaries | [Private render lock](../evidence/private-render-lock.md) and [render command](../evidence/private-render-command-service.md) |
+| V1 apply and interruption recovery | Complete for staged forward convergence | [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md), [V1 recovery contract](v1-recovery-contract.md), and [convergent apply evidence](../evidence/private-convergent-apply.md) |
+| Private command semantics | Complete for isolated `check`, `diff`, `render`, `doctor`, and `init` services | [Check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
+| Existing-file initialization bridge | Complete for create, exact adopt, lossless import, abort, and exact approved render | [Project-instructions import](../evidence/private-project-instructions-import.md) and [approved init render](../evidence/private-approved-init-render.md) |
+| V1 candidate platform qualification | Complete as candidate evidence, not a public support promise | [V1 platform qualification](../evidence/v1-platform-qualification.md) |
+| Domain workflow validation | Complete as a private prototype for issue-to-reviewed-PR and local reviewed change | [Domain workflow evidence](../evidence/private-domain-workflows.md) |
+| Private project intent, presets, parser, and runtime schema | Complete as private prototypes | [Project resolution](../evidence/private-domain-project-resolution.md), [preset expansion](../evidence/private-preset-expansion.md), [project document contract](private-project-document-contract.md), and [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md) |
+| Typed execution evidence and replay | Complete as a private verification boundary | [Execution contract evidence](../evidence/private-execution-contract.md) |
+| Strict private execution transport | Complete and frozen pending a real transport consumer | [Execution transport evidence](../evidence/private-execution-transport.md) |
+| GitHub Check Runs evidence mapping | Complete and frozen at caller-attested acquisition | [GitHub Check Runs evidence](../evidence/private-github-check-runs-evidence.md) |
 
-- fixture-only candidate `ProjectConfig` objects;
-- Fast and Balanced presets;
-- provider-neutral Steward, Developer, and Reviewer bindings;
-- Codex, Claude Code, and Cursor provider instances;
-- local or no-tracker mode;
-- finite typed artifacts and review requirements.
+Completion in this table means that the stated private question has reproducible evidence. It does not imply a stable public API, production CLI, package, discovery rule, persisted format, authenticated external observation, or runtime orchestration.
 
-Exit criteria:
+## Completed closure checkpoint
 
-- identical input produces an identical normalized digest;
-- invalid input produces deterministic path-specific diagnostics;
-- no public filename, serialized format, or API is claimed as stable.
-
-### 2. Private compiler slice
-
-Status: **Complete.** See [private compiler evidence](../evidence/private-compiler.md).
-
-Scope:
-
-- preset resolution and versioning;
-- private `WorkflowIR` construction;
-- closed safety-policy compilation;
-- capability requirements and degradation diagnostics;
-- explicit state-space limits;
-- deterministic compiler output.
-
-Exit criteria:
-
-- Fast and Balanced compile into materially distinct workflows;
-- direct review bypass and stale evidence mutations fail;
-- renderer and provider-specific types do not enter the policy core;
-- the compiler plan is stable across repeated runs.
-
-### 3. Renderer integration hardening
-
-Status: **Complete.** See [renderer integration evidence](../evidence/renderer-integration.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md).
+The 2026-07-21 checkpoint closed the domain-workflow and execution-evidence research direction without extending it.
 
 Scope:
 
-- convert compiler output into backend-neutral render requests;
-- retain Rulesync only as an external experimental oracle;
-- validate rules for the initial three providers;
-- evaluate the Rulesync runtime and dependency surface without adopting it;
-- derive or report output-to-source traceability honestly;
-- add upgrade and golden-output fixtures.
-
-Completed:
-
-- retain normalized provider instances in private compiler output;
-- map provider-neutral compiler capability resolutions at the renderer boundary;
-- bind the compiler digest to a caller-supplied materialized-input digest and normalized source paths;
-- reject incomplete capability evidence and unsafe or duplicate source paths;
-- prove that the resulting request crosses a replaceable staging backend without backend types entering compiler or policy modules.
-- define the private compiler-output materialization that produces renderer source content;
-- separate agent-facing instructions from machine provenance;
-- evaluate pinned Rulesync 9.6.3 and 11.0.0 distributions and cross-version output;
-- implement a minimal native renderer for Codex, Claude Code, and Cursor;
-- capture six native Fast and Balanced golden outputs;
-- reject unsupported capabilities and mismatched materializations before staging;
-- carry exact source references into ownership-aware plans.
+- maintain one disclosure-safe project health review procedure and current assessment;
+- reconcile README, architecture, roadmap, tooling, and repository guidance with actual package and qualification state;
+- record `Invest`, `Keep`, `Freeze`, `Defer`, and later removal-candidate dispositions;
+- retain explicit verdicts and non-claims for project resolution, presets, execution evidence, transport, and GitHub mapping;
+- inspect the cumulative working tree for incomplete imports, accidental coupling, stale hashes, unsupported public claims, and unreviewable commit scope;
+- propose coherent commit groups without staging, committing, or pushing;
+- run the complete repository verification.
 
 Exit criteria:
 
-- no render requires a nested package download at runtime;
-- unsupported required capabilities fail before the backend starts;
-- staged output is byte-deterministic for all three providers;
-- the backend remains replaceable without changing candidate user intent.
+- no current-facing document treats live GitHub acquisition as the immediate next objective;
+- the strong transaction, strict execution transport, and GitHub mapper are visibly frozen rather than implied product dependencies;
+- the active project-model convergence problem is explicit;
+- repository entry points accurately state that no production CLI exists;
+- the working tree has a reviewed file disposition and commit proposal;
+- repository audit, type checking, build, and all automated tests pass;
+- no change is staged, committed, or pushed without explicit authorization.
 
-### 4. Lock, provenance, and transactional workspace
+## Current: one experimental local vertical CLI path
 
-Status: **Complete.** [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) accepts staged digest-aware forward convergence as the V1 default. The private command service binds an exact plan snapshot, base-lock ownership, convergent apply, verification, and lock publication. The stronger write-ahead transaction remains non-default experimental evidence. See [private render command evidence](../evidence/private-render-command-service.md), [forward-convergent apply evidence](../evidence/private-convergent-apply.md), [recovery-strategy comparison](../evidence/workspace-recovery-strategy-comparison.md), and [private transaction evidence](../evidence/private-render-transaction.md).
+The next milestone must connect existing private components before adding another horizontal capability.
 
-Scope:
+Target path:
 
-- an internal, experimental lock model;
-- ownership, content digests, source references, and resolved versions;
-- artifact revision-consistency checks;
-- a real filesystem workspace with path and symlink safety;
-- recoverable multi-file apply and failure recovery.
+```text
+explicit configuration bytes
+-> parse and validate
+-> resolve preset, workflow, providers, tracker, and capabilities
+-> compile policy
+-> materialize provider instructions
+-> inspect repository and lock
+-> check and diff
+-> explicit approved render
+-> repeated check reports clean
+```
 
-Completed in the first slice:
+### 1. Converge the active project model
 
-- define a private versioned lock without selecting a public filename or serialized format;
-- bind compiler, source materialization, renderer, ownership, content digests, and source references;
-- require matching applied-result and verification plan digests before lock creation;
-- keep the lock stable across reordered intent and no-op rendering;
-- reject volatile fields, unsafe paths, corrupted digests, and unexpected ownership claims;
-- clear stale ownership for already-absent obsolete output.
+Recommendation:
 
-Completed in the second slice:
-
-- bind each planned path to its observed before digest and intended after digest;
-- revalidate plan integrity, base ownership, target materialization, and target lock intent before transaction preparation;
-- define deterministic `write`, `remove`, and `retain` operations without public storage paths;
-- define a strict `prepared` to `committed` write-ahead sequence with a terminal `rolled-back` recovery branch;
-- use the base and target lock digests as deterministic rollback and roll-forward anchors;
-- fail closed on foreign locks, unrecognized path states, contradictory journals, and post-commit drift;
-- exercise recovery decisions through fault injection without claiming filesystem durability.
-
-Completed in the third slice:
-
-- canonicalize an existing non-symlink repository root;
-- reject unsafe, non-normalized, escaping, and control-character project paths;
-- reject existing symbolic-link traversal, non-directory parents, and non-file leaves;
-- open reads with final-leaf no-follow behavior;
-- use exclusive same-directory temporary files, content synchronization, rename replacement, and failure cleanup for single-file writes;
-- exercise the native renderer against a temporary real repository;
-- document path-based API race limits and untested platform behavior.
-
-Completed in the fourth slice:
-
-- accept a caller-supplied private store root without selecting a public project path;
-- persist content-addressed before-and-after output and lock blobs;
-- bind required blobs through a deterministic recovery manifest;
-- acquire an exclusive opaque writer lease and verify it before every mutation;
-- publish the `prepared` journal only after canonical records and every required blob revalidate;
-- prevent journal advancement when recovery content is missing or corrupt;
-- leave stale-lease takeover, orphan cleanup, and store retention explicitly undefined.
-
-Completed in the fifth slice:
-
-- accept a caller-supplied repository lock path and reject output-path overlap;
-- verify the actual base lock and every before digest before mutation;
-- compare each path again immediately before single-file mutation;
-- avoid rewriting `retain` operations whose before and after digests match;
-- apply all changed outputs before publishing the target lock;
-- verify target outputs and lock before persisting `committed`;
-- add a terminal `rolled-back` journal branch for completed base-state recovery;
-- recover every instrumented forward boundary to exactly `rolled-back` or `committed`;
-- fail closed when interrupted state contains foreign drift.
-
-Completed in the sixth slice:
-
-- terminate a real child process with `SIGKILL` at every forward execution boundary on Darwin;
-- confirm that an ordinary recovery attempt refuses the stale writer record;
-- require external process-death confirmation plus unchanged writer evidence and the expected transaction digest before explicit writer-record removal;
-- verify the writer lease immediately before every project mutation;
-- recover all pre-lock termination boundaries to exact base bytes and `rolled-back`;
-- recover all post-lock termination boundaries to exact target bytes and `committed`;
-- synchronize affected directory entries after directory creation, rename, hard-link publication, temporary-file cleanup, and unlink;
-- fail workspace opening when the current filesystem cannot perform the directory synchronization probe.
-
-Completed in the seventh slice:
-
-- require exact terminal repository and lock state before writing a retirement marker;
-- make retirement an immutable barrier that prevents writer acquisition and in-place store reuse;
-- keep each prepared store single-use and caller-owned without selecting a public parent or transaction path;
-- atomically rename a retired store to a deterministic tombstone and synchronize the parent directory;
-- publish a canonical cleanup receipt with the authorized file inventory before tombstone removal so absence is distinguishable from an unknown store;
-- audit required recovery records, valid content-addressed orphan blobs, recognized private temporary files, and symbolic-link absence before recursive removal;
-- refuse unknown entries, corrupt orphan blobs, symbolic links, and active or stale writer records;
-- resume cleanup idempotently after cooperative faults and Darwin `SIGKILL` at retirement, tombstone, receipt, and removal boundaries;
-- resume a partially removed tombstone only when every remaining path and byte digest matches the receipt inventory.
-
-Completed in the eighth slice:
-
-- construct deterministic base-anchor rollback and target-anchor roll-forward recovery fixtures;
-- keep the target-anchor partial fixture explicit as a valid recovery input rather than normal execution output;
-- interrupt all three rollback output mutations, base verification, and `rolled-back` journal persistence;
-- interrupt all three roll-forward output mutations, `lock-written` persistence, target verification, and `committed` persistence;
-- repeat all eleven recovery mutation boundaries with cooperative faults and Darwin `SIGKILL`;
-- require explicit stale-writer evidence removal after every terminated recovery process;
-- recover each boundary to exact base bytes and `rolled-back` or exact target bytes and `committed`;
-- fail closed when foreign drift appears after recovery-process termination.
-
-Completed in the ninth slice:
-
-- persist a canonical digest-bound mutation intent before creating each transaction-owned repository temporary file;
-- derive the exact same-directory temporary path from transaction, writer, target path, and target content digests without PID, time, or age heuristics;
-- persist exact writer clearance before removing an unchanged stale writer record after external process-death confirmation;
-- reclaim only intent paths whose writer fingerprint has matching clearance and refuse every uncleared recorded temporary file;
-- keep cooperative write failures self-cleaning while retaining empty or synchronized partial-file evidence after `SIGKILL`;
-- verify creation and synchronization termination boundaries through a real child process on Darwin;
-- reject symbolic links, directories, malformed records, unknown paths, and conflicting temporary paths;
-- include intent and clearance registries in terminal store verification and cleanup inventory;
-- document that hostile regular-file replacement at an exact authorized path remains indistinguishable from owned partial bytes.
-
-Completed in the tenth slice:
-
-- require an existing empty dedicated parent before private lifecycle initialization;
-- publish and revalidate a canonical owner record before cleanup mutation or disposal inspection;
-- define immutable cleanup-receipt retention for the full parent lifetime without time, count, or size heuristics;
-- refuse unclaimed, non-empty, changed, malformed, extended, or non-canonical parent ownership;
-- produce a deterministic read-only disposal snapshot only when the parent contains no active store or tombstone;
-- bind the disposal snapshot to the owner record and every sorted canonical receipt identity and digest;
-- reject symbolic links, directories, foreign files, invalid receipts, and unexpected receipt filenames from disposal readiness;
-- leave whole-parent deletion as a future explicitly authorized administrative action rather than deleting retained evidence automatically.
-
-Prepared in the eleventh slice:
-
-- verify current Node.js release and GitHub-hosted runner facts from official primary sources;
-- define blocking Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 cells for Node.js 22 and 24;
-- use explicit runner labels, read-only workflow permission, disabled credential persistence, disabled package caching, and full-SHA action pins;
-- probe directory synchronization, synchronized rename, hard links, symbolic links, case sensitivity, and forced child termination before the full suite;
-- remove Windows skips from transaction interruption and symbolic-link tests;
-- add a zero-skip qualification command and fail if tracked files change;
-- audit workflow action pins, privileged triggers, and top-level permission mechanically;
-- define the private [interruption contract](interruption-contract.md), filesystem prerequisites, operator boundary, and explicit power-loss non-claims;
-- qualify four hosted Ubuntu and macOS cells only after run 29531413592 passed and its resolved environments were recorded;
-- retain both Windows cells as failed evidence after directory synchronization returned `EPERM` before the zero-skip suite.
-
-Completed in the twelfth slice:
-
-- compare clean-Git reset, digest-aware rerun, and the write-ahead journal at one reproducible complete-file failure boundary;
-- reject automatic Git reset as the default because it loses concurrent tracked work and does not restore ignored or untracked managed paths;
-- accept staged before-or-after digest convergence as the V1 default in ADR 0002;
-- derive a deterministic same-directory temporary path from the plan, target path, and target digest;
-- retain safe-path, symbolic-link, and regular-file checks while separating process-termination recovery from directory durability;
-- recheck every managed path before mutation and fail closed on foreign content;
-- converge creates, updates, deletes, repeated apply, regular partial temporary files, and mixed before-and-after targets;
-- terminate real child processes with `SIGKILL` at all twelve provider write boundaries and resume to exact target bytes;
-- keep the exact plan caller-supplied without selecting a public storage path or serialized recovery format.
-
-Completed in the thirteenth slice:
-
-- separate V1 qualification from the stronger write-ahead directory-durability experiment;
-- define six blocking Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 cells for Node.js 22 and 24;
-- probe synchronized file content, rename replacement, symbolic-link handling, and forced process termination without requiring directory synchronization or hard links;
-- select 14 V1-compatible compiled test files and pass 103 local tests with zero failures and zero skips;
-- exclude exactly five complete strong-transaction test files and mechanically require the V1 apply and subprocess suites;
-- run the complete 202-test stronger suite in one designated Ubuntu 24.04 and Node.js 24 regression cell;
-- retain the stronger write-ahead workflow as a manually dispatched experiment;
-- use read-only workflow permissions, full-SHA action references, disabled credential persistence, and tracked-file cleanliness checks.
-- qualify all six hosted cells with 103 selected tests and zero skips after retaining the first Windows failure as diagnostic evidence;
-- pass the complete 202-test stronger regression in the designated Ubuntu 24.04 and Node.js 24 cell.
-
-Completed in the fourteenth slice:
-
-- bind all known plan fields, diagnostics, target bytes, and previous ownership into a closed private exact-plan snapshot;
-- reject snapshot extensions, corruption, malformed ownership, and plan-digest mismatch before mutation;
-- require plan previous ownership to equal ownership derived from the caller-supplied base lock;
-- derive the target lock before mutation without selecting a public path or serialized contract;
-- reject lock and temporary-path overlap with managed outputs;
-- accept only exact base or target lock bytes and reject a target lock paired with incomplete outputs;
-- apply and verify exact output targets before convergently publishing the lock;
-- recover through cooperative faults and real process termination before and after lock publication;
-- prove repeated exact execution is an output and lock no-op;
-- retain the write-ahead implementation as non-default evidence without extending it;
-- leave directory durability and power-loss work deferred until a separately accepted property requires it.
+- use the revision-1 private domain project intent as the active forward model;
+- select one authoritative compiled representation, or introduce one explicit one-way bridge with semantic-parity tests;
+- separate required project and workflow compilation from optional execution-manifest export;
+- retain schema-version-0 candidate configuration only as an explicit one-way compatibility input or regression fixture;
+- do not add a third project model or conceal intent loss behind another adapter;
+- keep public names, filenames, and compatibility promises open.
 
 Exit criteria:
 
-- a repeated render is a no-op;
-- drift, ownership conflicts, deletions, and adoption are explicit;
-- an interrupted apply can be restored deterministically without accepting a partially updated artifact set and contradictory lock;
-- volatile machine data and secrets never enter the lock.
+- one configuration document reaches one authoritative policy compilation and renderer materialization without caller-supplied compiler output;
+- any temporary bridge rejects unsupported intent and proves parity for every represented policy and renderer input;
+- renderer planning does not require an execution manifest, and optional manifest export consumes the authoritative compiled result rather than defining it;
+- workflow family, pull-request initial state, auxiliary review, tracker, providers, and capability targets retain exact intent;
+- identical input and repository state produce an identical exact plan;
+- incompatible legacy input fails or requires explicit missing choices without inference.
 
-### 5. Command services and thin CLI
+### 2. Add executable read-only `check` and `diff`
 
-Status: **In progress.** The private `check`, `diff`, mutating `render`, provider-neutral `doctor`, and read-only non-interactive `init` proposal semantic services are available. No public command handler, probe adapter, extensible discovery rule, stable exit-code contract, output format, or CLI parser has been selected. See [private check evidence](../evidence/private-check-command-service.md), [private diff evidence](../evidence/private-diff-command-service.md), [private render evidence](../evidence/private-render-command-service.md), [private doctor evidence](../evidence/private-doctor-command-service.md), and [private init evidence](../evidence/private-init-command-service.md).
-
-Development order:
-
-1. `check`;
-2. `diff`;
-3. `render`;
-4. `doctor`;
-5. `init`.
-
-Command handlers must remain thin wrappers around testable services. Read-only commands precede mutating commands, and safe ownership behavior precedes existing-file initialization.
-
-Completed in the fifteenth slice:
-
-- accept only caller-supplied private materialization, exact plan snapshot, expected base lock, lock path, and read-only workspace;
-- classify exact observations as `clean`, `changes-required`, or `blocked`;
-- retain candidate exit codes `0`, `1`, and `2` without accepting a public compatibility contract;
-- distinguish recognized before-state changes from foreign drift;
-- retain renderer ownership and unsupported-capability diagnostics;
-- fail closed with structured diagnostics for malformed snapshots, malformed base locks, foreign lock bytes, and contradictory target-lock state;
-- sort diagnostics deterministically and prove repeated checks return identical results;
-- prove the service has no mutation-capable workspace interface and leaves repository bytes unchanged.
-
-Completed in the sixteenth slice:
-
-- build exact-byte diff only after the private check service reports non-blocked state;
-- return deterministic create, update, delete, and render-lock entries with before and target digests and content;
-- omit managed outputs already at target during partial forward convergence;
-- reread and revalidate every planned path and the lock before returning exact entries;
-- discard every accumulated entry if a post-check observation becomes foreign or contradictory;
-- read no path outside the exact plan and caller-supplied lock path;
-- preserve a read-only workspace interface and prove repeated diff leaves repository bytes unchanged;
-- defer line formatting, terminal disclosure, redaction, truncation, machine output, and public compatibility.
-
-Completed in the seventeenth slice:
-
-- validate one closed revisioned envelope of provider and environment observations;
-- bind provider observations to configured instance id, product, and surface;
-- retain observed version, execution context, principal, capability, strength, mechanism, evidence source, reference, and freshness;
-- classify healthy, degraded, and blocked evidence with candidate exit codes;
-- reject stale, unknown-freshness, missing, mismatched, duplicate, unavailable, or insufficient required evidence;
-- derive compiler-compatible capability availability only for a non-blocked result;
-- keep the semantic service deterministic and free of provider execution, network access, credentials, and environment inspection;
-- defer probe adapters, version support, authentication claims, persistence, redaction, and public output.
-
-Completed in the eighteenth slice:
-
-- observe only the fixed project-level instruction paths already validated for Codex, Claude Code, and Cursor;
-- require exactly one deterministic target for every configured provider product;
-- expose the normalized candidate configuration, canonical JSON, digest, exact target bytes, and source references before apply;
-- classify absent paths as `create` and only byte-exact existing content as `adopt`;
-- accept import proposals only from assessments bound to current observed bytes, the same candidate configuration digest, and exact target bytes;
-- retain complete asserted information-loss entries for lossy import proposals;
-- classify absent, stale, unsupported, mismatched, or unreadable import evidence as explicit `abort` outcomes;
-- keep foreign existing bytes out of the result and prove that a temporary repository remains unchanged;
-- defer provider parsing, managed-region syntax, public discovery, interactive prompts, output formatting, and all mutation.
+Use Node.js `util.parseArgs` unless real help, completion, nesting, or output requirements justify a framework. Accept explicit configuration and lock paths before deciding public discovery precedence.
 
 Exit criteria:
 
-- stable structured diagnostics and candidate exit-code behavior;
-- end-to-end tests in temporary repositories;
-- `check` and `diff` never modify project state;
-- `render` accepts only a verified, conflict-free plan.
+- the package has one experimental executable entry point;
+- `check` and `diff` accept user-level repository and configuration inputs rather than private materialization or snapshot values;
+- both commands are read-only and cover clean, changes-required, blocked, foreign-drift, ownership-conflict, and unsupported-capability outcomes;
+- human-readable diagnostics and private candidate exit behavior are exercised end to end in temporary repositories.
 
-### 6. Adoption and initialization
+### 3. Add explicit approved `render`
 
-Status: **In progress.** The private proposal core, fixed initial path discovery, narrow logical-equivalence analyzer, exact approved path into the existing renderer command, and hosted qualification are available. Managed-region adoption, broader import representation, and reproducible file or flag representations for future interactive choices remain open.
-
-Scope:
-
-- deterministic discovery of the initial provider files;
-- explicit exact adoption, import proposal, or abort outcomes;
-- complete information-loss diagnostics;
-- reproducible non-interactive initialization before an interactive wizard.
-
-Completed in the nineteenth slice:
-
-- extract the import-assessment shape from the command service into a private shared model;
-- require canonical native target output and a valid candidate-configuration digest;
-- recognize plain or generated Codex and Claude Code project instructions with deterministic line-ending normalization;
-- recognize only the exact validated Cursor project-wide `alwaysApply: true` frontmatter;
-- classify equal normalized logical bodies as lossless and bind exact observed, configuration, and target digests;
-- classify content differences, unknown Cursor frontmatter, and malformed generated notices as unsupported;
-- feed a real analyzer result through the private init proposal service;
-- defer merging, semantic inference, arbitrary YAML, managed-region ownership, apply authorization, and public import behavior.
-
-Completed in the twentieth slice:
-
-- bind the complete eligible init proposal into a deterministic proposal digest;
-- record a revisioned caller approval assertion over every disposition and exact observed and target digest;
-- reject blocked, diagnostic-bearing, lossy, extended, stale, or inconsistent proposals before mutation;
-- reread every provider path and independently re-run the lossless project-instructions analyzer for imports;
-- add exact observed-to-target initialization import authorization to the private renderer request;
-- require the staged adapter to fail closed for stale, missing, duplicated, or conflicting initialization authorizations;
-- require the resulting renderer plan to reproduce the complete approved proposal;
-- retain a prepared package binding proposal, approval, and exact render-plan snapshot digests;
-- execute and resume only through the existing private render command with no base ownership;
-- include the bridge in the selected V1 qualification suite with zero skipped tests;
-- defer public approval storage, identity, CLI prompts, configuration files, and lock discovery.
-
-Completed in the twenty-first slice:
-
-- add a hardened read-only filesystem view for initialization observation without mutation methods or write-durability probes;
-- retain canonical path, repository containment, symbolic-link, and regular-file checks on the read-only path;
-- diagnose the Windows directory-synchronization failure without weakening the mutating workspace contract;
-- qualify 154 selected tests with zero skips across Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24;
-- pass the complete 254-test stronger suite in the designated Ubuntu and Node.js 24 cell;
-- retain the failed and replacement hosted runs as reproducible portability evidence.
+Use only the accepted staged forward-convergent apply path. Do not make the write-ahead transaction experiment a runtime dependency.
 
 Exit criteria:
 
-- every existing path has one explicit outcome;
-- no existing file is silently overwritten;
-- the proposed configuration and all file changes are visible before apply;
-- every interactive choice has a file or flag representation.
+- `diff` exposes the complete exact target and plan identity before mutation;
+- `render` requires explicit approval bound to the current exact plan;
+- stale approval and post-plan drift fail closed;
+- repeated render is a no-op;
+- process termination at the accepted V1 boundaries converges safely when the exact plan is repeated.
 
-### 7. Procedures, trackers, and enforcement evidence
+### 4. Add minimal non-interactive `init`
 
-Scope:
-
-- `plan-task`, `implement-task`, `review-change`, and `record-progress`;
-- provider capability validation for each materialization;
-- GitHub Issues, Linear, and local tracker descriptions without tracker runtimes;
-- Fast and Balanced first; Strict only with sufficient enforcement evidence.
+Generate the active revision-1 private domain project intent and retain only deterministic create, exact adopt, lossless import, and abort outcomes. Defer an interactive wizard and managed-region merging.
 
 Exit criteria:
 
-- provider capability differences remain visible;
-- no prompt-only mechanism satisfies a stronger policy requirement;
-- a second clean repository can reproduce the selected development flow.
+```text
+fresh repository
+-> init
+-> diff
+-> explicit render
+-> check clean
+-> diff empty
+```
 
-### 8. V1 stabilization and release readiness
+The path must reproduce in a second temporary repository without network access.
 
-Scope:
+### 5. Package and local doctor qualification
 
-- public `ProjectConfig` schema and configuration discovery;
-- stable lock and migration contracts;
-- a synthetic pre-V1 to V1 migration fixture;
-- package contents, offline behavior, supported Node.js lines, and cross-platform tests;
-- prerelease and trusted publication procedures.
+Keep `doctor` local and honest. Report unknown external capability truth rather than adding a provider runtime merely to fill a diagnostic.
 
 Exit criteria:
 
-- public inputs can be migrated without silent intent loss;
-- package installation and core operation are reproducible;
-- published artifacts include only intended runtime files;
-- package publication is separately authorized.
+- `npm pack` contains only intended runtime and documentation files;
+- a clean installation executes the five candidate command names;
+- core initialization, rendering, checking, and diffing work offline;
+- Node.js and platform claims match qualified evidence;
+- publication remains separately authorized.
+
+## Frozen research
+
+Frozen work remains reviewable evidence but receives no feature expansion unless a material accepted requirement reopens it.
+
+### Strong write-ahead transaction
+
+The transaction store, executor, cleanup lifecycle, receipts, and stronger platform workflow are not the V1 default. Do not extend them, expose them, or include them in a future runtime package. The normal workspace currently imports a temporary-intent validator from the transaction area; move that shared primitive or isolate the transaction-only extension before package qualification. Revisit the frozen subsystem only under the triggers in ADR 0002.
+
+### Execution transport
+
+The strict path-free codecs demonstrate deterministic private transport. Do not generalize formats, discovery, persistence, signing, migration, or resource limits until a real storage or external-executor consumer exists.
+
+### GitHub Check Runs mapper
+
+The pure mapper demonstrates exact-SHA, pinned-App conversion into provider-neutral `CiResult`. Do not add a live probe, credentials, branch-protection discovery, merge-queue selection, polling, retry, or mutation before the local vertical CLI milestone requires an authenticated external consumer.
+
+### Provider-neutral doctor semantics
+
+The pure observation validator remains available. Do not add provider command execution, network access, credentials, or environment mutation without a narrow accepted probe contract tied to a real command outcome.
+
+## Later
+
+After the local vertical path and package qualification:
+
+- reevaluate one read-only authenticated provider observation only if a real consumer requires it;
+- stabilize `ProjectConfig`, configuration discovery, lock storage, and migration behavior with synthetic migration evidence;
+- qualify package contents, offline behavior, supported Node.js lines, and platform guarantees;
+- add broader import or managed-region behavior only from real adoption failures;
+- reconsider Strict only when its stronger evidence and completion gates are executable;
+- reconsider Custom only after multiple built-in workflows demonstrate a stable composition model;
+- reconsider additional providers, trackers, workflow families, or runtime exports from concrete user evidence.
+
+Interactive configuration, a complete `migrate` command, agent-assisted repository analysis, broad provider support, marketplaces, GUI, SaaS, scheduling, automatic repair, merge, and release remain deferred as defined by [product direction](../product-direction.md).
 
 ## Candidate decisions
 
-The following recommendations are candidates, not accepted public contracts:
+These recommendations remain private or prerelease candidates rather than public compatibility promises:
 
-| Decision | Current recommendation | Required evidence before acceptance |
+| Decision | Current recommendation | Acceptance gate |
 | --- | --- | --- |
-| Runtime schema | Zod 4 restricted to JSON-Schema-representable constructs | Candidate config fixtures, diagnostic quality, emitted schema snapshot, dependency review |
-| Configuration parser | `jsonc-parser` | Comment-preserving edits, precise syntax locations, deterministic normalization |
-| CLI parser | Node.js `parseArgs` without a third-party framework | Complete option matrix for the five candidate commands |
-| Configuration format | JSONC with `agentdevflow.config.jsonc` as the candidate root filename | Discovery, migration, editor, and non-interactive round-trip fixtures |
-| Lock format | Strict deterministic JSON with `agentdevflow.lock.json` as the candidate filename | Ownership, provenance, transaction, and migration fixtures |
-| First release | Prerelease on a non-default npm tag before a stable `0.1.0` | Package tarball, clean-install, provenance, and release authorization |
+| Active internal project model | Revision-1 private domain project intent | Lossless connection through renderer planning and command services, including explicit legacy disposition |
+| Runtime schema | Exact Zod 4.4.3 behind the private jitless boundary | Existing schema and security evidence plus real vertical-path diagnostics |
+| Configuration parser | Exact `jsonc-parser` 3.3.1 behind one private boundary | Existing ambiguity and edit tests plus real CLI input handling |
+| CLI parser | Node.js `util.parseArgs` | End-to-end help, error, output, and option qualification |
+| Configuration input | Explicit caller path before discovery precedence | Vertical-path fixtures and a later migration decision before stabilization |
+| Lock input | Explicit caller path before discovery precedence | V1 ownership, plan, package, and migration fixtures |
+| First release | Prerelease on a non-default npm tag | Tarball review, clean installation, provenance, platform qualification, and separate publication authorization |
 
-Accepting a major dependency, public filename, schema, lock contract, or publication flow requires an explicit decision and the relevant evidence.
+Accepting a public filename, schema, lock format, exit-code contract, major dependency, or publication flow requires explicit approval and the relevant evidence.
 
 ## Stop and pivot conditions
 
-Stop or reconsider the plan when:
+Until the next milestone is complete:
 
-- the adapter wrapper begins to reproduce most of the renderer backend;
-- provider-specific fields dominate candidate user configuration;
-- output provenance cannot be made honest enough for safe review;
-- realistic workflows exceed an explicit policy state budget;
-- Strict policies can only be represented as prompt claims;
-- transactional application cannot prevent partial repository updates;
-- the policy compiler loses independent value beyond file generation.
+- do not add a live GitHub probe;
+- do not extend the strong transaction subsystem;
+- do not add a provider, tracker, workflow family, preset, or evidence schema;
+- do not generalize execution transport;
+- do not require users to construct private compiler, materialization, manifest, evidence, lock, or snapshot values;
+- do not use additional tests, fixtures, or evidence documents as a substitute for a user-operable outcome;
+- stop for an explicit project-model decision if the two private configuration paths cannot converge without silent intent loss.
 
-## Roadmap maintenance
+Reconsider or pivot when:
 
-Update this file when an outcome, dependency, scope boundary, or exit criterion changes. Put accepted architecture decisions in `docs/decisions/`, current reversible tooling in `docs/development/tooling.md`, and reproducible observations in `docs/evidence/`. Do not append discussion minutes or private planning history.
+- provider-specific fields dominate user intent;
+- adapter maintenance approaches backend reimplementation;
+- provenance or ownership cannot support safe review;
+- realistic workflows exceed explicit policy state budgets;
+- Strict can only be represented as advisory prompt text;
+- the vertical path cannot demonstrate independent policy-compiler value beyond deterministic file generation.
+
+## Maintenance
+
+Update this file only when a milestone, dependency, disposition, exit criterion, or stop condition changes. Put current health findings in [project health](project-health.md), reversible tooling in [tooling](tooling.md), accepted material decisions in `docs/decisions/`, and reproducible observations in `docs/evidence/`. Do not append implementation-slice chronology or private review history.

@@ -10,6 +10,7 @@ Read:
 - [product direction](docs/product-direction.md);
 - [architecture](docs/architecture.md);
 - [development roadmap](docs/development/roadmap.md);
+- [current project health](docs/development/project-health.md);
 - [public information policy](docs/development/public-information-policy.md).
 
 Confirm that the proposed change fits the current phase and does not expand a deferred product area without an explicit project decision.

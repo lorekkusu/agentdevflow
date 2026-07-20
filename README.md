@@ -4,7 +4,9 @@ Configure, validate, and compile portable software-development flows for coding 
 
 ## Status
 
-`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 now includes deterministic candidate configuration normalization, a private compiler with versioned Fast and Balanced definitions, and a minimal native project-instructions renderer for Codex, Claude Code, and Cursor. The project does not yet provide a production CLI, and its public API and configuration format are not stable.
+`agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 has private prototypes for project-intent parsing, policy compilation, native project-instructions rendering, ownership-aware application, command semantics, domain workflows, and typed execution evidence.
+
+These components do not yet form a production CLI. The package is private, has no executable `bin`, and has no stable public API, configuration format, filename, lock format, or migration contract. The current work closes and freezes completed research before connecting one configuration input to an experimental local `check`, `diff`, and explicit `render` path.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -16,7 +18,7 @@ The long-term product is a development-flow configurator and policy compiler. It
 
 See [Product direction](docs/product-direction.md) and [Architecture](docs/architecture.md) for the retained product and technical boundaries.
 
-See the [development roadmap](docs/development/roadmap.md) for the dependency-ordered plan after Phase 0. Candidate decisions in the roadmap are not stable public contracts.
+See the [development roadmap](docs/development/roadmap.md) for the current, next, later, and frozen work. The [project health assessment](docs/development/project-health.md) records the current sanitized scope and complexity findings. Candidate decisions are not stable public contracts.
 
 ## Phase 0 result
 
@@ -27,15 +29,19 @@ Phase 0 evaluated two questions in order:
 
 See [renderer evidence](docs/evidence/renderer-backend.md), [policy evidence](docs/evidence/policy-safety.md), and the [Phase 0 plan](docs/development/phase-0.md).
 
-The first Phase 1 step validates fixture-only Fast and Balanced candidate configurations without selecting a public format or schema dependency. See [candidate configuration evidence](docs/evidence/candidate-configuration.md).
+Phase 1 has validated:
 
-The private compiler resolves those specimens into finite versioned workflows, provider-neutral capability requirements, and closed safety policies. See [private compiler evidence](docs/evidence/private-compiler.md).
+- deterministic private Fast and Balanced configuration and compiler specimens;
+- native project-wide instructions for Codex, Claude Code, and Cursor;
+- ownership, drift, lock, and staged forward-convergent apply behavior;
+- isolated private `check`, `diff`, `render`, `doctor`, and `init` semantics;
+- an issue-to-reviewed-pull-request workflow and a local no-pull-request contrast;
+- bounded revision-1 project intent, JSONC parsing, preset expansion, and runtime schema validation;
+- typed revision-bound execution evidence and one pure GitHub Check Runs mapping.
 
-Renderer integration hardening now includes deterministic private materialization, native output for the initial three providers, exact source references, fail-closed capability diagnostics, and six golden fixtures. See [renderer integration evidence](docs/evidence/renderer-integration.md) and [ADR 0001](docs/decisions/0001-native-project-instructions-renderer.md).
+The accepted V1 apply path is the smaller staged forward-convergent implementation in [ADR 0002](docs/decisions/0002-v1-forward-convergent-render-apply.md). The stronger write-ahead transaction, strict execution transport, and GitHub mapper are frozen private research rather than the next product direction.
 
-Transactional workspace hardening now covers private lock and provenance records, recoverable multi-file execution, explicit stale-writer handling, exact repository temporary-file ownership, single-use store cleanup, and dedicated parent-lifetime receipt ownership on the tested Darwin environment. Public storage paths and formats remain intentionally unselected. See the [transaction executor](docs/evidence/private-transaction-executor.md), [temporary-file ownership](docs/evidence/private-temporary-file-ownership.md), [cleanup](docs/evidence/private-transaction-cleanup.md), and [parent lifecycle](docs/evidence/private-transaction-parent-lifecycle.md) evidence.
-
-A blocking six-cell GitHub Actions matrix is prepared for Ubuntu, macOS, and Windows across Node.js 22 and 24. It is a qualification mechanism, not a support claim; Linux and Windows remain unqualified until hosted runs pass and are reviewed. See [candidate platform qualification](docs/evidence/candidate-platform-qualification.md).
+The selected V1 suite has candidate qualification across explicit Ubuntu, macOS, and Windows hosted runners on Node.js 22 and 24. This is test evidence, not a published support guarantee. See [V1 platform qualification](docs/evidence/v1-platform-qualification.md).
 
 ## Development
 
@@ -52,12 +58,14 @@ npm run build
 npm test
 npm run check:repository
 npm run check
-npm run check:qualification
+npm run check:v1-qualification
 npm run phase1:config
 npm run phase1:compiler
+npm run phase1:project-document
+npm run phase1:project-resolution
 ```
 
-The scaffold intentionally uses no CLI framework, schema library, linter, or production runtime dependency. See [Tooling decisions](docs/development/tooling.md).
+The project currently uses no CLI framework, linter, formatter, or bundler. It pins `jsonc-parser` and Zod behind private configuration boundaries; these dependencies do not make the current private schema a public contract. See [Tooling decisions](docs/development/tooling.md) and [ADR 0003](docs/decisions/0003-private-jsonc-zod-boundary.md).
 
 See [Contributing](CONTRIBUTING.md) and the [public information policy](docs/development/public-information-policy.md) before opening a change or decision proposal. Repository records preserve useful technical context without storing prompts, conversation transcripts, or private deliberation.
 

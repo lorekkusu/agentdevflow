@@ -17,6 +17,8 @@ The repository is the source of truth for public technical state. Conversation h
 | Product direction | `docs/product-direction.md` | Users, outcomes, product boundary, deferred work | Private priorities and discussion history |
 | Architecture | `docs/architecture.md` | Interfaces, invariants, trust boundaries, limitations | Brainstorms and unverified future designs |
 | Development sequence | `docs/development/roadmap.md` | Scope, dependencies, exit criteria, non-goals, stop conditions | Personal assignments and invented schedules |
+| Current project health | `docs/development/project-health.md` | Sanitized verified findings, disposition, next milestone, stop conditions | Raw reviewer output, recurring chronology, and confidential security findings |
+| Health review procedure | `docs/development/project-health-review.md` | Triggers, independent review method, format, disclosure classes, outcome routing | Prompts, reviewer identities, model reasoning, and speculative findings |
 | Reversible tooling | `docs/development/tooling.md` | Current choice, rationale, revisit trigger | Chronological debate |
 | Material decisions | `docs/decisions/` | Context, decision, consequences, evidence, revisit triggers | Raw deliberation and attribution to assistants |
 | Experimental evidence | `docs/evidence/` | Version, fixture, reproduction, observation, limitation, verdict | Unsanitized logs and machine-specific data |
