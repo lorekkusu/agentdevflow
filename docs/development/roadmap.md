@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, narrow project-instructions import analysis, and the private approved init-to-render bridge are complete. The next objective is hosted OS and Node.js matrix qualification of the initialization path before selecting a public configuration and CLI representation.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, narrow project-instructions import analysis, the private approved init-to-render bridge, and hosted qualification of that path are complete. The next objective is to evaluate a public configuration and CLI representation without freezing the current private shapes prematurely.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -329,7 +329,7 @@ Exit criteria:
 
 ### 6. Adoption and initialization
 
-Status: **In progress.** The private proposal core, fixed initial path discovery, narrow logical-equivalence analyzer, and exact approved path into the existing renderer command are available. Managed-region adoption, broader import representation, hosted qualification, and reproducible file or flag representations for future interactive choices remain open.
+Status: **In progress.** The private proposal core, fixed initial path discovery, narrow logical-equivalence analyzer, exact approved path into the existing renderer command, and hosted qualification are available. Managed-region adoption, broader import representation, and reproducible file or flag representations for future interactive choices remain open.
 
 Scope:
 
@@ -362,6 +362,15 @@ Completed in the twentieth slice:
 - execute and resume only through the existing private render command with no base ownership;
 - include the bridge in the selected V1 qualification suite with zero skipped tests;
 - defer public approval storage, identity, CLI prompts, configuration files, and lock discovery.
+
+Completed in the twenty-first slice:
+
+- add a hardened read-only filesystem view for initialization observation without mutation methods or write-durability probes;
+- retain canonical path, repository containment, symbolic-link, and regular-file checks on the read-only path;
+- diagnose the Windows directory-synchronization failure without weakening the mutating workspace contract;
+- qualify 154 selected tests with zero skips across Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24;
+- pass the complete 254-test stronger suite in the designated Ubuntu and Node.js 24 cell;
+- retain the failed and replacement hosted runs as reproducible portability evidence.
 
 Exit criteria:
 

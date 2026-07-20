@@ -1,10 +1,10 @@
 # V1 platform qualification
 
-Snapshot date: 2026-07-18.
+Snapshot date: 2026-07-20.
 
 ## Verdict
 
-**All six candidate cells qualified.** Hosted run [29643865692](https://github.com/lorekkusu/agentdevflow/actions/runs/29643865692) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed its V1 primitive probe, 103 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 202-test stronger regression suite.
+**All six candidate cells requalified with the private initialization path.** Hosted run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed its V1 primitive probe, 154 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 254-test stronger regression suite.
 
 This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
 
@@ -12,9 +12,9 @@ This qualification is intentionally separate from the stronger experimental writ
 
 | Operating-system image | Architecture | Node.js lines | Current status |
 | --- | --- | --- | --- |
-| `ubuntu-24.04` | x64 | 22, 24 | Qualified by run 29643865692 |
-| `macos-15` | arm64 | 22, 24 | Qualified by run 29643865692 |
-| `windows-2025` | x64 | 22, 24 | Qualified by run 29643865692 |
+| `ubuntu-24.04` | x64 | 22, 24 | Requalified by run 29741641490 |
+| `macos-15` | arm64 | 22, 24 | Requalified by run 29741641490 |
+| `windows-2025` | x64 | 22, 24 | Requalified by run 29741641490 |
 
 The matrix is a release-candidate experiment, not a public support table. Linux arm64, macOS Intel, Windows arm64, older operating-system images, network filesystems, and self-hosted runners remain outside its scope.
 
@@ -100,7 +100,7 @@ directory sync required: false
 hard link required: false
 ```
 
-The selected V1 suite discovered 14 compiled test files and passed 103 tests with zero failures and zero skips. The complete local repository suite also passed 202 tests with zero failures and zero skips. These observations are developer evidence only; they do not substitute for hosted cells with recorded runner images and Node.js versions.
+The current selected V1 suite discovers 22 compiled test files and passes 154 tests with zero failures and zero skips. The complete local repository suite passes 254 tests with zero failures and zero skips. These observations are developer evidence only; they do not substitute for hosted cells with recorded runner images and Node.js versions.
 
 ## First hosted observation
 
@@ -136,6 +136,25 @@ Run [29643865692](https://github.com/lorekkusu/agentdevflow/actions/runs/2964386
 | `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 103 passed, 0 failed, 0 skipped | Pass |
 
 The replacement run confirms both focused portability repairs without skipping a V1 recovery test or weakening the primitive contract. The first failed run remains recorded because it explains the evidence-backed implementation change.
+
+## Initialization-path regression and requalification
+
+Run [29741256136](https://github.com/lorekkusu/agentdevflow/actions/runs/29741256136) tested private approved-initialization bridge commit `e2633e9868457dbc06cc8e43958e5c4062f5af5c` on 2026-07-20 UTC. Both Ubuntu cells and both macOS cells passed. Both Windows cells passed the primitive probe but failed the same read-only initialization integration test with 153 of 154 selected tests passing and zero skips. Opening the full filesystem workspace attempted directory synchronization before the service read any file, and Windows returned `EPERM`.
+
+The repair introduced a narrow read-only workspace view. It retains root containment, canonical relative-path, symbolic-link, and regular-file checks, exposes no mutation methods, and does not request directory synchronization. The strict mutating workspace continues to require its existing durability primitives; the repair separates observation requirements from write durability rather than weakening mutation behavior.
+
+Run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) tested repair commit `13b0b3ecb29be8663b8ea33264bf777f0c69d657` on 2026-07-20 UTC:
+
+| Runner image | Image version | Node.js | Probe | Selected tests | Result |
+| --- | --- | --- | --- | --- | --- |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
+| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 154 passed, 0 failed, 0 skipped; complete 254-test regression also passed with zero skips | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 154 passed, 0 failed, 0 skipped | Pass |
+| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 154 passed, 0 failed, 0 skipped | Pass |
+
+The requalification covers the complete private initialization observation and approved render bridge without adding a Windows skip or making directory synchronization a V1 read requirement.
 
 ## Qualification record requirements
 
