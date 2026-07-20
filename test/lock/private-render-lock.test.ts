@@ -5,6 +5,8 @@ import { compileCandidateProjectConfig } from "../../src/compiler/compile-candid
 import type { CandidateCompilation } from "../../src/compiler/private-model.js";
 import {
   createPrivateRenderLock,
+  parsePrivateRenderLock,
+  serializePrivateRenderLock,
   validatePrivateRenderLock,
   type PrivateRenderLock,
 } from "../../src/lock/private-render-lock.js";
@@ -161,6 +163,25 @@ test("keeps the lock stable across reordered intent and a no-op render", async (
     ["unchanged", "unchanged", "unchanged"],
   );
   assert.deepEqual(noOp.lock, first.lock);
+});
+
+test("round-trips only bounded canonical private lock bytes", async () => {
+  const { lock } = await applyFixture();
+  const content = serializePrivateRenderLock(lock);
+
+  assert.deepEqual(parsePrivateRenderLock(content), lock);
+  assert.throws(
+    () => parsePrivateRenderLock(` ${content}`),
+    /bytes are not canonical/u,
+  );
+  assert.throws(
+    () => parsePrivateRenderLock(content, { maxBytes: 1 }),
+    /exceeds the 1-byte limit/u,
+  );
+  assert.throws(
+    () => parsePrivateRenderLock(content, { maxBytes: 0 }),
+    /positive safe integer/u,
+  );
 });
 
 test("rejects corrupted, unsafe, unsorted, or extended lock data", async () => {

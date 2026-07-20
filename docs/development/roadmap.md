@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components do not yet form a user-operable product. The package remains private, has no executable `bin`, and has two private project-configuration paths that have not converged into one application pipeline. The completed closure checkpoint froze horizontal research and reconciled the current product state. The current objective is one experimental local CLI path before another provider integration or evidence boundary.
+These components do not yet form a user-operable product. The package remains private and has no executable `bin`. Revision-1 is now the active private forward path from bounded configuration bytes through policy compilation, native materialization, canonical lock observation, and exact repository planning; schema-version-0 remains compatibility and regression evidence. The current objective is to expose the local path through one experimental CLI before another provider integration or evidence boundary.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -75,6 +75,8 @@ explicit configuration bytes
 
 ### 1. Converge the active project model
 
+Status: **Complete as a private local planning bridge.**
+
 Recommendation:
 
 - use the revision-1 private domain project intent as the active forward model;
@@ -90,7 +92,10 @@ Progress:
 - optional execution-manifest export consumes that compilation and is mechanically forbidden as a project-layer dependency;
 - revision-1 configuration bytes now reach deterministic project-instructions materialization and the native Codex, Claude Code, and Cursor staging boundary;
 - schema-version-0 remains only a private compatibility and regression path;
-- the remaining work in this step is to feed the revision-1 render request into exact repository planning and user-level command services without caller-supplied private values.
+- `src/application/private-domain-project-plan.ts` now composes revision-1 bytes, native local capability observations, canonical lock bytes, repository observations, materialization, and exact snapshot creation through a read-only workspace;
+- identical configuration, lock, and repository bytes produce an identical plan;
+- the bridge requires only an explicit lock path and does not accept caller-supplied compiler output, materialization, manifest, lock object, render request, plan, or snapshot;
+- issue-to-reviewed-pull-request input fails with unavailable-capability diagnostics because live tracker, pull-request, CI, review-service, and merge adapters do not exist yet.
 
 Exit criteria:
 
@@ -102,6 +107,8 @@ Exit criteria:
 - incompatible legacy input fails or requires explicit missing choices without inference.
 
 ### 2. Add executable read-only `check` and `diff`
+
+Status: **Current.** The private planner can already feed the existing services; the missing boundary is a user-level executable, path handling, and output contract.
 
 Use Node.js `util.parseArgs` unless real help, completion, nesting, or output requirements justify a framework. Accept explicit configuration and lock paths before deciding public discovery precedence.
 

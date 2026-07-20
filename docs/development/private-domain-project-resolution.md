@@ -80,6 +80,14 @@ Provider products appear in the project resolution because they are material bin
 
 Provider replacement should normally change the intent and project-resolution digests while retaining the same workflow-compilation digest. A capability gap may still prevent workflow compilation; provider neutrality does not imply capability equivalence or silent degradation.
 
+## Private application planning bridge
+
+`src/application/private-domain-project-plan.ts` accepts bounded revision-1 document bytes, an explicit private lock path, and a read-only repository workspace. It selects only capability observations that the native local project-instructions path actually provides, compiles the project, materializes provider instructions, reads and validates canonical lock bytes, derives ownership, stages the native outputs, and retains the exact plan snapshot.
+
+The bridge does not accept caller-supplied compiler output, materialization, manifest, lock object, render request, plan, or snapshot. Planning performs no write or external operation. Identical configuration, lock, and repository bytes produce an identical result.
+
+The issue-to-reviewed-pull-request family remains valid resolver and compiler evidence, but the application bridge does not invent its external adapter availability. It fails with capability diagnostics until tracker, pull-request, CI, optional review-service, and merge capabilities have real acquisition and adapter evidence.
+
 ## Non-claims and open boundaries
 
 - The resolver accepts typed in-memory data. The separate private project-document boundary validates untrusted serialized content before calling it.
@@ -87,7 +95,7 @@ Provider replacement should normally change the intent and project-resolution di
 - Role bindings do not prove fresh reviewer context or distinct identity; execution evidence handles those observations separately.
 - External identifiers do not select or initialize adapters.
 - No network access, credential access, provider invocation, tracking, scheduling, waiting, retry, merge, or filesystem mutation occurs.
-- Custom workflows, provider versions, execution context selection, discovery, migration, persistence, and lock integration remain open.
+- Custom workflows, provider versions, execution context selection, discovery, migration, and public lock placement remain open.
 - Fast and Balanced preset expansion is private and executable. Strict remains intentionally unavailable until stronger evidence semantics exist.
 
 ## Change boundary

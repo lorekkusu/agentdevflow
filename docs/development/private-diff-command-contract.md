@@ -10,6 +10,8 @@ The service accepts the same caller-supplied private materialization, exact plan
 
 It does not discover, parse, compile, plan, render, or persist state. It calls the private check service first and produces no change entries when check is blocked.
 
+The separate private application planner may supply its exact local plan and materialization. Diff remains a read-only consumer and does not duplicate configuration, lock parsing, or staging behavior.
+
 ## Change entries
 
 Each deterministic change entry contains:

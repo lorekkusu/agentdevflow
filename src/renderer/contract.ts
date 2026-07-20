@@ -53,8 +53,11 @@ export interface StagingRenderer {
   stage(request: RenderRequest): Promise<StagedRender>;
 }
 
-export interface RenderWorkspace {
+export interface RenderReadWorkspace {
   read(path: string): Promise<string | null>;
+}
+
+export interface RenderWorkspace extends RenderReadWorkspace {
   writeAtomically(path: string, content: string): Promise<void>;
   removeAtomically(path: string): Promise<void>;
 }
@@ -102,7 +105,10 @@ export interface VerifyResult {
 }
 
 export interface RendererBackend {
-  plan(request: RenderRequest, workspace: RenderWorkspace): Promise<RenderPlan>;
+  plan(
+    request: RenderRequest,
+    workspace: RenderReadWorkspace,
+  ): Promise<RenderPlan>;
   render(plan: RenderPlan, workspace: RenderWorkspace): Promise<RenderResult>;
   verify(plan: RenderPlan, workspace: RenderWorkspace): Promise<VerifyResult>;
 }

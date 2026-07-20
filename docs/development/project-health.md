@@ -14,7 +14,7 @@ This is a product, architecture, maintainability, documentation, and delivery re
 
 Phase 0 established independent value for a provider-neutral policy compiler and a replaceable native project-instructions renderer. The working tree also contains private project-intent parsing, workflow resolution, typed execution evidence, deterministic transport, and one GitHub Check Runs mapping.
 
-The intended npm product is not yet usable through `npx agentdevflow`. The package remains private, has no `bin` entry, and has no executable application handler connecting repository configuration to the private command services.
+The intended npm product is not yet usable through `npx agentdevflow`. The package remains private and has no `bin` entry. A private application planner now connects local revision-1 configuration and canonical lock bytes to exact plans consumable by the command services, but no executable command handler or user-facing output contract exists.
 
 The smallest current outcome is therefore a collection of executable private fixtures and semantic services, not a user-operable CLI.
 
@@ -24,15 +24,15 @@ The assessed closure was published as nine dependency-ordered commits ending at 
 
 The first convergence slice after that checkpoint removes project resolution's dependency on execution-manifest export. The revision-1 project result now owns the authoritative private workflow compilation and can reach native Codex, Claude Code, and Cursor renderer staging directly. Execution manifests remain optional downstream exports for replay experiments. Schema-version-0 compilation remains compatibility and regression evidence rather than the active project path.
 
-This convergence slice does not yet create a user-operable command. Exact repository planning, lock inspection, and command-service integration remain the active milestone.
+The next convergence slice adds a read-only private application planner. Local revision-1 configuration bytes now combine with repository observations and canonical lock bytes to produce an exact plan and snapshot consumable by existing check, diff, and render services. The planner never requests mutation access. Issue-to-reviewed-pull-request planning remains blocked because the repository does not contain live tracker, pull-request, CI, review-service, or merge adapters.
 
-The convergence candidate passes the repository audit over 203 text files, strict type checking, the build, and 361 automated tests with zero failures, skips, or todos.
+The current convergence candidate passes the repository audit over 205 text files, strict type checking, the build, and 368 automated tests with zero failures, skips, or todos.
 
 ## Roadmap alignment
 
 - **Completed:** Phase 0 renderer and policy gates, the native initial-provider renderer, deterministic ownership and lock semantics, and staged forward-convergent apply have executable evidence.
-- **Partial:** private project intent, workflow selection, presets, command semantics, initialization, and execution evidence exist but do not form one executable application path.
-- **Blocked:** packaging and a user-operable CLI are blocked by missing command and repository-planning integration and a normal workspace import from frozen transaction code. The former project-resolution dependency on optional manifest export has been removed.
+- **Partial:** the local private application path reaches exact planning and existing command services, but no executable accepts user paths or emits user-level diagnostics.
+- **Blocked:** packaging and a user-operable CLI are blocked by the missing executable and output boundary and a normal workspace import from frozen transaction code. Project-resolution manifest coupling and exact-planning integration are no longer blockers.
 - **Prematurely advanced:** strict execution transport and one GitHub observation mapper answered bounded research questions before the local CLI dependency was complete. Both are now frozen.
 
 ## Measured observations
@@ -59,9 +59,9 @@ The older schema-version-0 candidate configuration feeds `CandidateCompilation`,
 
 At the assessment baseline, the newer model represented workflow family, hosted tracker intent, pull-request initial state, auxiliary review, and logical capability bindings that the older model could not express, but it did not feed renderer materialization. Project resolution also compiled and returned an execution manifest directly, coupling required project resolution to an optional export boundary.
 
-The first convergence slice resolves those two defects: revision-1 project resolution now returns the authoritative workflow compilation, direct renderer materialization preserves its domain intent, and execution-manifest creation is an explicit optional downstream operation. Command services still consume caller-supplied plans and have not yet been connected to this project result.
+The first convergence slice resolves those two defects: revision-1 project resolution now returns the authoritative workflow compilation, direct renderer materialization preserves its domain intent, and execution-manifest creation is an explicit optional downstream operation. The next slice adds a private read-only application planner that prepares exact values for the existing command services from configuration, lock, and repository bytes.
 
-Disposition: **Invest.** Continue the accepted revision-1 path into exact repository planning and command services. Retain the older model only as an explicit compatibility input or regression fixture, and fail rather than translating unsupported revision-1 intent back into it.
+Disposition: **Invest.** Continue the accepted revision-1 path through a user-level read-only command entry point. Retain the older model only as an explicit compatibility input or regression fixture, and fail rather than translating unsupported revision-1 intent back into it.
 
 ### High: a non-default transaction experiment is disproportionately large
 
@@ -77,7 +77,7 @@ Disposition: **Freeze.** Do not extend or expose the strong transaction subsyste
 
 Confidence: **High.** Categories: product and delivery. Evidence: `package.json`, `src/commands/`, and `src/interface/`.
 
-Private `check`, `diff`, `render`, `doctor`, and `init` semantics exist, but the package has no executable handler, discovery behavior, output contract, or end-to-end application service. Recent work advanced execution transport and GitHub evidence mapping instead of completing the earlier thin-CLI and initialization dependencies.
+Private `check`, `diff`, `render`, `doctor`, and `init` semantics exist, and the local application planner now reaches them from revision-1 bytes. The package still has no executable handler, configuration-file reading, user-level output contract, or path-facing end-to-end command.
 
 Disposition: **Invest in vertical integration; freeze horizontal expansion.** The next milestone must connect one configuration input to policy compilation, materialization, plan creation, read-only check and diff, explicit render, and clean recheck.
 
@@ -202,7 +202,7 @@ Until the next milestone is complete:
 
 ## Decision requests
 
-None for this closure. The active internal model, bridge or replacement mechanics, public filenames, public schema, lock discovery, CLI output, and package publication remain candidate decisions gated by the next vertical milestone and explicit approval.
+None for this closure. Public filenames, public schema, discovery precedence, CLI output, render approval UX, and package publication remain candidate decisions gated by the next vertical milestone and explicit approval.
 
 ## Limitations
 

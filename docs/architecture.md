@@ -44,6 +44,8 @@ The [private preset expansion](development/private-preset-expansion.md) overlays
 
 The [private project document boundary](development/private-project-document-contract.md) converts bounded JSONC bytes into that intent through size and depth preflight, complete syntax-tree validation, duplicate and unsafe-key rejection, a strict jitless runtime schema, and semantic project resolution. Syntax validity, schema validity, project consistency, policy safety, and external truth remain distinct checks.
 
+The private application planning bridge composes that document boundary with revision-1 materialization, canonical lock observation, the native staging backend, and exact render-plan retention. Planning depends on a read-only workspace interface and performs no mutation. It currently derives only the local workflow's native project-instructions observations; workflows requiring tracker, pull-request, CI, review-service, or merge adapters fail closed until real adapter evidence is available.
+
 ## Renderer boundary
 
 The renderer backend is replaceable behind a narrow contract that separates planning, rendering, and verification. The contract must make writes, conflicts, unsupported capabilities, and ownership decisions explicit.

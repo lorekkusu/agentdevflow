@@ -16,6 +16,8 @@ The caller supplies:
 
 The service does not discover, parse, compile, plan, repair, or persist these inputs. Keeping those responsibilities outside the service prevents early command work from freezing configuration and storage decisions.
 
+The separate private application planner now prepares these inputs from local revision-1 configuration, canonical lock, and repository bytes. This command service remains independently testable and does not acquire the planner's parsing or staging responsibilities.
+
 ## Outcomes
 
 The private result has three mutually exclusive outcomes:

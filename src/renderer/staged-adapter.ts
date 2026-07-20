@@ -5,6 +5,7 @@ import type {
   OwnershipClaim,
   PlannedFile,
   RenderPlan,
+  RenderReadWorkspace,
   RenderRequest,
   RendererBackend,
   RendererDiagnostic,
@@ -163,7 +164,7 @@ export class StagedRendererAdapter implements RendererBackend {
 
   async plan(
     request: RenderRequest,
-    workspace: RenderWorkspace,
+    workspace: RenderReadWorkspace,
   ): Promise<RenderPlan> {
     const staged = await this.backend.stage(request);
     const diagnostics: RendererDiagnostic[] = [...staged.diagnostics];

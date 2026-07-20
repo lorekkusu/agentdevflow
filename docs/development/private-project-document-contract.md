@@ -88,6 +88,10 @@ Diagnostics are deterministic for identical bytes and options. Their codes and w
 - The parser and editor perform no filesystem, network, process, credential, provider, tracker, or repository mutation.
 - Public file-size policy, schema URI, editor behavior, and migrations remain open.
 
+## Application planning consumer
+
+The private application planner consumes these bounded bytes without selecting a public filename. It uses only native local project-instructions capability observations, reads a caller-path canonical lock through a read-only repository interface, and produces an exact private plan snapshot. It does not accept precompiled private values from a user. Workflows requiring unavailable external adapters remain resolution failures rather than silently receiving fixture capabilities.
+
 ## Change boundary
 
 Do not import either dependency outside its checked boundary. Any dependency version change requires renewed advisory, integrity, signature, lifecycle-script, package-content, JSON Schema snapshot, focused test, and complete repository review.

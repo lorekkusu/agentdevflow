@@ -4,7 +4,7 @@ Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**Pass for bounded private project-intent resolution and renderer convergence.** One deterministic resolver selects either the issue-to-reviewed-pull-request family or the local reviewed-change family, produces the authoritative provider-neutral workflow compilation, resolves project bindings, and feeds renderer materialization without an execution manifest. Manifest export remains an explicit optional consumer of that compilation.
+**Pass for bounded private project-intent resolution, renderer convergence, and local exact planning.** One deterministic resolver selects either workflow family and produces the authoritative provider-neutral compilation. The local application path now combines revision-1 bytes, native project-instructions capabilities, canonical lock bytes, and repository observations into an exact plan without an execution manifest or caller-supplied private intermediate values.
 
 This result does not accept a public configuration API, filename, serialized syntax, adapter selection protocol, tracker runtime, trusted identity, scheduler, or external mutation. Follow-on parser and preset experiments remain private and do not change that boundary.
 
@@ -14,6 +14,7 @@ Implementation:
 
 - `src/project/private-domain-project-resolution.ts`;
 - `src/project/private-domain-preset.ts`;
+- `src/application/private-domain-project-plan.ts`;
 - `src/renderer/materialize-domain-project.ts`;
 - `src/renderer/from-compilation.ts`;
 - `src/execution/private-execution-contract.ts`;
@@ -24,6 +25,7 @@ Fixtures and tests:
 
 - `test/fixtures/project/run.ts`;
 - `test/project/private-domain-project-resolution.test.ts`;
+- `test/application/private-domain-project-plan.test.ts`;
 - `test/renderer/materialize-domain-project.test.ts`.
 
 Run:
@@ -32,6 +34,7 @@ Run:
 npm run build
 node --test dist/test/project/private-domain-project-resolution.test.js
 node --test dist/test/renderer/materialize-domain-project.test.js
+node --test dist/test/application/private-domain-project-plan.test.js
 npm run phase1:project-resolution
 npm run check
 ```
@@ -56,6 +59,11 @@ Preset-expanded workflow compilations bind the effective preset definition ident
 | Reordered providers, logical bindings, and capability observations | Produced identical normalized intent, workflow compilation, project resolution, and renderer materialization |
 | Reviewer provider binding changed without changing workflow behavior | Project-resolution digest changed; workflow-compilation digest remained identical |
 | Revision-1 document through renderer staging | Produced deterministic Codex, Claude Code, and Cursor project-instructions requests without a manifest |
+| Local revision-1 bytes, absent lock, and empty repository | Produced an identical safe three-file create plan on repeated read-only preparation |
+| Local exact plan through existing command services | Check and diff reported changes, render converged, and repeated planning, check, and diff reported clean |
+| Foreign `AGENTS.md` | Retained exact foreign bytes and produced a blocked ownership conflict |
+| Canonical lock at the caller path | Parsed internally and produced an exact no-op plan without a caller-supplied lock object |
+| Issue-to-reviewed-pull-request application planning | Failed with unavailable-capability diagnostics rather than treating fixture observations as installed adapters |
 | Responsibility references unknown provider | Rejected |
 | Duplicate provider or logical binding | Rejected |
 | Local tracker used with issue workflow | Rejected |
@@ -67,7 +75,7 @@ Preset-expanded workflow compilations bind the effective preset definition ident
 | Strict preset | Rejected with `PRESET_UNAVAILABLE` before workflow compilation |
 | Legacy local-only configuration asked to select an issue workflow | Rejected instead of inventing hosted tracker intent |
 
-The focused project-resolution suite passed 13 tests and the revision-1 renderer-convergence suite passed four tests, all with zero failures or skips. At this evidence snapshot, the complete repository check passed the publication audit over 203 text files, TypeScript type checking, the build, and 361 tests with zero failures, skips, or todos.
+The focused project-resolution suite passed 13 tests, the revision-1 renderer-convergence suite passed four tests, and the local exact-planning suite passed six tests, all with zero failures or skips. At this evidence snapshot, the complete repository check passed the publication audit over 205 text files, TypeScript type checking, the build, and 368 tests with zero failures, skips, or todos.
 
 ## Criteria
 
@@ -79,10 +87,12 @@ The focused project-resolution suite passed 13 tests and the revision-1 renderer
 | Provider-neutral compiler | Pass | Provider and tracker products remain outside workflow topology and policy. |
 | Optional manifest export | Pass | Project resolution has no execution dependency; export consumes the accepted workflow compilation. |
 | Renderer convergence | Pass as a private bridge | Configuration bytes reach exact project-instructions materialization and the native staging boundary without caller-supplied compiler or manifest values. |
+| Exact local planning | Pass as a private bridge | Configuration, canonical lock, and repository bytes determine one exact snapshot through a read-only workspace. |
+| Caller private-value removal | Pass for planning | The caller supplies bytes, lock path, and workspace rather than compiler output, materialization, manifest, lock object, request, plan, or snapshot. |
 | Exact capability routing | Pass for bounded private bindings | Every declared logical binding has one validated target and one compiler capability observation. |
 | Material binding identity | Pass | Intent and project-resolution digests change when a provider binding changes. |
 | No-pull-request coverage | Pass | Local workflow requires no issue, pull-request, CI, or merge placeholders. |
-| Untrusted input validation | Excluded | The current input is a typed in-memory specimen. |
+| Untrusted input validation | Pass for the private bridge | Bounded JSONC parsing, strict runtime schema validation, semantic resolution, and canonical bounded lock parsing precede planning. |
 | Runtime execution | Excluded | Resolution performs no adapter invocation or external mutation. |
 | Public compatibility | Fail by design | Revisions, types, diagnostics, syntax, filenames, and migrations are private candidates. |
 
@@ -92,13 +102,13 @@ The focused project-resolution suite passed 13 tests and the revision-1 renderer
 - Provider instances do not yet include versions, credentials, principals, or execution-context selection.
 - The same provider instance may fill multiple responsibilities; reviewer independence is validated from execution observations rather than inferred from product names.
 - External target identifiers are opaque and are not checked against an adapter registry.
-- Capability observations are supplied separately and are not authenticated.
+- Standalone resolver fixtures accept separate unauthenticated capability observations. The application planner derives only local native project-instructions observations and rejects workflows needing unavailable external adapters.
 - Fast and Balanced are private executable profiles. Strict remains unavailable, and Custom remains deferred.
 - The older Fast and Balanced candidate specimens converge only through an explicit private bridge; this is not a public migration contract.
 - Reviewer-isolation payloads are structurally validated and checked for consistency with active change-producer and review envelopes, but the supplied identities and fresh-context observations are not authenticated.
 
 ## Recommendation
 
-Retain the revision-1 resolution and workflow compilation as the active private forward model. Preserve both workflow families as mandatory regression fixtures. Keep execution manifest export optional and downstream, and use the direct renderer materialization rather than translating revision-1 intent back into schema-version-0.
+Retain revision-1 resolution, compilation, and local exact planning as the active private forward model. Preserve both workflow families as regression fixtures, but do not promote fixture capability observations into application availability. Keep execution manifest export optional and downstream.
 
-The follow-on [private project document experiment](../development/private-project-document-contract.md) integrates bounded JSONC parsing and runtime schema validation without selecting a public filename. [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md) accepts the exact private dependency boundary. [Private preset expansion](private-preset-expansion.md) reconciles Fast and Balanced and rejects Strict honestly, the [private execution contract](private-execution-contract.md) validates closed typed evidence payloads, and [private execution transport](private-execution-transport.md) preserves them across strict canonical bytes. The current [roadmap](../development/roadmap.md) prioritizes connecting this intent to renderer planning and executable local commands before further acquisition, persistence, or versioning work.
+The [private project document experiment](../development/private-project-document-contract.md) supplies bounded JSONC and runtime schema validation without selecting a public filename. [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md) accepts the dependency boundary. The current [roadmap](../development/roadmap.md) now prioritizes a user-level read-only `check` and `diff` entry point over further acquisition, persistence, or versioning work.

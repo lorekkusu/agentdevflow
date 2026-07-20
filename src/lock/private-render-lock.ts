@@ -14,6 +14,7 @@ import {
 import { validateRenderPlanIntegrity } from "../renderer/staged-adapter.js";
 
 export const privateRenderLockRevision = 1;
+export const privateRenderLockDefaultMaxBytes = 1_048_576;
 
 export interface PrivateRenderLockSource {
   readonly revision: number;
@@ -53,6 +54,10 @@ export interface CreatePrivateRenderLockOptions {
 export interface DerivePrivateRenderLockIntentOptions {
   readonly materialization: PrivateRendererSourceMaterialization;
   readonly plan: RenderPlan;
+}
+
+export interface ParsePrivateRenderLockOptions {
+  readonly maxBytes?: number;
 }
 
 const sha256Pattern = /^[a-f0-9]{64}$/u;
@@ -386,4 +391,31 @@ export function serializePrivateRenderLock(lock: PrivateRenderLock): string {
     })),
     digest: lock.digest,
   })}\n`;
+}
+
+export function parsePrivateRenderLock(
+  content: string,
+  options: ParsePrivateRenderLockOptions = {},
+): PrivateRenderLock {
+  const maxBytes = options.maxBytes ?? privateRenderLockDefaultMaxBytes;
+  if (!Number.isSafeInteger(maxBytes) || maxBytes < 1) {
+    throw new Error("Private render lock maxBytes must be a positive safe integer.");
+  }
+  if (Buffer.byteLength(content, "utf8") > maxBytes) {
+    throw new Error(`Private render lock exceeds the ${maxBytes}-byte limit.`);
+  }
+
+  let value: unknown;
+  try {
+    value = JSON.parse(content) as unknown;
+  } catch (error) {
+    throw new Error(
+      `Private render lock is not valid JSON: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  validatePrivateRenderLock(value);
+  if (serializePrivateRenderLock(value) !== content) {
+    throw new Error("Private render lock bytes are not canonical.");
+  }
+  return value;
 }

@@ -1,12 +1,12 @@
 # Private render lock evidence
 
-Snapshot date: 2026-07-17.
+Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**Pass for the first roadmap step 4 slice.** An applied and verified render can now produce a deterministic private lock that binds compiler intent, source materialization, renderer identity, generated-file ownership, content digests, and source references.
+**Pass for deterministic private lock creation and bounded canonical parsing.** An applied and verified render produces a lock that binds compiler intent, source materialization, renderer identity, generated-file ownership, content digests, and source references. The private application planner can read those exact bytes without requiring a caller-supplied lock object.
 
-This is an in-memory implementation contract. It does not select a public lock filename, serialized format, discovery rule, migration contract, transaction directory, or CLI behavior.
+This remains a private implementation contract. It does not select a public lock filename, serialized compatibility promise, discovery rule, migration contract, transaction directory, or CLI behavior.
 
 ## Reproduction
 
@@ -63,7 +63,7 @@ Lock creation requires all of the following:
 7. every retained output has exact renderer ownership, content digest, and source references;
 8. the result contains no unexpected ownership claims.
 
-The authoritative lock is created only after apply and verification. The transaction protocol may deterministically derive the expected target lock bytes before apply, but that value is a non-authoritative intent and does not claim successful materialization. Persisting and committing a future serialized lock still requires the recoverable filesystem executor.
+The authoritative lock is created only after apply and verification. The private render command derives expected target bytes before mutation, applies outputs through the accepted forward-convergent path, verifies them, and publishes the canonical lock last. A derived target remains non-authoritative until those checks complete.
 
 ## Runtime validation
 
@@ -82,13 +82,15 @@ The validator rejects:
 
 Nested object key order does not affect digest validation. Array order remains meaningful and is required to be canonical.
 
+The byte parser additionally enforces a private 1,048,576-byte default limit, strict JSON syntax, the complete runtime validator, and exact canonical serialization including the terminal newline. Alternate whitespace and key ordering are rejected even if they decode to the same object.
+
 ## Ownership correction
 
 The staged adapter now emits a deterministic delete action for an obsolete owned path even when the file is already absent. Applying that plan clears the stale ownership claim, so it cannot leak into the next private lock.
 
 ## Limitations
 
-- The private executor reads and writes canonical lock bytes at a caller-supplied path.
+- The private planner reads canonical lock bytes from a caller-supplied path through a read-only workspace; the private executor writes the same canonical form.
 - The runtime validator is private and is not a public schema or compatibility promise.
 - There is no public filename or discovery algorithm.
 - There is no migration support between private revisions.
@@ -96,6 +98,6 @@ The staged adapter now emits a deterministic delete action for an obsolete owned
 - The private executor coordinates outputs and lock state under cooperative fault injection and Darwin subprocess termination, but power-loss and cross-platform durability remain unverified.
 - The current private lock expects one renderer ownership domain and rejects unrelated ownership claims.
 
-## Next experiment
+## Current use
 
-Validate the [temporary-file ownership](private-temporary-file-ownership.md), [transaction cleanup](private-transaction-cleanup.md), and [parent lifecycle](private-transaction-parent-lifecycle.md) protocols on the supported release platforms before selecting a public lock path or format.
+The local private application planner reads this canonical form when producing an exact plan. Public path discovery, format compatibility, and migration remain deferred. The stronger transaction subsystem is frozen and is not the next lock direction.
