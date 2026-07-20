@@ -214,6 +214,47 @@ function inspectWorkflowSecurity(relativePath, content) {
   return diagnostics;
 }
 
+function inspectDependencyBoundaries(relativePath, content) {
+  if (!relativePath.endsWith(".ts")) {
+    return [];
+  }
+  const diagnostics = [];
+  const rules = [
+    {
+      packageName: "jsonc-parser",
+      allowedPath: "src/interface/private-domain-project-document.ts",
+    },
+    {
+      packageName: "zod",
+      allowedPath: "src/interface/private-zod.ts",
+    },
+  ];
+  const imports = [
+    ...content.matchAll(
+      /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["'](jsonc-parser(?:\/[^"']*)?|zod(?:\/[^"']*)?)["']/gu,
+    ),
+  ];
+  for (const match of imports) {
+    const specifier = match[1];
+    if (specifier === undefined || match.index === undefined) {
+      continue;
+    }
+    const rule = rules.find(
+      ({ packageName }) =>
+        specifier === packageName || specifier.startsWith(`${packageName}/`),
+    );
+    if (rule !== undefined && relativePath !== rule.allowedPath) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "DEPENDENCY_BOUNDARY_BYPASSED",
+        message: `Import ${rule.packageName} only through ${rule.allowedPath}.`,
+      });
+    }
+  }
+  return diagnostics;
+}
+
 function markdownLinkTargets(content) {
   const targets = [];
   const pattern = /\[[^\]]*\]\((<[^>]+>|[^)\s]+)(?:\s+"[^"]*")?\)/gu;
@@ -284,6 +325,7 @@ for (const absolutePath of files) {
     continue;
   }
   diagnostics.push(...inspectDisclosure(relativePath, content));
+  diagnostics.push(...inspectDependencyBoundaries(relativePath, content));
   diagnostics.push(...inspectWorkflowSecurity(relativePath, content));
   if (extname(absolutePath) === ".md") {
     diagnostics.push(

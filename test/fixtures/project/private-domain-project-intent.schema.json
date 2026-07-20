@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capabilityBindings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "binding": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "type": "string"
+          },
+          "target": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "responsibility",
+                    "type": "string"
+                  },
+                  "responsibility": {
+                    "enum": [
+                      "developer",
+                      "reviewer",
+                      "steward"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "responsibility"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "tracker",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "maxLength": 128,
+                    "minLength": 1,
+                    "pattern": "^[a-z][a-z0-9.-]*$",
+                    "type": "string"
+                  },
+                  "kind": {
+                    "const": "external",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "id"
+                ],
+                "type": "object"
+              }
+            ]
+          }
+        },
+        "required": [
+          "binding",
+          "target"
+        ],
+        "type": "object"
+      },
+      "maxItems": 64,
+      "type": "array"
+    },
+    "preset": {
+      "enum": [
+        "balanced",
+        "fast",
+        "strict"
+      ],
+      "type": "string"
+    },
+    "providers": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "type": "string"
+          },
+          "product": {
+            "enum": [
+              "claude-code",
+              "codex",
+              "cursor"
+            ],
+            "type": "string"
+          },
+          "surface": {
+            "enum": [
+              "cli",
+              "ide"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "product",
+          "surface"
+        ],
+        "type": "object"
+      },
+      "maxItems": 32,
+      "minItems": 1,
+      "type": "array"
+    },
+    "revision": {
+      "const": 1,
+      "type": "number"
+    },
+    "roles": {
+      "additionalProperties": false,
+      "properties": {
+        "developer": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "type": "string"
+        },
+        "reviewer": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "type": "string"
+        },
+        "steward": {
+          "maxLength": 64,
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "developer",
+        "reviewer",
+        "steward"
+      ],
+      "type": "object"
+    },
+    "tracker": {
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "enum": [
+            "github-issues",
+            "linear",
+            "local",
+            "none"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "type": "object"
+    },
+    "workflow": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "auxiliaryReview": {
+              "enum": [
+                "disabled",
+                "enabled"
+              ],
+              "type": "string"
+            },
+            "family": {
+              "const": "issue-to-reviewed-pull-request",
+              "type": "string"
+            },
+            "initialState": {
+              "enum": [
+                "draft",
+                "ready"
+              ],
+              "type": "string"
+            },
+            "mergeMethod": {
+              "const": "squash",
+              "type": "string"
+            }
+          },
+          "required": [
+            "family",
+            "initialState",
+            "auxiliaryReview",
+            "mergeMethod"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "family": {
+              "const": "local-reviewed-change",
+              "type": "string"
+            }
+          },
+          "required": [
+            "family"
+          ],
+          "type": "object"
+        }
+      ]
+    }
+  },
+  "required": [
+    "revision",
+    "preset",
+    "providers",
+    "roles",
+    "tracker",
+    "workflow",
+    "capabilityBindings"
+  ],
+  "type": "object"
+}
