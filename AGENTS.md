@@ -28,6 +28,7 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/development/private-check-command-contract.md` defines the candidate read-only check outcomes and diagnostics.
 - `docs/development/private-diff-command-contract.md` defines exact-byte read-only diff behavior and disclosure boundaries.
 - `docs/development/private-doctor-command-contract.md` defines provider-neutral observation validation and compiler evidence.
+- `docs/development/private-approved-init-render-contract.md` defines exact approval, reread, plan preparation, and routing into the existing render command.
 - `docs/development/interruption-contract.md` defines the stronger experimental write-ahead behavior.
 - `docs/development/public-information-policy.md` defines what public technical context to retain and what private or transient material to exclude.
 - `docs/decisions/` contains accepted or proposed material architecture decisions and the reusable ADR template.
@@ -72,6 +73,7 @@ npm run test:v1-recovery
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Keep private initialization read-only and non-interactive. Exact adoption, import assessment, and abort decisions must bind observed bytes to the candidate configuration; never infer ownership from Git cleanliness.
 - Keep project-instructions import limited to deterministic logical equivalence with exact observed, configuration, and target digests. Do not invent merges or infer provider semantics from natural language.
+- Route initialization mutation through the private approved-init render service. Retain its exact prepared snapshot before mutation; do not bypass it with a generic overwrite authorization.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.
 - Make diagnostics and counterexample traces deterministic.

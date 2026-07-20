@@ -2,6 +2,7 @@ import { posix } from "node:path";
 
 import type { CandidateCompilation } from "../compiler/private-model.js";
 import type {
+  InitializationImportAuthorization,
   OwnershipClaim,
   RenderRequest,
   RendererCapability,
@@ -20,6 +21,7 @@ export interface CompilationRenderRequestOptions {
   readonly sourceFiles: readonly string[];
   readonly ownership?: Readonly<Record<string, OwnershipClaim>>;
   readonly adoptPaths?: readonly string[];
+  readonly initializationImports?: readonly InitializationImportAuthorization[];
 }
 
 export type MaterializedCompilationRenderRequestOptions = Omit<
@@ -59,6 +61,41 @@ function normalizeRelativePaths(
     normalized.push(path);
   }
   return normalized.sort(compareText);
+}
+
+function normalizeInitializationImports(
+  values: readonly InitializationImportAuthorization[],
+): InitializationImportAuthorization[] {
+  const paths = normalizeRelativePaths(
+    values.map((value) => value.path),
+    "Initialization import",
+    false,
+  );
+  const byPath = new Map(values.map((value) => [value.path, value]));
+  return paths.map((path) => {
+    const value = byPath.get(path);
+    if (!value) {
+      throw new Error(`Initialization import path is not canonical: ${path}`);
+    }
+    if (
+      !sha256Pattern.test(value.observedDigest) ||
+      !sha256Pattern.test(value.targetDigest)
+    ) {
+      throw new Error(
+        `Initialization import digests must be lowercase SHA-256 digests: ${path}`,
+      );
+    }
+    if (value.observedDigest === value.targetDigest) {
+      throw new Error(
+        `Initialization import must bind different observed and target digests: ${path}`,
+      );
+    }
+    return {
+      path,
+      observedDigest: value.observedDigest,
+      targetDigest: value.targetDigest,
+    };
+  });
 }
 
 function rendererCapability(
@@ -122,6 +159,17 @@ export function renderRequestFromCompilation(
     "Adoption",
     false,
   );
+  const initializationImports = normalizeInitializationImports(
+    options.initializationImports ?? [],
+  );
+  const adopted = new Set(adoptPaths);
+  for (const authorization of initializationImports) {
+    if (adopted.has(authorization.path)) {
+      throw new Error(
+        `Initialization path cannot be both adopted and imported: ${authorization.path}`,
+      );
+    }
+  }
   const providers = [
     ...new Set(
       compilation.workflow.providers.map(
@@ -154,6 +202,7 @@ export function renderRequestFromCompilation(
       ),
     ),
     ...(options.adoptPaths ? { adoptPaths } : {}),
+    ...(options.initializationImports ? { initializationImports } : {}),
   };
 }
 

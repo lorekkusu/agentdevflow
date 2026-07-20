@@ -2,7 +2,7 @@
 
 ## Status
 
-Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, and narrow project-instructions import analysis are complete. The next objective is an explicitly approved init-to-render bridge that converts exact adoption or lossless import proposals into the normal digest-bound render plan without adding a general overwrite escape hatch.
+Phase 0, candidate configuration specimens, the private compiler slice, renderer integration hardening, the private lock and workspace slice, the private command semantic services, narrow project-instructions import analysis, and the private approved init-to-render bridge are complete. The next objective is hosted OS and Node.js matrix qualification of the initialization path before selecting a public configuration and CLI representation.
 
 This roadmap records outcomes, dependencies, scope, and exit criteria. It is not a release promise, staffing plan, or transcript of planning discussions.
 
@@ -329,7 +329,7 @@ Exit criteria:
 
 ### 6. Adoption and initialization
 
-Status: **In progress.** The private proposal core, fixed initial path discovery, and narrow logical-equivalence analyzer for all three initial project-instructions formats are available. Managed-region adoption, approved apply integration, broader import representation, and reproducible file or flag representations for future interactive choices remain open.
+Status: **In progress.** The private proposal core, fixed initial path discovery, narrow logical-equivalence analyzer, and exact approved path into the existing renderer command are available. Managed-region adoption, broader import representation, hosted qualification, and reproducible file or flag representations for future interactive choices remain open.
 
 Scope:
 
@@ -348,6 +348,20 @@ Completed in the nineteenth slice:
 - classify content differences, unknown Cursor frontmatter, and malformed generated notices as unsupported;
 - feed a real analyzer result through the private init proposal service;
 - defer merging, semantic inference, arbitrary YAML, managed-region ownership, apply authorization, and public import behavior.
+
+Completed in the twentieth slice:
+
+- bind the complete eligible init proposal into a deterministic proposal digest;
+- record a revisioned caller approval assertion over every disposition and exact observed and target digest;
+- reject blocked, diagnostic-bearing, lossy, extended, stale, or inconsistent proposals before mutation;
+- reread every provider path and independently re-run the lossless project-instructions analyzer for imports;
+- add exact observed-to-target initialization import authorization to the private renderer request;
+- require the staged adapter to fail closed for stale, missing, duplicated, or conflicting initialization authorizations;
+- require the resulting renderer plan to reproduce the complete approved proposal;
+- retain a prepared package binding proposal, approval, and exact render-plan snapshot digests;
+- execute and resume only through the existing private render command with no base ownership;
+- include the bridge in the selected V1 qualification suite with zero skipped tests;
+- defer public approval storage, identity, CLI prompts, configuration files, and lock discovery.
 
 Exit criteria:
 

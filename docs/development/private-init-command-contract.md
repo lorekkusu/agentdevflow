@@ -79,4 +79,4 @@ The private service does not define:
 - mutation, lock creation, adoption authorization, or import application;
 - Git status, reset, clean, stash, branch, commit, or push behavior.
 
-Any future handler must preserve this read-only proposal boundary and route mutation through the existing exact-plan render path.
+The [private approved-init render bridge](private-approved-init-render-contract.md) preserves this read-only proposal boundary, revalidates lossless import evidence, and routes approved mutation through the existing exact-plan render command.

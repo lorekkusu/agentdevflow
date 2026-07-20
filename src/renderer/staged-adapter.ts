@@ -172,6 +172,29 @@ export class StagedRendererAdapter implements RendererBackend {
     const adoptPaths = new Set(
       (request.adoptPaths ?? []).map(normalizeRelativePath),
     );
+    const initializationImports = new Map(
+      (request.initializationImports ?? []).map((authorization) => [
+        normalizeRelativePath(authorization.path),
+        authorization,
+      ]),
+    );
+    if (
+      initializationImports.size !== (request.initializationImports ?? []).length
+    ) {
+      throw new Error("Initialization import paths are duplicated.");
+    }
+    for (const [path, authorization] of initializationImports) {
+      if (
+        !/^[a-f0-9]{64}$/u.test(authorization.observedDigest) ||
+        !/^[a-f0-9]{64}$/u.test(authorization.targetDigest) ||
+        authorization.observedDigest === authorization.targetDigest
+      ) {
+        throw new Error(
+          `Initialization import authorization is invalid: ${path}`,
+        );
+      }
+    }
+    const usedInitializationImports = new Set<string>();
 
     for (const stagedFile of staged.files) {
       const path = normalizeRelativePath(stagedFile.path);
@@ -209,10 +232,20 @@ export class StagedRendererAdapter implements RendererBackend {
       if (claim && claim.owner !== this.backend.ownershipKey) {
         action = "conflict";
       } else if (existing !== null && !claim) {
-        action =
-          adoptPaths.has(path) && digest(existing) === expectedDigest
-            ? "unchanged"
-            : "conflict";
+        const authorization = initializationImports.get(path);
+        if (adoptPaths.has(path) && observedDigest === expectedDigest) {
+          action = "unchanged";
+        } else if (
+          authorization &&
+          authorization.observedDigest === observedDigest &&
+          authorization.targetDigest === expectedDigest &&
+          authorization.observedDigest !== authorization.targetDigest
+        ) {
+          action = "update";
+          usedInitializationImports.add(path);
+        } else {
+          action = "conflict";
+        }
       } else if (existing !== null && claim) {
         if (observedDigest !== claim.digest) {
           action = "conflict";
@@ -240,6 +273,24 @@ export class StagedRendererAdapter implements RendererBackend {
         expectedDigest,
         sourceRefs,
       });
+    }
+
+    for (const path of initializationImports.keys()) {
+      if (!stagedByPath.has(path)) {
+        diagnostics.push({
+          code: "INITIALIZATION_IMPORT_TARGET_MISSING",
+          severity: "error",
+          message: `Initialization import authorization has no renderer output at ${path}.`,
+          path,
+        });
+      } else if (!usedInitializationImports.has(path)) {
+        diagnostics.push({
+          code: "INITIALIZATION_IMPORT_STALE",
+          severity: "error",
+          message: `Initialization import authorization does not match current bytes at ${path}.`,
+          path,
+        });
+      }
     }
 
     for (const [rawPath, claim] of Object.entries(request.ownership).sort(

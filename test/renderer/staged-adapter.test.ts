@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
 import type {
@@ -49,6 +50,7 @@ function backend(result: StagedRender): StagingRenderer {
 function request(
   ownership: Readonly<Record<string, OwnershipClaim>> = {},
   adoptPaths: readonly string[] = [],
+  initializationImports: RenderRequest["initializationImports"] = [],
 ): RenderRequest {
   return {
     inputDigest: "fixture-input",
@@ -58,7 +60,12 @@ function request(
     sourceFiles: ["rules/overview.md"],
     ownership,
     adoptPaths,
+    initializationImports,
   };
+}
+
+function digest(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
 }
 
 test("plans deterministic creates and renders owned files", async () => {
@@ -118,6 +125,41 @@ test("rejects a hand-written provider file unless adoption is explicit and exact
   );
   assert.equal(adoption.safeToApply, true);
   assert.equal(adoption.files[0]?.action, "unchanged");
+});
+
+test("authorizes initialization import only for exact observed and target digests", async () => {
+  const workspace = new MemoryWorkspace({ "CLAUDE.md": "existing\n" });
+  const adapter = new StagedRendererAdapter(
+    backend({
+      files: [{ path: "CLAUDE.md", content: "generated\n" }],
+      diagnostics: [],
+    }),
+  );
+  const authorization = {
+    path: "CLAUDE.md",
+    observedDigest: digest("existing\n"),
+    targetDigest: digest("generated\n"),
+  };
+  const exact = await adapter.plan(request({}, [], [authorization]), workspace);
+  assert.equal(exact.safeToApply, true);
+  assert.equal(exact.files[0]?.action, "update");
+
+  const stale = await adapter.plan(
+    request({}, [], [
+      { ...authorization, observedDigest: digest("different\n") },
+    ]),
+    workspace,
+  );
+  assert.equal(stale.safeToApply, false);
+  assert.equal(stale.files[0]?.action, "conflict");
+  assert.deepEqual(
+    stale.diagnostics.map((diagnostic) => diagnostic.code),
+    [
+      "INITIALIZATION_IMPORT_STALE",
+      "OWNERSHIP_CONFLICT",
+      "TRACEABILITY_UNAVAILABLE",
+    ],
+  );
 });
 
 test("rejects drift when an owned generated file was modified", async () => {
