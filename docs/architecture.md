@@ -24,6 +24,26 @@ ProjectConfig
 
 Policy validation must not depend on a renderer, provider SDK, tracker, or runtime scheduler.
 
+## Workflow and execution boundary
+
+The compiler models responsibilities, finite workflow topology, typed evidence, closed safety policies, capability requirements, provider bindings, and enforcement strength. It may export deterministic procedures or an execution manifest. External agents, CI systems, trackers, and hosting platforms perform observations and mutations and return evidence for revalidation.
+
+Provider products and tracker products are bindings, not workflow primitives. Replacing a Steward, Developer, Reviewer, tracker, or auxiliary review service should not normally change workflow topology. Provider-specific capability gaps remain visible diagnostics.
+
+Pull-request hosting state is separate from policy state. A workflow may create a draft pull request or a pull request that is ready for review immediately, but neither state authorizes merge. Merge authorization binds an exact revision to the current required evidence. Revision-changing repair or autofix work invalidates revision-bound CI, review, and authorization artifacts.
+
+The first realistic domain-validation target is the [issue-to-reviewed-pull-request workflow candidate](development/issue-to-reviewed-pull-request.md). It must remain a private definition until multiple workflows demonstrate a stable public representation.
+
+Domain-specific artifact and capability types belong in built-in workflow definitions, not the compiler core. The [private domain workflow evidence](evidence/private-domain-workflows.md) compiles the issue-to-pull-request family and a local no-pull-request workflow through one generic seam. The local workflow remains a regression guard: it must not require empty pull-request fields, fictitious tracker evidence, or domain-specific compiler branches.
+
+The [private execution contract](development/private-execution-contract.md) exports deterministic manifests and verifies externally supplied evidence traces for both workflow families. The [private execution transport](development/private-execution-transport.md) rejects ambiguous, malformed, or unbounded caller-supplied bytes before those values reach replay. The [private GitHub Check Runs adapter](development/private-github-check-runs-evidence.md) demonstrates one source-specific mapping into provider-neutral `CiResult` evidence while keeping network access, credentials, polling, and external mutation outside the core. These are verification boundaries, not executors: capability-to-step routing, artifact invalidation, and policy checks remain data, while scheduling, waiting, credentials, retries, and external mutation remain outside the core.
+
+The [private domain project resolution](development/private-domain-project-resolution.md) selects a built-in workflow family and binds responsibilities, tracker choice, and logical capability targets outside that manifest. Provider replacement changes project resolution without changing provider-neutral topology unless the selected capability set or bounded workflow choice also changes. Intent, manifest, and project-resolution digests remain separate so configuration changes cannot be mistaken for workflow changes.
+
+The [private preset expansion](development/private-preset-expansion.md) overlays a minimum policy profile on an explicitly selected workflow family. It never selects Draft or Ready PR state, auxiliary review, a tracker, provider products, or capability targets. Fast and Balanced compile through the same generic seam; Strict fails closed until stronger evidence semantics exist. The older schema-version-0 candidate converges only with caller-supplied choices that it could not represent.
+
+The [private project document boundary](development/private-project-document-contract.md) converts bounded JSONC bytes into that intent through size and depth preflight, complete syntax-tree validation, duplicate and unsafe-key rejection, a strict jitless runtime schema, and semantic project resolution. Syntax validity, schema validity, project consistency, policy safety, and external truth remain distinct checks.
+
 ## Renderer boundary
 
 The renderer backend is replaceable behind a narrow contract that separates planning, rendering, and verification. The contract must make writes, conflicts, unsupported capabilities, and ownership decisions explicit.
@@ -61,7 +81,9 @@ Artifact validity has three distinct levels:
 2. **Consistency**: its revision, digests, and recorded outputs match observable repository state.
 3. **Semantic**: the evidence and judgment are truthful and sufficient.
 
-The initial product may claim structural validity and parts of consistency. It must not claim semantic truth or authenticated producer identity without a controlled producer or attestation mechanism.
+The private execution boundary now validates closed CI, review, reviewer-isolation, and merge-authorization payload packages, exact subject agreement, envelope producer agreement, reviewer separation from active change-producer evidence, and exact canonical byte transport. `ci-result@2` also binds the complete normalized source observation so a passing summary cannot be detached from the captured provider state. This advances structural validity and internal consistency. It must not claim response origin, compiler provenance, semantic truth, or authenticated producer identity without a controlled acquisition or attestation mechanism.
+
+Source adapters are pure translators after an explicit acquisition trust boundary. The first GitHub adapter requires a complete exact-SHA Check Runs snapshot and pinned App identities, but its response-origin field remains an external assertion. This adapter is frozen until a real consumer exists after the local vertical CLI milestone. Any later live probe requires a separately accepted narrow permission and acquisition contract and must not move tokens or provider clients into the compiler core.
 
 Repository files are the candidate canonical V1 artifact transport so local and tracker-free workflows can use the same checks. The exact path remains unselected. CI and pull-request views are derived representations.
 
@@ -81,7 +103,7 @@ User-facing strength labels are derived. Materialization may degrade only toward
 
 - Generated paths have one owner.
 - Existing files follow explicit adopt, import, or abort behavior.
-- Planned writes are deterministic, atomic, hash-bound, and conflict-aware.
+- Planned writes are deterministic, hash-bound, conflict-aware, and published with atomic single-file replacement. The V1 path does not claim cross-file atomic visibility.
 - Community capabilities are opt-in and require immutable provenance and digests.
 - Hash mismatch fails closed.
 - Installation must disclose scripts, network and environment access, tools, write paths, and licensing.
@@ -96,26 +118,6 @@ Single-file writes synchronize content in a deterministic same-directory tempora
 
 ### Experimental write-ahead prototype
 
-Multi-file rendering must provide recoverability rather than claim cross-file atomicity. A private transaction binds every affected path to an observed before digest and intended after digest, plus base and target lock digests. The base lock is the rollback anchor until the target lock is present; the target lock is the roll-forward anchor after that point.
+The private write-ahead prototype demonstrates deterministic rollback or roll-forward using content-addressed recovery blobs, explicit writer evidence, a target-lock commit anchor, and resumable cleanup. It is stronger and substantially more complex than the accepted V1 path.
 
-A write-ahead journal records strict protocol progress, but recovery also inspects the observable lock and path digests. Any foreign lock or path state outside the recorded before-and-after set fails closed. A committed transaction does not silently repair subsequent drift.
-
-The private filesystem workspace canonicalizes the repository root, rejects non-canonical relative paths and existing symbolic-link traversal, and restricts leaves to regular files. Its checks use path-based Node.js APIs and do not prevent another process from replacing a parent between inspection and mutation.
-
-The caller-supplied private transaction store persists content-addressed before-and-after bytes, canonical transaction records, and journal state. It publishes `prepared` only after every required blob revalidates and uses an exclusive opaque writer lease for cooperative process exclusion. It does not automatically reclaim a stale lease. An operator may clear one unchanged writer record only after independently confirming that the owner process terminated and matching both captured writer evidence and the prepared transaction digest.
-
-The private executor re-checks its writer lease and content preconditions before project mutation, persists the target lock last, verifies the resulting target state, and produces terminal `committed` or `rolled-back` journals. The target lock is the point after which recovery must roll forward; before that point, recovery rolls back. Cooperative faults and Darwin subprocess termination exercise the forward mutation boundaries.
-
-Before a transaction-owned repository write creates a same-directory temporary file, the private store persists a canonical mutation intent bound to the transaction digest, writer fingerprint, target path, target digest, and deterministic temporary path. Stale-writer clearance is persisted before the unchanged writer record is removed. A new writer may reclaim only exact intent paths with matching clearance and otherwise fails closed. This protocol uses no directory scan, age threshold, PID, or automatic liveness inference. It rejects symbolic links and non-regular leaves, but it cannot distinguish hostile regular-file replacement at the exact authorized path from partial owned bytes.
-
-The private filesystem synchronizes file content and affected directory entries, and refuses to open on a filesystem where its directory synchronization probe fails. This is exercised on Darwin but does not prove power-loss behavior or another platform.
-
-A terminal transaction may be retired only after the executor verifies exact repository and lock state. Retirement is an immutable barrier: the prepared store cannot acquire another writer or return to active use. A dedicated caller-supplied parent must be claimed while empty by a canonical private owner record. The lifecycle revalidates that record, atomically renames the single-use store to a deterministic tombstone, writes a digest-bound cleanup receipt containing the authorized file inventory, audits known records, regular blobs, and recognized temporary files, then removes and synchronizes the tombstone. A partially removed tombstone can resume only while every remaining path and byte digest matches that inventory. Marker, tombstone, and receipt states make process-terminated cleanup idempotent.
-
-Cleanup receipts remain immutable for the parent lifetime because deleting one would erase the distinction between completed cleanup and unknown history. A read-only disposal snapshot succeeds only when the dedicated parent contains the owner record and canonical receipts, with no active store, tombstone, symbolic link, or foreign entry. It binds every receipt digest but does not delete or lock the parent. Whole-parent disposal remains an explicit future administrative action requiring external exclusion.
-
-Recovery is also process-termination tolerant on the tested Darwin environment. A base-lock anchor repeatedly restores before bytes and terminates as `rolled-back`; a target-lock anchor repeatedly restores after bytes and terminates as `committed`. All eleven recovery mutation boundaries have cooperative and `SIGKILL` coverage. Repository temporary-file creation and synchronization also have cooperative and `SIGKILL` coverage. The target-anchor partial fixture is an accepted recovery input, not a state produced by the normal executor order. The supported-platform guarantee remains an explicit prerequisite for completing the transactional workspace step.
-
-A blocking candidate matrix is prepared for explicit Ubuntu, macOS, and Windows GitHub-hosted images on Node.js 22 and 24. It probes required filesystem primitives and runs the entire suite with zero skips. These are qualification candidates rather than support claims; only the local Darwin arm64 Node.js 24 cell has observed evidence in the working tree. See [candidate platform qualification](evidence/candidate-platform-qualification.md).
-
-The experimental [write-ahead interruption contract](development/interruption-contract.md) separates its tested recoverability from cross-file atomicity and power-loss durability. It is stronger than the accepted V1 contract and is not the default apply path. Platform qualification cannot widen either claim without new evidence.
+This subsystem is frozen research. It is not the default apply implementation, must not enter a future runtime package, and must not receive new durability, cleanup, platform, or public-contract work without a material requirement that reopens ADR 0002. Its detailed behavior and limitations remain in the [interruption contract](development/interruption-contract.md) and the transaction evidence documents. Candidate qualification does not establish power-loss durability, hostile-writer exclusion, or a public platform guarantee.

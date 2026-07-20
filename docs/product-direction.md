@@ -30,6 +30,12 @@ choose preset, roles, providers, tracker, and review policy
 -> check drift, ownership, provenance, and environment health
 ```
 
+A representative development workflow family begins with planning and optional tracker-backed work-item creation, delegates implementation, observes an exact pull-request revision, requires CI and independent-review evidence, allows repair cycles, and authorizes an external merge only when current evidence satisfies policy. A project may create either a draft pull request or a pull request that is ready for review immediately. Pull-request readiness is not merge authorization. Optional auxiliary automated review is a bounded stage rather than a provider-specific workflow.
+
+The [issue-to-reviewed-pull-request candidate](development/issue-to-reviewed-pull-request.md) defines the current domain-validation direction. It remains an experimental workflow definition, not a frozen public configuration surface.
+
+The private project-resolution experiment also retains a local no-pull-request workflow as a mandatory contrast. Project intent selects a workflow family, while provider, tracker, and external integration choices remain bindings outside generic workflow topology. This prevents the product from treating issue-to-pull-request as its only valid development flow.
+
 ## Roles and initial adapters
 
 Roles describe workflow responsibilities rather than product brands:
@@ -55,6 +61,8 @@ The intended presets are:
 
 Presets should expand into versioned workflow definitions rather than become special cases throughout the compiler.
 
+A preset is a policy profile, not a workflow-family selector. It must not silently choose Issue-to-PR, local operation, Draft or Ready PR creation, auxiliary review, a tracker, or a provider. A selected workflow may retain safety invariants stronger than the preset minimum. Strict must remain unavailable until its high-risk evidence and stronger gates are mechanically represented; Custom remains future composition.
+
 Candidate first-party procedures are `plan-task`, `implement-task`, `review-change`, and `record-progress`. Later procedures may include `reconcile-change`, `audit-alignment`, `close-milestone`, and `release-version`. Critical transitions should invoke procedures explicitly; heuristic skill discovery is useful but not a reliable enforcement boundary.
 
 ## Candidate V1 commands
@@ -76,6 +84,8 @@ A complete `migrate` command is deferred until a real schema transition exists. 
 - Typed artifacts connect states and carry evidence, but schema validity does not prove semantic truth or producer identity.
 - Capabilities need versioned contracts that describe side effects, authorization, dry-run behavior, failure semantics, and provenance.
 - Provider bindings need product, surface, version, execution context, principal, and supported capabilities rather than a single provider string.
+- External execution should consume deterministic procedures or manifests and return typed, revision-bound evidence. Long-running monitoring, credentials, retries, scheduling, and external mutation remain outside the compiler core.
+- Narrow source adapters may translate authenticated provider observations into provider-neutral evidence, but acquisition trust, credentials, and provider API behavior remain explicit integration boundaries.
 - Lock state should capture immutable workflow, skill, adapter, and generated-artifact resolution.
 
 The exact public configuration syntax, directory names, configuration filenames, and lockfile format remain open.
@@ -88,7 +98,7 @@ Every generated path must have exactly one owner. Existing files require an expl
 - **Import** supported intent into source configuration while disclosing information loss.
 - **Abort** when safe ownership cannot be established.
 
-Writes must be planned, deterministic, atomic, tied to input hashes, and conflict-aware. Silent overwrite, silent capability downgrade, and digest mismatch are failures.
+Writes must be planned, deterministic, tied to input hashes, conflict-aware, and published with atomic single-file replacement. Cross-file atomic visibility is not a V1 claim. Silent overwrite, silent capability downgrade, and digest mismatch are failures.
 
 Prompt instructions are advisory. Policy data should record the actual mechanism, scope, bypass authority, availability, and required strength. Display labels such as advisory, guarded, and enforced are derived views. A weaker fallback must produce a diagnostic and never satisfy a stronger requirement.
 

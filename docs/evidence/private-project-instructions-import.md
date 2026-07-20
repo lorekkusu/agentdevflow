@@ -58,4 +58,4 @@ No test claims that a provider interprets two natural-language documents identic
 
 Use this analyzer to replace asserted lossless assessments for the currently supported project-instructions form. Keep content differences and unknown scope blocked until a separately designed merge representation can show complete retained and discarded intent.
 
-The next slice should build a private, explicitly approved init-to-render bridge that binds the proposal's observed, configuration, and target digests to the normal exact render plan. It must not add a general overwrite escape hatch.
+The follow-on [approved init-to-render bridge](private-approved-init-render.md) now binds the proposal's observed, configuration, and target digests to the normal exact render plan without adding a general overwrite escape hatch. The current [roadmap](../development/roadmap.md) places its next work in the unified local vertical CLI path.

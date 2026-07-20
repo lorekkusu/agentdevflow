@@ -40,3 +40,4 @@ See the [public information policy](../development/public-information-policy.md)
 
 - [0001: Native project-instructions renderer](0001-native-project-instructions-renderer.md) — Accepted.
 - [0002: V1 forward-convergent render apply](0002-v1-forward-convergent-render-apply.md) — Accepted.
+- [0003: Private JSONC and runtime-schema boundary](0003-private-jsonc-zod-boundary.md) — Accepted.
