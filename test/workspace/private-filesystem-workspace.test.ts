@@ -85,6 +85,22 @@ test("writes, replaces, reads, and removes regular files within the root", async
   assert.equal(await workspace.read("nested/AGENTS.md"), null);
 });
 
+test("opens a hardened read-only view without exposing mutation methods", async (t) => {
+  const root = await temporaryDirectory(t);
+  await writeFile(join(root, "AGENTS.md"), "observed\n", "utf8");
+  const workspace = await PrivateFilesystemWorkspace.openReadOnly(root);
+
+  assert.equal(await workspace.read("AGENTS.md"), "observed\n");
+  assert.equal("writeAtomically" in workspace, false);
+  assert.equal("removeAtomically" in workspace, false);
+  await assert.rejects(
+    () => workspace.read("../outside"),
+    (error: unknown) =>
+      error instanceof PrivateFilesystemWorkspaceError &&
+      error.code === "UNSAFE_WORKSPACE_PATH",
+  );
+});
+
 test("publishes registered owned temporary files atomically", async (t) => {
   const root = await temporaryDirectory(t);
   const workspace = await PrivateFilesystemWorkspace.open(root);

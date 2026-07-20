@@ -104,6 +104,10 @@ export interface PrivateConvergentWorkspace extends RenderWorkspace {
   ): Promise<"absent" | "removed">;
 }
 
+export interface PrivateFilesystemReadWorkspace {
+  read(path: string): Promise<string | null>;
+}
+
 let temporaryFileSequence = 0;
 
 function isNodeErrorWithCode(
@@ -159,6 +163,20 @@ export class PrivateFilesystemWorkspace
 
   static async open(root: string): Promise<PrivateFilesystemWorkspace> {
     return PrivateFilesystemWorkspace.openWithDirectorySync(root, true);
+  }
+
+  static async openReadOnly(
+    root: string,
+  ): Promise<PrivateFilesystemReadWorkspace> {
+    const workspace = await PrivateFilesystemWorkspace.openWithDirectorySync(
+      root,
+      false,
+    );
+    return {
+      read(path: string): Promise<string | null> {
+        return workspace.read(path);
+      },
+    };
   }
 
   static async openForProcessTermination(

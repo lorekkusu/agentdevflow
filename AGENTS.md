@@ -72,6 +72,7 @@ npm run test:v1-recovery
 - Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. Add probe adapters only with narrow permission and evidence contracts.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Keep private initialization read-only and non-interactive. Exact adoption, import assessment, and abort decisions must bind observed bytes to the candidate configuration; never infer ownership from Git cleanliness.
+- Open private initialization workspaces through `PrivateFilesystemWorkspace.openReadOnly`; do not require write-durability probes or expose mutation methods for observation-only commands.
 - Keep project-instructions import limited to deterministic logical equivalence with exact observed, configuration, and target digests. Do not invent merges or infer provider semantics from natural language.
 - Route initialization mutation through the private approved-init render service. Retain its exact prepared snapshot before mutation; do not bypass it with a generic overwrite authorization.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.

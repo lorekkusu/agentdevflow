@@ -64,7 +64,7 @@ Candidate exit codes remain private until end-to-end CLI behavior is qualified a
 
 Targets, assessments, entries, source references, information-loss lists, and diagnostics are normalized or sorted deterministically. The service reads only the three fixed paths selected by configured provider products.
 
-The production filesystem adapter enforces repository-root containment, canonical relative paths, symbolic-link rejection, and regular-file checks. A read failure becomes an explicit unreadable `abort` entry. The proposal is still an observation rather than an atomic snapshot; a future apply must reread and revalidate all bound digests.
+The production read-only filesystem adapter enforces repository-root containment, canonical relative paths, symbolic-link rejection, and regular-file checks without requiring write-durability primitives such as directory synchronization. It exposes no mutation methods. A read failure becomes an explicit unreadable `abort` entry. The proposal is still an observation rather than an atomic snapshot; a future apply must reread and revalidate all bound digests.
 
 ## Explicit non-claims
 

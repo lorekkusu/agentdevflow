@@ -387,7 +387,7 @@ test("observes a temporary repository through the hardened workspace without mut
   const target = fastTarget();
   const path = join(root, privateInitProviderPaths.codex);
   await writeFile(path, target.content, "utf8");
-  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const workspace = await PrivateFilesystemWorkspace.openReadOnly(root);
 
   const result = await executePrivateInitCommand({
     proposedConfiguration: fastCandidateConfig,

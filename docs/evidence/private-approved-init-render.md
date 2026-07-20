@@ -46,7 +46,7 @@ Focused tests demonstrate:
 - resumption from the retained prepared snapshot after outputs change but before lock publication;
 - target lock publication through the existing private render command.
 
-The focused bridge and renderer suite passes 18 tests with zero failures and zero skips. The selected V1 qualification suite passes 154 tests across 22 selected test files with zero failures and zero skips. The complete stronger suite passes 253 tests with zero failures and zero skips. The repository audit checks 149 text files successfully.
+The focused bridge and renderer suite passes 18 tests with zero failures and zero skips. The selected V1 qualification suite passes 154 tests across 22 selected test files with zero failures and zero skips. The complete stronger suite passes 254 tests with zero failures and zero skips. The repository audit checks 149 text files successfully.
 
 ## Limitations
 
