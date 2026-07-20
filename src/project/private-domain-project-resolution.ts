@@ -7,12 +7,12 @@ import type {
 } from "../config/candidate.js";
 import type {
   PrivateDomainCapabilityObservation,
+  PrivateDomainWorkflowCompilation,
   PrivateDomainWorkflowDiagnostic,
 } from "../compiler/private-domain-workflow.js";
 import {
-  compilePrivateExecutionManifest,
-  type PrivateExecutionManifestPackage,
-} from "../execution/private-execution-contract.js";
+  compilePrivateDomainWorkflow,
+} from "../compiler/private-domain-workflow.js";
 import {
   expandPrivateDomainPreset,
   type PrivateDomainPreset,
@@ -101,7 +101,6 @@ export interface PrivateDomainProjectResolution {
     readonly definitionId: string;
     readonly definitionRevision: number;
     readonly compilationDigest: string;
-    readonly manifestDigest: string;
   };
   readonly tracker: { readonly mode: PrivateDomainTrackerMode };
   readonly responsibilities: readonly PrivateResolvedResponsibility[];
@@ -135,7 +134,7 @@ export type PrivateDomainProjectResolutionResult =
       readonly ok: true;
       readonly normalizedIntent: PrivateDomainProjectIntent;
       readonly intentCanonicalJson: string;
-      readonly manifestPackage: PrivateExecutionManifestPackage;
+      readonly workflowCompilation: PrivateDomainWorkflowCompilation;
       readonly resolution: PrivateDomainProjectResolution;
       readonly resolutionCanonicalJson: string;
       readonly resolutionDigest: string;
@@ -454,18 +453,18 @@ export function resolvePrivateDomainProject(
     return { ok: false, diagnostics: diagnostics.sort(diagnosticOrder) };
   }
 
-  const manifest = compilePrivateExecutionManifest(definition, {
+  const workflow = compilePrivateDomainWorkflow(definition, {
     capabilityObservations: options.capabilityObservations,
   });
-  if (!manifest.ok) {
+  if (!workflow.ok) {
     return {
       ok: false,
       diagnostics: [
         {
           code: "WORKFLOW_COMPILATION_FAILED",
           path: "$.workflow",
-          message: `Workflow ${definition.id} did not compile into an execution manifest.`,
-          causes: manifest.diagnostics,
+          message: `Workflow ${definition.id} did not compile into the authoritative project workflow.`,
+          causes: workflow.diagnostics,
         },
       ],
     };
@@ -484,10 +483,9 @@ export function resolvePrivateDomainProject(
     },
     workflow: {
       family: intent.workflow.family,
-      definitionId: manifest.package.manifest.definition.id,
-      definitionRevision: manifest.package.manifest.definition.revision,
-      compilationDigest: manifest.workflow.compilationDigest,
-      manifestDigest: manifest.package.digest,
+      definitionId: workflow.compilation.definition.id,
+      definitionRevision: workflow.compilation.definition.revision,
+      compilationDigest: workflow.compilation.compilationDigest,
     },
     tracker: { mode: intent.tracker.mode },
     responsibilities: resolvedResponsibilities.sort((left, right) =>
@@ -503,7 +501,7 @@ export function resolvePrivateDomainProject(
     ok: true,
     normalizedIntent,
     intentCanonicalJson,
-    manifestPackage: manifest.package,
+    workflowCompilation: workflow.compilation,
     resolution,
     resolutionCanonicalJson,
     resolutionDigest: digestText(resolutionCanonicalJson),

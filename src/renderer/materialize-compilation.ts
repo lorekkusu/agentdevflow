@@ -115,6 +115,32 @@ function expectedMaterializationDigest(
   });
 }
 
+export interface CreatePrivateRendererSourceMaterializationOptions {
+  readonly compilerDigest: string;
+  readonly content: string;
+  readonly sourceRefs: readonly string[];
+}
+
+export function createPrivateRendererSourceMaterialization(
+  options: CreatePrivateRendererSourceMaterializationOptions,
+): PrivateRendererSourceMaterialization {
+  const files: readonly PrivateRendererSourceFile[] = [
+    {
+      path: "project-instructions/development-flow.md",
+      capability: "project-instructions",
+      content: options.content,
+      contentDigest: digestText(options.content),
+      sourceRefs: [...options.sourceRefs],
+    },
+  ];
+  const base = {
+    revision: privateRendererSourceRevision,
+    compilerDigest: options.compilerDigest,
+    files,
+  };
+  return { ...base, digest: expectedMaterializationDigest(base) };
+}
+
 export function validatePrivateRendererSourceMaterialization(
   materialization: PrivateRendererSourceMaterialization,
 ): void {
@@ -155,22 +181,12 @@ export function materializeCompilation(
     throw new Error("Refusing to materialize an unsafe compilation.");
   }
   const content = materializedContent(compilation);
-  const files: readonly PrivateRendererSourceFile[] = [
-    {
-      path: "project-instructions/development-flow.md",
-      capability: "project-instructions",
-      content,
-      contentDigest: digestText(content),
-      sourceRefs: [
-        `candidate-config:sha256:${compilation.configDigest}`,
-        `workflow-definition:${compilation.workflow.definitionId}@${compilation.workflow.definitionRevision}`,
-      ],
-    },
-  ];
-  const base = {
-    revision: privateRendererSourceRevision,
+  return createPrivateRendererSourceMaterialization({
     compilerDigest: compilation.compilerDigest,
-    files,
-  };
-  return { ...base, digest: expectedMaterializationDigest(base) };
+    content,
+    sourceRefs: [
+      `candidate-config:sha256:${compilation.configDigest}`,
+      `workflow-definition:${compilation.workflow.definitionId}@${compilation.workflow.definitionRevision}`,
+    ],
+  });
 }

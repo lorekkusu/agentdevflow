@@ -18,11 +18,21 @@ The intended npm product is not yet usable through `npx agentdevflow`. The packa
 
 The smallest current outcome is therefore a collection of executable private fixtures and semantic services, not a user-operable CLI.
 
+## Progress since assessment
+
+The assessed closure was published as nine dependency-ordered commits ending at `2a1a4ae`. Each commit passed the repository check from an isolated archive snapshot, and `main` then matched `origin/main` with no staged or unstaged changes.
+
+The first convergence slice after that checkpoint removes project resolution's dependency on execution-manifest export. The revision-1 project result now owns the authoritative private workflow compilation and can reach native Codex, Claude Code, and Cursor renderer staging directly. Execution manifests remain optional downstream exports for replay experiments. Schema-version-0 compilation remains compatibility and regression evidence rather than the active project path.
+
+This convergence slice does not yet create a user-operable command. Exact repository planning, lock inspection, and command-service integration remain the active milestone.
+
+The convergence candidate passes the repository audit over 203 text files, strict type checking, the build, and 361 automated tests with zero failures, skips, or todos.
+
 ## Roadmap alignment
 
 - **Completed:** Phase 0 renderer and policy gates, the native initial-provider renderer, deterministic ownership and lock semantics, and staged forward-convergent apply have executable evidence.
 - **Partial:** private project intent, workflow selection, presets, command semantics, initialization, and execution evidence exist but do not form one executable application path.
-- **Blocked:** packaging and a user-operable CLI are blocked by parallel project and compiler models, project-resolution coupling to optional manifest export, and a normal workspace import from frozen transaction code.
+- **Blocked:** packaging and a user-operable CLI are blocked by missing command and repository-planning integration and a normal workspace import from frozen transaction code. The former project-resolution dependency on optional manifest export has been removed.
 - **Prematurely advanced:** strict execution transport and one GitHub observation mapper answered bounded research questions before the local CLI dependency was complete. Both are now frozen.
 
 ## Measured observations
@@ -47,9 +57,11 @@ Confidence: **High.** Categories: product, architecture, and delivery. Evidence:
 
 The older schema-version-0 candidate configuration feeds `CandidateCompilation`, renderer materialization, initialization, and command-service experiments. The newer revision-1 domain project intent feeds a separate domain-workflow compilation, workflow selection, preset expansion, project resolution, execution-manifest export, and replay.
 
-The newer model represents workflow family, hosted tracker intent, pull-request initial state, auxiliary review, and logical capability bindings that the older model cannot express. It does not yet feed renderer materialization or the command services, and the renderer still consumes only the older compiled representation. Project resolution also compiles and returns an execution manifest directly, coupling project and workflow resolution to an optional export boundary. Continuing provider or evidence work before these boundaries converge would deepen parallel policy, rendering, and execution semantics.
+At the assessment baseline, the newer model represented workflow family, hosted tracker intent, pull-request initial state, auxiliary review, and logical capability bindings that the older model could not express, but it did not feed renderer materialization. Project resolution also compiled and returned an execution manifest directly, coupling required project resolution to an optional export boundary.
 
-Disposition: **Invest.** Select one active internal project intent and one authoritative compiled representation, or define one explicit one-way bridge with tested semantic parity. Separate required project and workflow compilation from optional execution-manifest export. Retain the older model only as an explicit compatibility input, bridge source, or regression fixture.
+The first convergence slice resolves those two defects: revision-1 project resolution now returns the authoritative workflow compilation, direct renderer materialization preserves its domain intent, and execution-manifest creation is an explicit optional downstream operation. Command services still consume caller-supplied plans and have not yet been connected to this project result.
+
+Disposition: **Invest.** Continue the accepted revision-1 path into exact repository planning and command services. Retain the older model only as an explicit compatibility input or regression fixture, and fail rather than translating unsupported revision-1 intent back into it.
 
 ### High: a non-default transaction experiment is disproportionately large
 
@@ -87,13 +99,13 @@ At the assessment baseline, the roadmap accumulated chronological implementation
 
 Disposition: **Invest in consolidation.** Keep reproducible evidence, replace chronological roadmap accumulation with milestone state, and update current-facing documents when behavior changes.
 
-### High: the cumulative working tree is not one reviewable change
+### High: the assessed cumulative working tree was not one reviewable change
 
 Confidence: **High.** Categories: maintainability and delivery. Evidence: the declared Git working-tree inventory and the subsystem paths listed in the disposition summary.
 
-The unstaged working tree combines project representation, parser and schema dependencies, workflow definitions, project resolution, presets, execution contracts, transport, a provider-specific evidence mapper, tests, and documentation.
+At the assessment baseline, the unstaged working tree combined project representation, parser and schema dependencies, workflow definitions, project resolution, presets, execution contracts, transport, a provider-specific evidence mapper, tests, and documentation.
 
-Disposition: **Close before expanding.** Audit dependencies and incomplete boundaries, retain or freeze each subsystem explicitly, run the complete verification suite, and propose small coherent commit groups. Do not stage, commit, or push without separate authorization.
+Disposition: **Resolved for the assessed closure.** The cumulative change was divided into nine dependency-ordered commits and each snapshot passed complete verification before publication. Future slices should remain small and milestone-bound. Do not stage, commit, or push without separate authorization.
 
 ## Disposition summary
 
@@ -195,8 +207,8 @@ None for this closure. The active internal model, bridge or replacement mechanic
 ## Limitations
 
 - This assessment is not a security audit, threat model, dedicated secret scan, package-installation test, or publication review.
-- The initial measurements describe the declared pre-closure target; final verification results are recorded only after closure edits stop changing.
-- The current working tree is intentionally dirty and cumulative. Proposed groups have not yet been proven as independently passing commits.
+- The initial measurements describe the declared pre-closure target. They are preserved as assessment evidence rather than presented as current repository counts.
+- The published closure was independently verified per commit. The later convergence slice is a new working-tree candidate until it receives its own verification and publication decision.
 - No public compatibility, Node.js support, configuration-discovery, lockfile, exit-code, or release promise is accepted by this assessment.
 
 ## Closure verification
@@ -205,31 +217,19 @@ The coordinating review completed the repository audit, strict type check, build
 
 The local tool environment did not expose the `npm` executable, so the coordinator invoked the exact `check` constituent commands directly with the available Node.js runtime. This is equivalent source verification but is not an npm installation, package-content, or clean-install qualification result.
 
-## Proposed checkpoint groups
+## Published checkpoint groups
 
-The cumulative working tree should be reviewed and, only after separate authorization, committed in dependency order:
-
-1. domain workflow definitions, generic compilation, deterministic fixtures, and focused evidence;
-2. typed execution manifest, typed evidence, pure replay, deterministic fixtures, and focused evidence;
-3. revision-1 project intent, preset expansion, resolution, and project fixtures;
-4. bounded JSONC and Zod document parsing, exact dependency pins, repository-boundary enforcement, and its regression test;
-5. frozen strict execution transport and its focused fixtures;
-6. frozen GitHub Check Runs mapper and its focused fixtures;
-7. schema-version-0 compatibility and representation experiments plus their existing fixture commands;
-8. mutually dependent contracts, ADRs, architecture, and compact evidence;
-9. closure governance, current-facing documentation, and roadmap reconciliation.
-
-Each proposed commit must pass type checking, automated tests, repository audit, and link validation from its own snapshot. Some `package.json` and documentation changes will require hunk-level assignment so an earlier commit never references a later untracked file. Project resolution currently depends on execution-manifest compilation, so group 2 precedes group 3 unless that coupling is removed first.
+The assessed cumulative working tree was published as nine dependency-ordered commits covering domain workflows, execution evidence, project resolution and presets, project-document parsing, transport, GitHub evidence mapping, compatibility experiments, architecture contracts, and closure governance. Git history is the authoritative record of those review units; this document intentionally does not duplicate commit chronology.
 
 ## Current closure checkpoint
 
-Status: **Complete in the current working tree; pending separate commit authorization.**
+Status: **Complete and published at `2a1a4ae`.**
 
 The closure criteria are:
 
 - the domain workflow, project-intent, preset, execution-evidence, transport, and GitHub mapping questions have explicit retained or frozen verdicts;
 - current-facing documentation matches the package, platform, and roadmap state;
 - no public file treats live trusted acquisition as the immediate next objective;
-- the cumulative working tree has a reviewed disposition and coherent proposed commit groups;
+- the cumulative working tree was divided into coherent, independently verified commits;
 - the complete repository verification passes;
-- no change is staged, committed, or pushed without explicit authorization.
+- no later change is staged, committed, or pushed without explicit authorization.

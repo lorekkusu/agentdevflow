@@ -254,6 +254,18 @@ function manifestFromCompilation(
   };
 }
 
+export function createPrivateExecutionManifestPackage(
+  compilation: PrivateDomainWorkflowCompilation,
+): PrivateExecutionManifestPackage {
+  const manifest = manifestFromCompilation(compilation);
+  const serialized = canonicalJson(manifest);
+  return {
+    manifest,
+    canonicalJson: serialized,
+    digest: digestText(serialized),
+  };
+}
+
 export function compilePrivateExecutionManifest(
   definition: PrivateDomainWorkflowDefinition,
   options: PrivateDomainWorkflowCompilerOptions = {},
@@ -262,16 +274,10 @@ export function compilePrivateExecutionManifest(
   if (!result.ok) {
     return result;
   }
-  const manifest = manifestFromCompilation(result.compilation);
-  const serialized = canonicalJson(manifest);
   return {
     ok: true,
     workflow: result.compilation,
-    package: {
-      manifest,
-      canonicalJson: serialized,
-      digest: digestText(serialized),
-    },
+    package: createPrivateExecutionManifestPackage(result.compilation),
   };
 }
 

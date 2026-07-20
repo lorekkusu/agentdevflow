@@ -2,7 +2,7 @@
 
 ## Status
 
-This is a private, fixture-only contract. It resolves a bounded project intent into one built-in workflow definition, an exact execution manifest, responsibility providers, tracker selection, and logical capability targets. It does not define a public `ProjectConfig`, filename, parser, schema, compatibility promise, provider adapter, tracker runtime, or workflow DSL.
+This is a private, fixture-only contract. It resolves a bounded project intent into one authoritative workflow compilation, responsibility providers, tracker selection, and logical capability targets. The same result now feeds renderer materialization directly. Execution-manifest export is optional downstream evidence and is no longer part of project resolution. This contract does not define a public `ProjectConfig`, filename, parser, schema, compatibility promise, provider adapter, tracker runtime, or workflow DSL.
 
 The implementation is in `src/project/private-domain-project-resolution.ts`. Reproducible results are in [private domain project resolution evidence](../evidence/private-domain-project-resolution.md).
 
@@ -29,15 +29,18 @@ These are private TypeScript specimens. They are not accepted configuration synt
 
 ## Resolution layers
 
-Resolution keeps three integrity identities separate:
+Resolution keeps four integrity identities separate:
 
 1. The intent digest binds normalized providers, roles, tracker mode, workflow choice, and logical capability targets.
-2. The execution-manifest digest binds provider-neutral workflow topology, policies, artifact invalidation, and observed logical capabilities.
-3. The project-resolution digest binds the intent digest, exact manifest digest, tracker, responsibility-to-provider resolution, and capability targets.
+2. The workflow-compilation digest binds provider-neutral topology, policies, artifact invalidation, and observed logical capabilities.
+3. The project-resolution digest binds the intent digest, exact workflow compilation, tracker, responsibility-to-provider resolution, and capability targets.
+4. An optional execution-manifest digest binds a deterministic export of the already accepted workflow compilation. It does not define or change project resolution.
 
 Preset expansion adds a separate deterministic identity inside project resolution. The effective definition id binds the preset name while the expansion digest binds the private profile and effective workflow definition.
 
-Changing the Reviewer from one provider instance to another changes the project resolution but does not change an otherwise identical provider-neutral workflow manifest. Changing draft to ready or enabling auxiliary review changes the workflow definition and manifest.
+Changing the Reviewer from one provider instance to another changes the project resolution but does not change an otherwise identical provider-neutral workflow compilation. Changing draft to ready or enabling auxiliary review changes the workflow definition and compilation.
+
+`src/project/` does not import `src/execution/`; the repository audit enforces this direction. `createPrivateExecutionManifestPackage` accepts the resolved workflow compilation only when an execution consumer explicitly needs that export.
 
 ## Logical capability targets
 
@@ -69,13 +72,13 @@ Resolution also fails for:
 - invalid opaque external identifiers;
 - any downstream workflow definition, capability, state-budget, or safety-policy compilation failure.
 
-Diagnostics are deterministic private candidates. No partial resolution or manifest is returned after failure.
+Diagnostics are deterministic private candidates. No partial project or workflow compilation is returned after failure.
 
 ## Provider neutrality
 
-Provider products appear in the project resolution because they are material bindings. They do not appear in the execution manifest. Tracker products similarly resolve outside generic workflow topology.
+Provider products appear in the project resolution because they are material bindings. They do not appear in the workflow compilation or optional execution manifest. Tracker products similarly resolve outside generic workflow topology.
 
-Provider replacement should normally change the intent and project-resolution digests while retaining the same manifest digest. A capability gap may still prevent manifest compilation; provider neutrality does not imply capability equivalence or silent degradation.
+Provider replacement should normally change the intent and project-resolution digests while retaining the same workflow-compilation digest. A capability gap may still prevent workflow compilation; provider neutrality does not imply capability equivalence or silent degradation.
 
 ## Non-claims and open boundaries
 
@@ -89,4 +92,4 @@ Provider replacement should normally change the intent and project-resolution di
 
 ## Change boundary
 
-Keep this contract private until evidence payload validation and a real migration boundary can preserve all resolution layers without silent intent loss. Do not add a public filename or arbitrary workflow representation merely to serialize these fixtures.
+Keep this contract private until a real migration boundary can preserve all resolution layers without silent intent loss. Keep execution exports downstream and optional. Do not add a public filename or arbitrary workflow representation merely to serialize these fixtures.

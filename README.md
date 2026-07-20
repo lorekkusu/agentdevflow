@@ -6,7 +6,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 `agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 has private prototypes for project-intent parsing, policy compilation, native project-instructions rendering, ownership-aware application, command semantics, domain workflows, and typed execution evidence.
 
-These components do not yet form a production CLI. The package is private, has no executable `bin`, and has no stable public API, configuration format, filename, lock format, or migration contract. The current work closes and freezes completed research before connecting one configuration input to an experimental local `check`, `diff`, and explicit `render` path.
+These components do not yet form a production CLI. The package is private, has no executable `bin`, and has no stable public API, configuration format, filename, lock format, or migration contract. Revision-1 configuration bytes now reach the authoritative workflow compilation and native provider-instructions staging without an execution manifest. The current work connects that result to an experimental local `check`, `diff`, and explicit `render` path.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -37,6 +37,7 @@ Phase 1 has validated:
 - isolated private `check`, `diff`, `render`, `doctor`, and `init` semantics;
 - an issue-to-reviewed-pull-request workflow and a local no-pull-request contrast;
 - bounded revision-1 project intent, JSONC parsing, preset expansion, and runtime schema validation;
+- direct revision-1 project-instructions materialization with optional downstream execution-manifest export;
 - typed revision-bound execution evidence and one pure GitHub Check Runs mapping.
 
 The accepted V1 apply path is the smaller staged forward-convergent implementation in [ADR 0002](docs/decisions/0002-v1-forward-convergent-render-apply.md). The stronger write-ahead transaction, strict execution transport, and GitHub mapper are frozen private research rather than the next product direction.

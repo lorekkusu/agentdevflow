@@ -60,7 +60,8 @@ console.log(
       contentDigest: result.document.contentDigest,
       schemaDigest: privateDomainProjectIntentJsonSchemaDigest,
       intentDigest: result.project.resolution.intentDigest,
-      manifestDigest: result.project.manifestPackage.digest,
+      workflowCompilationDigest:
+        result.project.workflowCompilation.compilationDigest,
       resolutionDigest: result.project.resolutionDigest,
     },
     null,

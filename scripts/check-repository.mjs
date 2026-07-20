@@ -255,6 +255,27 @@ function inspectDependencyBoundaries(relativePath, content) {
   return diagnostics;
 }
 
+function inspectArchitectureBoundaries(relativePath, content) {
+  if (!relativePath.startsWith("src/project/") || !relativePath.endsWith(".ts")) {
+    return [];
+  }
+  const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']\.\.\/execution\//u.exec(
+    content,
+  );
+  if (match === null || match.index === undefined) {
+    return [];
+  }
+  return [
+    {
+      path: relativePath,
+      line: lineNumberAt(content, match.index),
+      code: "PROJECT_EXECUTION_BOUNDARY_BYPASSED",
+      message:
+        "Keep project resolution independent from optional execution exports.",
+    },
+  ];
+}
+
 function markdownLinkTargets(content) {
   const targets = [];
   const pattern = /\[[^\]]*\]\((<[^>]+>|[^)\s]+)(?:\s+"[^"]*")?\)/gu;
@@ -325,6 +346,7 @@ for (const absolutePath of files) {
     continue;
   }
   diagnostics.push(...inspectDisclosure(relativePath, content));
+  diagnostics.push(...inspectArchitectureBoundaries(relativePath, content));
   diagnostics.push(...inspectDependencyBoundaries(relativePath, content));
   diagnostics.push(...inspectWorkflowSecurity(relativePath, content));
   if (extname(absolutePath) === ".md") {

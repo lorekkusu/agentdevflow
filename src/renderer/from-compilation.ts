@@ -1,6 +1,10 @@
 import { posix } from "node:path";
 
 import type { CandidateCompilation } from "../compiler/private-model.js";
+import {
+  materializePrivateDomainProject,
+  type PrivateResolvedDomainProject,
+} from "./materialize-domain-project.js";
 import type {
   InitializationImportAuthorization,
   OwnershipClaim,
@@ -137,9 +141,14 @@ function validateCapabilityCoverage(compilation: CandidateCompilation): void {
   }
 }
 
-/** Internal bridge from compiler evidence to the replaceable renderer contract. */
-export function renderRequestFromCompilation(
-  compilation: CandidateCompilation,
+interface PrivateRenderRequestSource {
+  readonly compilerDigest: string;
+  readonly providers: readonly RendererProvider[];
+  readonly capabilities: readonly RendererCapability[];
+}
+
+function renderRequestFromSource(
+  source: PrivateRenderRequestSource,
   options: CompilationRenderRequestOptions,
 ): RenderRequest {
   if (!sha256Pattern.test(options.materializedInputDigest)) {
@@ -147,8 +156,6 @@ export function renderRequestFromCompilation(
       "materializedInputDigest must be a lowercase SHA-256 digest.",
     );
   }
-  validateCapabilityCoverage(compilation);
-
   const sourceFiles = normalizeRelativePaths(
     options.sourceFiles,
     "Materialized source",
@@ -170,22 +177,10 @@ export function renderRequestFromCompilation(
       );
     }
   }
-  const providers = [
-    ...new Set(
-      compilation.workflow.providers.map(
-        (provider): RendererProvider => provider.product,
-      ),
-    ),
-  ].sort(compareText);
-  const capabilities = [
-    ...new Set(
-      compilation.capabilityResolutions.map((resolution) =>
-        rendererCapability(resolution.capability),
-      ),
-    ),
-  ].sort(compareText);
+  const providers = [...new Set(source.providers)].sort(compareText);
+  const capabilities = [...new Set(source.capabilities)].sort(compareText);
   const inputDigest = createRenderInputDigest({
-    compilerDigest: compilation.compilerDigest,
+    compilerDigest: source.compilerDigest,
     sourceDigest: options.materializedInputDigest,
     sourceFiles,
   });
@@ -204,6 +199,63 @@ export function renderRequestFromCompilation(
     ...(options.adoptPaths ? { adoptPaths } : {}),
     ...(options.initializationImports ? { initializationImports } : {}),
   };
+}
+
+/** Internal bridge from compiler evidence to the replaceable renderer contract. */
+export function renderRequestFromCompilation(
+  compilation: CandidateCompilation,
+  options: CompilationRenderRequestOptions,
+): RenderRequest {
+  validateCapabilityCoverage(compilation);
+  const providers = [
+    ...new Set(
+      compilation.workflow.providers.map(
+        (provider): RendererProvider => provider.product,
+      ),
+    ),
+  ].sort(compareText);
+  const capabilities = [
+    ...new Set(
+      compilation.capabilityResolutions.map((resolution) =>
+        rendererCapability(resolution.capability),
+      ),
+    ),
+  ].sort(compareText);
+  return renderRequestFromSource(
+    { compilerDigest: compilation.compilerDigest, providers, capabilities },
+    options,
+  );
+}
+
+export function renderRequestFromPrivateDomainProjectMaterialization(
+  project: PrivateResolvedDomainProject,
+  materialization: PrivateRendererSourceMaterialization,
+  options: MaterializedCompilationRenderRequestOptions = {},
+): RenderRequest {
+  validatePrivateRendererSourceMaterialization(materialization);
+  const expectedMaterialization = materializePrivateDomainProject(project);
+  if (
+    materialization.digest !== expectedMaterialization.digest ||
+    materialization.compilerDigest !== expectedMaterialization.compilerDigest
+  ) {
+    throw new Error(
+      "Private renderer source materialization belongs to a different domain project compilation.",
+    );
+  }
+  return renderRequestFromSource(
+    {
+      compilerDigest: project.workflowCompilation.compilationDigest,
+      providers: project.normalizedIntent.providers.map(
+        (provider): RendererProvider => provider.product,
+      ),
+      capabilities: ["rules"],
+    },
+    {
+      ...options,
+      materializedInputDigest: materialization.digest,
+      sourceFiles: materialization.files.map((file) => file.path),
+    },
+  );
 }
 
 export function renderRequestFromMaterialization(

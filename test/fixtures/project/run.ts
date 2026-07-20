@@ -128,7 +128,7 @@ const output = specimens.map((specimen) => {
     workflowFamily: result.resolution.workflow.family,
     tracker: result.resolution.tracker.mode,
     intentDigest: result.resolution.intentDigest,
-    manifestDigest: result.manifestPackage.digest,
+    workflowCompilationDigest: result.workflowCompilation.compilationDigest,
     resolutionDigest: result.resolutionDigest,
     providerCount: result.normalizedIntent.providers.length,
     capabilityTargetCount: result.resolution.capabilityTargets.length,

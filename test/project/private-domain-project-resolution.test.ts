@@ -150,7 +150,7 @@ test("resolves the Codex, Cursor, Linear, and immediately ready workflow specime
     "candidate/issue-to-reviewed-pull-request/ready/disabled/squash/preset-balanced",
   );
   assert.equal(result.resolution.tracker.mode, "linear");
-  assert.equal(result.manifestPackage.manifest.steps.length, 11);
+  assert.equal(result.workflowCompilation.definition.transitions.length, 11);
   assert.deepEqual(
     result.resolution.responsibilities.map((item) => [
       item.responsibility,
@@ -177,19 +177,19 @@ test("resolves the Codex, Cursor, Linear, and immediately ready workflow specime
   );
 });
 
-test("resolves a draft workflow with auxiliary review without changing the generic manifest shape", () => {
+test("resolves a draft workflow with auxiliary review without provider data in the workflow compilation", () => {
   const result = resolveIssue(draftAuxiliaryIntent());
 
   expectSuccess(result);
   assert.equal(result.resolution.tracker.mode, "github-issues");
-  assert.equal(result.manifestPackage.manifest.steps.length, 14);
-  assert.equal(result.manifestPackage.manifest.capabilities.length, 7);
+  assert.equal(result.workflowCompilation.definition.transitions.length, 14);
+  assert.equal(result.workflowCompilation.capabilityResolutions.length, 7);
   assert.equal(
-    JSON.stringify(result.manifestPackage.manifest).includes("claude-code"),
+    JSON.stringify(result.workflowCompilation).includes("claude-code"),
     false,
   );
   assert.equal(
-    JSON.stringify(result.manifestPackage.manifest).includes("cursor"),
+    JSON.stringify(result.workflowCompilation).includes("cursor"),
     false,
   );
   assert.equal(
@@ -216,7 +216,7 @@ test("resolves a local workflow without issue, pull-request, CI, or merge capabi
     ["developer", "reviewer"],
   );
   assert.equal(
-    JSON.stringify(result.manifestPackage.manifest).includes("pull-request"),
+    JSON.stringify(result.workflowCompilation.definition).includes("pull-request"),
     false,
   );
 });
@@ -239,7 +239,10 @@ test("normalizes reordered providers, bindings, and capability observations dete
   expectSuccess(first);
   expectSuccess(second);
   assert.equal(second.intentCanonicalJson, first.intentCanonicalJson);
-  assert.equal(second.manifestPackage.digest, first.manifestPackage.digest);
+  assert.equal(
+    second.workflowCompilation.compilationDigest,
+    first.workflowCompilation.compilationDigest,
+  );
   assert.equal(second.resolutionCanonicalJson, first.resolutionCanonicalJson);
   assert.equal(second.resolutionDigest, first.resolutionDigest);
 });
@@ -255,7 +258,10 @@ test("changes the project resolution digest for a material provider binding chan
 
   expectSuccess(first);
   expectSuccess(second);
-  assert.equal(second.manifestPackage.digest, first.manifestPackage.digest);
+  assert.equal(
+    second.workflowCompilation.compilationDigest,
+    first.workflowCompilation.compilationDigest,
+  );
   assert.notEqual(second.resolutionDigest, first.resolutionDigest);
 });
 

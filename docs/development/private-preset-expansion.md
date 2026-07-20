@@ -28,11 +28,11 @@ A workflow family may already exceed a preset minimum. The issue-to-reviewed-pul
 
 For the local workflow, Balanced adds explicit finding production and invalidation, reviewer-isolation evidence production, and two terminal policies. Fast retains the smaller basic-review workflow. For the issue workflow, the existing family already satisfies the Balanced structural minimum; the preset identity is still bound into the effective definition and project resolution.
 
-Every available expansion has a private revision and deterministic digest over the profile and effective workflow definition. The execution manifest compiles the effective definition through the existing generic policy and state-space boundary.
+Every available expansion has a private revision and deterministic digest over the profile and effective workflow definition. The authoritative workflow compilation validates the effective definition through the generic policy and state-space boundary. An execution manifest may be exported afterward without defining project resolution.
 
 ## Strict failure boundary
 
-The parser recognizes `strict` so a structurally valid document can receive a precise semantic diagnostic. Project resolution returns `PRESET_UNAVAILABLE` before manifest compilation. It does not silently downgrade Strict to Balanced or accept unenforced prompt language as high-risk evidence.
+The parser recognizes `strict` so a structurally valid document can receive a precise semantic diagnostic. Project resolution returns `PRESET_UNAVAILABLE` before workflow compilation. It does not silently downgrade Strict to Balanced or accept unenforced prompt language as high-risk evidence.
 
 Strict may become available only after the project defines and tests the required evidence types, invalidation rules, capability strengths, and completion policies. If those requirements cannot be expressed mechanically, Strict must remain unavailable or the project must reconsider the preset.
 

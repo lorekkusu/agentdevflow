@@ -71,3 +71,26 @@ test("enforces dependency boundaries for direct import forms", async () => {
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("keeps project resolution independent from execution exports", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-project-boundary-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, "src", "project"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeFile(
+      join(root, "src", "project", "bypass.ts"),
+      defaultImport("../execution/private-execution-contract.js"),
+    );
+
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /PROJECT_EXECUTION_BOUNDARY_BYPASSED/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

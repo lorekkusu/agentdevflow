@@ -84,6 +84,14 @@ Recommendation:
 - do not add a third project model or conceal intent loss behind another adapter;
 - keep public names, filenames, and compatibility promises open.
 
+Progress:
+
+- revision-1 project resolution now returns the authoritative workflow compilation directly;
+- optional execution-manifest export consumes that compilation and is mechanically forbidden as a project-layer dependency;
+- revision-1 configuration bytes now reach deterministic project-instructions materialization and the native Codex, Claude Code, and Cursor staging boundary;
+- schema-version-0 remains only a private compatibility and regression path;
+- the remaining work in this step is to feed the revision-1 render request into exact repository planning and user-level command services without caller-supplied private values.
+
 Exit criteria:
 
 - one configuration document reaches one authoritative policy compilation and renderer materialization without caller-supplied compiler output;

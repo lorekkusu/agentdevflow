@@ -4,6 +4,7 @@ import test from "node:test";
 import type { PrivateDomainWorkflowDefinition } from "../../src/compiler/private-domain-workflow.js";
 import {
   createPrivateExecutionEvidenceEnvelope,
+  createPrivateExecutionManifestPackage,
   createPrivateExecutionPayloadDigest,
   replayPrivateExecutionTrace,
   type PrivateExecutionManifestPackage,
@@ -325,14 +326,17 @@ test("compiles Fast and Balanced local presets through the existing generic seam
 
   expectResolutionSuccess(fast);
   expectResolutionSuccess(balanced);
+  const fastManifest = createPrivateExecutionManifestPackage(
+    fast.workflowCompilation,
+  );
+  const balancedManifest = createPrivateExecutionManifestPackage(
+    balanced.workflowCompilation,
+  );
   assert.equal(fast.resolution.preset.name, "fast");
   assert.equal(balanced.resolution.preset.name, "balanced");
-  assert.notEqual(
-    balanced.manifestPackage.digest,
-    fast.manifestPackage.digest,
-  );
-  assert.equal(balanced.manifestPackage.manifest.policies.length, 5);
-  assert.equal(fast.manifestPackage.manifest.policies.length, 3);
+  assert.notEqual(balancedManifest.digest, fastManifest.digest);
+  assert.equal(balancedManifest.manifest.policies.length, 5);
+  assert.equal(fastManifest.manifest.policies.length, 3);
 });
 
 test("replays a Balanced local rework cycle without stale blocking evidence", () => {
@@ -340,21 +344,24 @@ test("replays a Balanced local rework cycle without stale blocking evidence", ()
     capabilityObservations: privateLocalReviewedChangeCapabilityObservations,
   });
   expectResolutionSuccess(project);
+  const manifestPackage = createPrivateExecutionManifestPackage(
+    project.workflowCompilation,
+  );
   const firstRevision = createPrivateExecutionPayloadDigest({
     revision: "local-a",
   });
   const secondRevision = createPrivateExecutionPayloadDigest({
     revision: "local-b",
   });
-  const result = replayPrivateExecutionTrace(project.manifestPackage, {
+  const result = replayPrivateExecutionTrace(manifestPackage, {
     revision: 2,
-    manifestDigest: project.manifestPackage.digest,
+    manifestDigest: manifestPackage.digest,
     events: [
-      eventFor(project.manifestPackage, "01-plan-implement", firstRevision),
-      eventFor(project.manifestPackage, "02-implement-review", firstRevision),
-      eventFor(project.manifestPackage, "03-review-rework", secondRevision),
-      eventFor(project.manifestPackage, "02-implement-review", secondRevision),
-      eventFor(project.manifestPackage, "04-review-accept", secondRevision),
+      eventFor(manifestPackage, "01-plan-implement", firstRevision),
+      eventFor(manifestPackage, "02-implement-review", firstRevision),
+      eventFor(manifestPackage, "03-review-rework", secondRevision),
+      eventFor(manifestPackage, "02-implement-review", secondRevision),
+      eventFor(manifestPackage, "04-review-accept", secondRevision),
     ],
   });
 

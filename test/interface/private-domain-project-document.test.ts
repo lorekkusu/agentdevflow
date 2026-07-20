@@ -116,12 +116,12 @@ test("compiles parsed intent into the previously captured exact project resoluti
 
   expectCompilationSuccess(result);
   assert.equal(
-    result.project.manifestPackage.digest,
-    "6aa91b3d335ad702ea295f4d76b74ec220d0b496810177d5d72562e22c9eba4b",
+    result.project.resolution.workflow.compilationDigest,
+    result.project.workflowCompilation.compilationDigest,
   );
   assert.equal(
     result.project.resolutionDigest,
-    "d2b5fc7fcced4e7b939c5e42d4a014b8a534a64ba14aa39c7326e504fc5247d4",
+    "d813821ead25477482bb14d9c3d0a3f83a788ae152be1081cf0e67cff982d517",
   );
 });
 

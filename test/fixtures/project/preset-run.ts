@@ -39,7 +39,7 @@ const output = specimens.map((specimen) => {
     convergenceDigest: convergence.convergence.convergenceDigest,
     expansionDigest: project.resolution.preset.expansionDigest,
     definitionId: project.resolution.workflow.definitionId,
-    manifestDigest: project.manifestPackage.digest,
+    workflowCompilationDigest: project.workflowCompilation.compilationDigest,
     resolutionDigest: project.resolutionDigest,
   };
 });
