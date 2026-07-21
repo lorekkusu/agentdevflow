@@ -61,9 +61,11 @@ These are point-in-time advisory and installed-tree observations. They do not pr
 
 A read-only unauthenticated registry request for `agentdevflow` returned HTTP 404. No public package record was visible at the observation time. This is not a reservation and can change at any time.
 
-An authenticated read-only repository query confirmed that the GitHub repository remains private. npm automatic provenance through trusted publishing requires a public source repository and public package, so separate disclosure review and visibility-change authorization remain publication prerequisites.
+Authenticated API and unauthenticated HTTP checks confirmed that the GitHub repository, README, license, security policy, and latest qualification run are publicly accessible. The repository publishes the accepted description and topics without claiming a separate project website.
 
-No npm publishing secret, publishing environment, release tag, or external publishing state was configured during qualification. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
+GitHub private vulnerability reporting, Dependabot security updates, secret scanning, push protection, and full-SHA Actions pinning are enabled. The active `Protect main` ruleset has no bypass actor; it requires pull requests, resolved review conversations, squash-only linear history, all six exact GitHub Actions checks on the latest base, and prevents deletion and force pushes. The initial secret-scanning alert query returned zero results, which is a point-in-time observation rather than proof that later scanning cannot find an alert.
+
+No npm publishing secret, publishing environment, release tag, GitHub release, or npm package was configured or created during public-repository hardening. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
 
 ## Public-disclosure audit
 
@@ -86,18 +88,19 @@ Using Node.js 24.18.0:
 - `npm run check:v1-qualification` selected 36 test files and passed 294 tests with zero failures, skips, or todos;
 - focused CLI tests cover exact-root defaults, no parent discovery, repository-relative reads, installed symlink invocation, stable exit classes, JSON schema version 1, output limiting, foreign-byte non-disclosure, stale approval, interruption convergence, and all five commands.
 
-The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29807660977](https://github.com/lorekkusu/agentdevflow/actions/runs/29807660977). The repository was clean and matched `origin/main` after the run.
+The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29807660977](https://github.com/lorekkusu/agentdevflow/actions/runs/29807660977). The disclosure-preflight commit `e6461f4552704cc3b549cbacca867775005e0a2d` then passed the same six cells in [GitHub Actions run 29808741036](https://github.com/lorekkusu/agentdevflow/actions/runs/29808741036). The repository was clean and matched `origin/main` after both runs.
 
 ## Remaining publication gates
 
 - Keep the release source clean and require the normal repository and hosted checks on any later source commit.
+- Merge this public-hardening closure only through the active `main` ruleset after its required checks pass.
 - Repeat package, advisory, lifecycle-script, and clean-install checks if the final release commit changes packaged artifact bytes or dependency state.
 - Repeat the npm package-name lookup immediately before publication; the current 404 observation does not reserve the name.
-- Obtain explicit authorization before changing repository visibility, and confirm public accessibility before relying on automatic npm provenance.
-- After the repository becomes public, configure the intended `main` protection, enable private vulnerability reporting, and verify the documented security route before accepting external contributions or publishing a release.
-- Select and authorize the first-publication credential bootstrap. After the package exists, configure trusted publishing and remove or revoke the bootstrap credential before future releases.
+- Separately authorize and configure the protected `npm-publish` environment and one-time first-publication credential without placing the credential in repository content.
+- Dispatch only the exact reviewed final `main` commit and version, verify the public `next` artifact and provenance, then immediately remove the GitHub secret and revoke the bootstrap credential.
+- After the package exists, configure trusted publishing before a later release and remove token-based publication from the workflow.
 - Obtain explicit authorization before configuring external publishing state, tagging, creating a release, or publishing to npm.
 
 ## Conclusion
 
-The beta implementation passes its local package, security-observation, installed-bin, disclosure, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate is separately authorized repository visibility and public-repository hardening, not feature expansion.
+The beta implementation passes its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate after this documentation-only closure is separately authorized first-publication setup, not feature expansion.

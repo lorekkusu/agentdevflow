@@ -225,7 +225,8 @@ Required sequence:
 3. **Complete:** inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, signatures, and license inclusion;
 4. **Complete:** define a minimal public release checklist, changelog, vulnerability-reporting policy, and bounded full-history disclosure audit without adding a release framework;
 5. **Complete:** the manual release-preparation workflow and packageable manifest passed local qualification, were committed as `96c253c`, and passed all six hosted Node.js 22/24 cells on the exact pushed commit;
-6. **Current gate:** the bounded full-history and external-state disclosure preflight found no publication blocker. Stop for explicit authorization before changing repository visibility. Public-repository protections, vulnerability reporting, first-publication or trusted-publisher state, tags, releases, and npm publication remain separately authorized actions.
+6. **Complete:** the bounded disclosure preflight found no publication blocker; unauthenticated checks verified the public repository and release-facing documents; private vulnerability reporting, Dependabot security updates, secret scanning, push protection, full-SHA Actions pinning, and the active no-bypass `Protect main` ruleset establish the accepted public security baseline;
+7. **Current gate:** close the public-hardening record through the protected documentation-only pull-request path. Then stop for separate authorization before first-publication environment or credential configuration, tags, releases, and npm publication.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
 
