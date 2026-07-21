@@ -40,6 +40,27 @@ Use the change proposal issue form for scoped implementation work. Use the decis
 
 An issue is not an accepted decision. Candidate recommendations remain non-binding until the required evidence exists and the project explicitly accepts them.
 
+## Branch names
+
+Name branches for the purpose of the change, not for an author, tool, or execution environment. Branches created directly in this repository must use one of these prefixes:
+
+- `build/`;
+- `chore/`;
+- `ci/`;
+- `dependabot/`;
+- `docs/`;
+- `feat/`;
+- `fix/`;
+- `perf/`;
+- `refactor/`;
+- `release/`;
+- `research/`;
+- `revert/`;
+- `security/`;
+- `test/`.
+
+The active GitHub ruleset enforces these prefixes when new branches are created directly in this repository, other than `main` and GitHub-managed merge-queue branches. Branches in external forks are outside the repository ruleset's scope.
+
 ## Pull requests
 
 Keep pull requests focused. Include:

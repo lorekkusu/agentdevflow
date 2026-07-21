@@ -16,6 +16,10 @@ Write every repository artifact in English, including documentation, code, comme
 
 Do not store conversation transcripts or temporary deliberation records in the repository. Preserve durable technical conclusions and reproducible evidence only.
 
+## Branch names
+
+Name branches for the change purpose, never for an authoring tool or contributor identity. Use an allowed prefix from `CONTRIBUTING.md`; an active GitHub ruleset enforces the documented convention for branches created in this repository.
+
 ## Source of truth
 
 - `docs/product-direction.md` defines retained product intent and deferred work.
