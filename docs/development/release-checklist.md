@@ -79,6 +79,8 @@ Stop and obtain explicit authorization before any of these actions:
 
 Authorization for one action does not imply authority for the others.
 
+For a brand-new npm package, treat first-publication authentication as a separate bootstrap decision. At the 2026-07-21 review snapshot, npm requires a package to exist before a trusted publisher can be configured, and staged publishing cannot create a brand-new package. Do not store or configure a bootstrap token until that one-time use is explicitly reviewed and authorized. After the first publication, configure trusted publishing and revoke or remove the bootstrap credential before a later release.
+
 ## 6. Authorized publication
 
 After authorization, confirm the reviewed source repository is publicly accessible, then use npm trusted publishing when available. Confirm provenance is attached and publish with the non-default `next` tag. Never publish the beta as `latest`.
@@ -95,6 +97,7 @@ The package version cannot be reused after publication. If publication partially
 
 - Verify the registry version, `next` distribution tag, license, repository link, engines, provenance, integrity, and tarball contents.
 - Install by exact version in a clean project and repeat the bounded offline command smoke test.
+- Enable GitHub private vulnerability reporting after the repository is public and verify that the route documented in `SECURITY.md` works.
 - Publish the changelog entry and GitHub release only for the exact verified artifact.
 - Record known limitations without claiming live orchestration, authenticated observations, broad provider support, or 1.0 compatibility.
 - If verification fails, report the exact observed state and use a new version for any corrected artifact.
@@ -106,4 +109,7 @@ The package version cannot be reused after publication. If publication partially
 - [Private package qualification](../evidence/private-package-qualification.md)
 - [npm provenance](https://docs.npmjs.com/generating-provenance-statements/)
 - [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
+- [npm trusted-publisher CLI requirements](https://docs.npmjs.com/cli/v11/commands/npm-trust/)
+- [npm staged publishing](https://docs.npmjs.com/staged-publishing/)
 - [npm distribution tags](https://docs.npmjs.com/adding-dist-tags-to-packages/)
+- [GitHub private vulnerability reporting](https://docs.github.com/en/code-security/how-tos/report-and-fix-vulnerabilities/configure-vulnerability-reporting/configure-for-a-repository)

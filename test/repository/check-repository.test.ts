@@ -36,6 +36,7 @@ test("enforces dependency boundaries for direct import forms", async () => {
     await mkdir(join(root, "src", "other"), { recursive: true });
     const script = join(root, "scripts", "check-repository.mjs");
     await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
     await writeFile(
       join(root, "src", "interface", "private-zod.ts"),
       sideEffectImport("zod"),
@@ -67,6 +68,24 @@ test("enforces dependency boundaries for direct import forms", async () => {
       assert.match(bypassed.stderr, /DEPENDENCY_BOUNDARY_BYPASSED/u);
       await unlink(bypassPath);
     }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("requires a root security policy", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-security-policy-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /REQUIRED_ROOT_FILE_MISSING/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

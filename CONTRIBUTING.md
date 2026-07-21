@@ -65,4 +65,4 @@ npm run check
 
 ## Security-sensitive reports
 
-Do not open a public issue containing credentials, exploit details, or an unpatched vulnerability. If no private reporting route is published, request a private contact route from a maintainer without including sensitive details.
+Follow [the security policy](SECURITY.md). Do not open a public issue containing credentials, exploit details, or an unpatched vulnerability. If the private reporting route is unavailable, request a private contact route from a maintainer without including sensitive details.

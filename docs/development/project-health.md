@@ -38,15 +38,15 @@ The pre-beta-surface convergence candidate passed the repository audit over 211 
 
 The accepted beta-surface slice adds Apache-2.0 licensing, the `0.1.0-beta.1` candidate version, a Node.js 22/24 engine range, exact-root `agentdevflow.config.jsonc` and `.agentdevflow/lock.json` defaults, explicit repository-relative overrides, stable exit classes, and bounded JSON schema version 1. Tests prove default discovery does not walk to a parent and that oversized machine output fails closed. The package remains mechanically private pending release authorization.
 
-Current Node.js 24 release-candidate verification passes strict type checking, build, and 392 tests with zero failures, skips, or todos; the final documentation audit passes over 218 text files. The selected V1 suite passes 292 tests from 36 files. A new 118-entry tarball installs offline and completes all five commands through the installed npm bin. Registry advisory matching reports zero production vulnerabilities, and installed dependency queries report no preinstall, install, or postinstall scripts. See [beta release-candidate evidence](../evidence/beta-release-candidate.md).
+Current Node.js 24 release-candidate verification passes strict type checking, build, and 393 tests with zero failures, skips, or todos; the repository audit passes over 219 text files. The selected V1 suite passes 293 tests from 36 files. A new 118-entry tarball installs offline and completes all five commands through the installed npm bin. Registry advisory matching reports zero production vulnerabilities, and installed dependency queries report no preinstall, install, or postinstall scripts. See [beta release-candidate evidence](../evidence/beta-release-candidate.md).
 
-Read-only unauthenticated checks found no visible npm package record and no publicly accessible GitHub repository page. The package name is not reserved, and repository visibility must not change without a full disclosure review and separate authorization. Public source accessibility is required before the planned provenance claim can be completed.
+Read-only registry checks found no visible npm package record, and an authenticated read-only GitHub query confirmed that the repository remains private. The package name is not reserved, and repository visibility must not change without separate authorization. A bounded full-history disclosure audit found no publication blocker through its documented pattern, path, blob, and metadata checks, but it does not replace human review or a dedicated secret scanner. Public source accessibility is required before the planned automatic provenance claim can be completed.
 
 ## Roadmap alignment
 
 - **Completed:** Phase 0 renderer and policy gates, the native initial-provider renderer, deterministic ownership and lock semantics, and staged forward-convergent apply have executable evidence.
 - **Completed for the initial beta boundary:** the local application path reaches revision-1 init, exact planning, executable `check` and `diff`, and approved `render`, including fresh, exact-adopt, lossless-import, abort, exact-root discovery, bounded JSON, and stable outcome fixtures.
-- **Current:** beta hardening must repeat platform and package qualification against the accepted surface, add a minimal release checklist and changelog, and then stop for explicit publication authority.
+- **Current:** beta hardening has completed local package, dependency-security, installed-bin, disclosure, and selected hosted platform qualification. The repository must now review and publish the closure through normal CI, then stop for explicit visibility and publication authority.
 - **Prematurely advanced:** strict execution transport and one GitHub observation mapper answered bounded research questions before the local CLI dependency was complete. Both are now frozen.
 
 ## Measured observations
@@ -196,7 +196,7 @@ Exit criteria:
 - public filename, discovery, schema-versioning, output, and exit-code boundaries match ADR 0004 and executable tests;
 - no package is published or reserved.
 
-The next milestone is beta release hardening. It must repeat Node.js 22/24 and installed-package qualification, verify the final tarball and license, repeat dependency security checks, and create a minimal release checklist and changelog. It must stop before any external trusted-publisher configuration, tag, release, package reservation, or npm publication.
+Beta release hardening is technically complete in the working tree: Node.js 22/24 hosted qualification passed, the installed package and five commands were requalified offline, the final tarball and license were inspected, dependency security observations were refreshed, and the repository now has a minimal release checklist, changelog, security policy, and bounded full-history disclosure audit. The current gate is review and normal CI on the closure commit. Work must then stop before any visibility change, first-publication credential, trusted-publisher configuration, tag, release, package reservation, or npm publication without explicit authorization.
 
 ## Stop conditions
 

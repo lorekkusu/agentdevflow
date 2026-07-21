@@ -395,6 +395,29 @@ async function inspectPackageBoundary() {
   return diagnostics;
 }
 
+async function inspectRequiredRootFiles() {
+  const requiredFiles = ["SECURITY.md"];
+  const diagnostics = [];
+
+  for (const requiredFile of requiredFiles) {
+    try {
+      const file = await stat(join(root, requiredFile));
+      if (!file.isFile()) {
+        throw new Error("not a regular file");
+      }
+    } catch {
+      diagnostics.push({
+        path: requiredFile,
+        line: 1,
+        code: "REQUIRED_ROOT_FILE_MISSING",
+        message: `Keep ${requiredFile} as a regular file at the repository root.`,
+      });
+    }
+  }
+
+  return diagnostics;
+}
+
 function markdownLinkTargets(content) {
   const targets = [];
   const pattern = /\[[^\]]*\]\((<[^>]+>|[^)\s]+)(?:\s+"[^"]*")?\)/gu;
@@ -459,6 +482,7 @@ const diagnostics = [];
 const files = await collectTextFiles();
 
 diagnostics.push(...(await inspectPackageBoundary()));
+diagnostics.push(...(await inspectRequiredRootFiles()));
 
 for (const absolutePath of files) {
   const relativePath = relative(root, absolutePath).replaceAll("\\", "/");

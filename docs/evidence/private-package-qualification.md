@@ -40,8 +40,8 @@ npm pack --pack-destination <temporary-directory> --json
 For a network-independent installation exercise, package the already installed exact dependencies locally, then install all three tarballs into a new prefix:
 
 ```bash
-npm pack node_modules/jsonc-parser --ignore-scripts --pack-destination <temporary-directory>
-npm pack node_modules/zod --ignore-scripts --pack-destination <temporary-directory>
+npm pack ./node_modules/jsonc-parser --ignore-scripts --pack-destination <temporary-directory>
+npm pack ./node_modules/zod --ignore-scripts --pack-destination <temporary-directory>
 npm install --prefix <clean-install-directory> --offline --ignore-scripts \
   <agentdevflow-tarball> <jsonc-parser-tarball> <zod-tarball>
 ```

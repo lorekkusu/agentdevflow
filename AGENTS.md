@@ -48,6 +48,7 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/decisions/` contains accepted or proposed material architecture decisions and the reusable ADR template.
 - `docs/evidence/` contains public, reproducible technical evidence and gate conclusions.
 - `CONTRIBUTING.md` defines the public contribution, issue, pull-request, and AI-assisted-work expectations.
+- `SECURITY.md` defines the public vulnerability-reporting and coordinated-disclosure route.
 
 Keep critical constraints in this file. Link to detailed documents for context instead of duplicating them here.
 

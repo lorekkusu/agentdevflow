@@ -22,7 +22,7 @@ See [project health](project-health.md) for the current sanitized scope and comp
 | V1 apply and interruption recovery | Complete for staged forward convergence | [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md), [V1 recovery contract](v1-recovery-contract.md), and [convergent apply evidence](../evidence/private-convergent-apply.md) |
 | Private command semantics | Complete for isolated services and executable local `init`, `check`, `diff`, approved `render`, and explicit-observation `doctor` | [Local CLI](../evidence/private-local-cli.md), [check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
 | Private package qualification | Complete for one allowlisted local tarball and offline installed-bin exercise | [Private package qualification](../evidence/private-package-qualification.md) |
-| Initial beta candidate qualification | Complete locally on Node.js 24; final Node.js 22/24 hosted matrix pending | [Beta release-candidate evidence](../evidence/beta-release-candidate.md) and [ADR 0004](../decisions/0004-initial-beta-public-surface.md) |
+| Initial beta candidate qualification | Complete locally and on the selected hosted Node.js 22/24 matrix | [Beta release-candidate evidence](../evidence/beta-release-candidate.md) and [ADR 0004](../decisions/0004-initial-beta-public-surface.md) |
 | Existing-file initialization bridge | Complete for create, exact adopt, lossless import, abort, and exact approved render | [Project-instructions import](../evidence/private-project-instructions-import.md) and [approved init render](../evidence/private-approved-init-render.md) |
 | V1 candidate platform qualification | Complete as candidate evidence, not a public support promise | [V1 platform qualification](../evidence/v1-platform-qualification.md) |
 | Domain workflow validation | Complete as a private prototype for issue-to-reviewed-PR and local reviewed change | [Domain workflow evidence](../evidence/private-domain-workflows.md) |
@@ -216,15 +216,15 @@ The accepted packet covers exact-root configuration and lock discovery, explicit
 
 ## Current: beta release hardening
 
-Status: **Current; publication remains unauthorized.**
+Status: **Technical qualification complete; publication preparation remains externally gated and unauthorized.**
 
 Required sequence:
 
-1. enforce accepted package metadata, publication guard, exact-root path behavior, JSON version, and output limits in repository checks and tests;
-2. repeat complete repository verification and Node.js 22/24 qualification against the accepted beta surface;
-3. inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, and license inclusion;
-4. define a minimal public release checklist and changelog without adding a release framework;
-5. stop for explicit authorization before removing `private: true`, configuring any external trusted publisher, creating a tag or release, or publishing to npm.
+1. **Complete:** enforce accepted package metadata, publication guard, exact-root path behavior, JSON version, and output limits in repository checks and tests;
+2. **Complete:** repeat complete repository verification and Node.js 22/24 qualification against the accepted beta surface;
+3. **Complete:** inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, signatures, and license inclusion;
+4. **Complete:** define a minimal public release checklist, changelog, vulnerability-reporting policy, and bounded full-history disclosure audit without adding a release framework;
+5. **Current gate:** review and publish the closure commit through normal CI, then stop for explicit authorization before changing visibility, removing `private: true`, configuring first-publication or trusted-publisher state, creating a tag or release, or publishing to npm.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
 
