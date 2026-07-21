@@ -6,7 +6,7 @@
 
 Keep the implementation provider-neutral. Codex, Claude Code, and Cursor are the initial adapter validation set; Steward, Developer, and Reviewer are responsibilities, not provider brands.
 
-Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The initial five-command beta is published but its first package entrypoint failed; `0.1.0-beta.2` is the authorized repair candidate. The current gate is protected publication, registry first-run verification, and maintainer-operated dogfood qualification. Later versions, tags, releases, and package-setting changes remain separately authorized. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
+Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The repaired five-command beta is published as `0.1.0-beta.2`, passes protected publication and registry first-run qualification, and has one bounded maintainer-dogfood observation. The current gate is a decision about the smallest compiled-policy consumer; later versions, tags, releases, package-setting changes, and public-surface extensions remain separately authorized. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
 
 Do not extend the accepted beta API, configuration syntax, discovery rules, JSON schema, lock format, or production framework without its roadmap acceptance gate. Follow ADR 0004 and the beta CLI contract for the currently accepted surface.
 
@@ -35,6 +35,7 @@ Name branches for the change purpose, never for an authoring tool or contributor
 - `docs/evidence/beta-release-candidate.md` records the final pre-publication package snapshot and its historical release gates.
 - `docs/evidence/initial-beta-publication.md` records the exact initial registry artifact, provenance, installation, and credential closure.
 - `docs/evidence/public-first-run.md` records the public entrypoint and onboarding qualification boundary.
+- `docs/development/maintainer-dogfood.md` records a bounded private-repository observation of native instruction discovery and an advisory three-role handoff; it is not reproducible qualification evidence.
 - `docs/development/v1-recovery-contract.md` defines the accepted forward-convergence behavior and non-claims.
 - `docs/development/private-render-command-contract.md` defines exact-plan and private lock publication behavior.
 - `docs/development/private-check-command-contract.md` defines the candidate read-only check outcomes and diagnostics.

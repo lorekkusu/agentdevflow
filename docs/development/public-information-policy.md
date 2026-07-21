@@ -22,6 +22,7 @@ The repository is the source of truth for public technical state. Conversation h
 | Reversible tooling | `docs/development/tooling.md` | Current choice, rationale, revisit trigger | Chronological debate |
 | Material decisions | `docs/decisions/` | Context, decision, consequences, evidence, revisit triggers | Raw deliberation and attribution to assistants |
 | Experimental evidence | `docs/evidence/` | Version, fixture, reproduction, observation, limitation, verdict | Unsanitized logs and machine-specific data |
+| Bounded maintainer observation | Current project health or a scoped development note | Sanitized scope, observed versions, bounded outcome, limitations, and follow-up gate | Private fixtures, commands, source details, raw output, and compatibility qualification claims |
 | Contribution procedure | `CONTRIBUTING.md`, issue forms, and pull-request template | Operational steps and verification | Prompt transcripts and private review chronology |
 | Repository-wide agent guidance | `AGENTS.md` | Concise commands, boundaries, and routing | Duplicated design documents |
 
@@ -72,6 +73,12 @@ Published evidence must separate observations from assumptions and recommendatio
 - links to current primary sources when external claims matter.
 
 Sanitize captured output before committing it. Remove credentials, personal identifiers, absolute user paths, hostnames, temporary paths, volatile timestamps that do not support the result, and unrelated environment data. Prefer a compact fixture and expected diagnostic over a complete terminal transcript.
+
+A private dogfood repository can support a bounded maintainer observation but
+cannot become public qualification evidence when its fixture and reproduction
+procedure are intentionally withheld. Record only the sanitized outcome and
+limitations in development or project-health documentation, and route
+independently reproducible claims to `docs/evidence/`.
 
 ## AI-assisted work
 
