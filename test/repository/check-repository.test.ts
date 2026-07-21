@@ -94,3 +94,56 @@ test("keeps project resolution independent from execution exports", async () => 
     await rm(root, { recursive: true, force: true });
   }
 });
+
+test("keeps normal source independent from frozen transaction code", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-transaction-boundary-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, "src", "workspace"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeFile(
+      join(root, "src", "workspace", "bypass.ts"),
+      defaultImport("../transaction/private-render-transaction.js"),
+    );
+
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /FROZEN_TRANSACTION_BOUNDARY_BYPASSED/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("requires a private allowlisted package boundary", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-package-boundary-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeFile(
+      join(root, "package.json"),
+      `${JSON.stringify({
+        private: false,
+        bin: { agentdevflow: "dist/src/other.js" },
+        files: ["dist/src/transaction/"],
+      })}\n`,
+    );
+
+    const result = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /PACKAGE_PUBLICATION_ENABLED/u);
+    assert.match(result.stderr, /PACKAGE_BETA_METADATA_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_LICENSE_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_BIN_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_ALLOWLIST_TOO_BROAD/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});

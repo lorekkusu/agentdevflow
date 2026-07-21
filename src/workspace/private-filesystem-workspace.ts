@@ -21,7 +21,7 @@ import type { RenderWorkspace } from "../renderer/contract.js";
 import {
   validatePrivateTemporaryMutationIntent,
   type PrivateTemporaryMutationIntent,
-} from "../transaction/private-temporary-intent.js";
+} from "./private-temporary-intent.js";
 import {
   validatePrivateConvergentMutationIntent,
   type PrivateConvergentMutationIntent,

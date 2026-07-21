@@ -6,7 +6,7 @@ Snapshot date: 2026-07-18.
 
 **Pass for the read-only private proposal core.** The service deterministically observes the three initial provider instruction paths and assigns every configured path one explicit `create`, byte-exact `adopt`, assessed `import`, or `abort` disposition.
 
-This validates the initialization decision boundary without selecting a public configuration file, implementing a wizard, trusting Git cleanliness, or granting mutation authority. Provider-specific import analyzers are not implemented; their assessment contract remains an explicit dependency.
+This validates the initialization decision boundary without selecting a public configuration file, implementing a wizard, trusting Git cleanliness, or granting mutation authority. At this snapshot provider-specific import analyzers were not implemented; the later narrow project-instructions analyzer and revision-1 local CLI now provide the bounded active follow-on.
 
 ## Reproduction
 
@@ -55,4 +55,4 @@ The proposal is not an atomic filesystem snapshot. Another process may change a 
 
 ## Recommendation
 
-Keep this service as the private non-interactive initialization core. Implement narrow provider-specific project-instruction analyzers before offering import as an end-user feature. Start with exact, explainable content forms; abort on constructs that cannot be represented without a complete diagnostic. Do not build an interactive wizard until every choice maps to a reproducible file or flag representation.
+Keep this service as schema-version-0 compatibility and regression evidence. The active revision-1 local path preserves the same dispositions through exact native targets and the narrow analyzer. Continue to abort on constructs that cannot be represented without a complete diagnostic, and do not build an interactive wizard until every choice maps to a reproducible file or flag representation.

@@ -27,7 +27,7 @@ import {
   type PrivateTemporaryIntentRegistry,
   type PrivateTemporaryMutationIntent,
   type PrivateWriterClearanceRegistry,
-} from "./private-temporary-intent.js";
+} from "../workspace/private-temporary-intent.js";
 
 export const privateRenderRecoveryManifestRevision = 1;
 export const privateTransactionRetirementRevision = 1;

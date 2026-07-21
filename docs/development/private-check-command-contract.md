@@ -16,7 +16,9 @@ The caller supplies:
 
 The service does not discover, parse, compile, plan, repair, or persist these inputs. Keeping those responsibilities outside the service prevents early command work from freezing configuration and storage decisions.
 
-The separate private application planner now prepares these inputs from local revision-1 configuration, canonical lock, and repository bytes. This command service remains independently testable and does not acquire the planner's parsing or staging responsibilities.
+The separate private application planner now prepares these inputs from local revision-1 configuration, canonical lock, and repository bytes. When the lock is absent, the planner also classifies exact adoption and proven lossless import before producing the retained plan. This command service remains independently testable and does not acquire the planner's parsing, staging, or import-analysis responsibilities.
+
+The private local CLI composes that planner with this service from explicit repository, configuration, and lock paths. It opens the repository through the read-only filesystem boundary and returns the service's private candidate exit behavior. This composition does not establish path discovery, a public configuration filename, a public lock filename, or an npm executable contract.
 
 ## Outcomes
 
@@ -75,4 +77,4 @@ The private service does not define:
 - protection against concurrent repository mutation;
 - semantic truth of workflow evidence.
 
-The next command-service slice may build `diff` from the same exact snapshot and read-only observations. Mutating `render` remains routed through the separate private render command service.
+The private local CLI now exercises this service and the exact-byte diff service through one experimental development entry point. The same entry exposes exact approved render, but all provider mutation remains routed through the separate private render command service.

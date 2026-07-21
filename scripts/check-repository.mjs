@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -256,24 +257,142 @@ function inspectDependencyBoundaries(relativePath, content) {
 }
 
 function inspectArchitectureBoundaries(relativePath, content) {
-  if (!relativePath.startsWith("src/project/") || !relativePath.endsWith(".ts")) {
+  const diagnostics = [];
+  if (relativePath.startsWith("src/project/") && relativePath.endsWith(".ts")) {
+    const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']\.\.\/execution\//u.exec(
+      content,
+    );
+    if (match !== null && match.index !== undefined) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "PROJECT_EXECUTION_BOUNDARY_BYPASSED",
+        message:
+          "Keep project resolution independent from optional execution exports.",
+      });
+    }
+  }
+  if (
+    relativePath.startsWith("src/") &&
+    !relativePath.startsWith("src/experiments/") &&
+    !relativePath.startsWith("src/transaction/") &&
+    relativePath.endsWith(".ts")
+  ) {
+    const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["'][^"']*\/transaction\//u.exec(
+      content,
+    );
+    if (match !== null && match.index !== undefined) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "FROZEN_TRANSACTION_BOUNDARY_BYPASSED",
+        message: "Keep the normal runtime graph independent from frozen transaction code.",
+      });
+    }
+  }
+  return diagnostics;
+}
+
+async function inspectPackageBoundary() {
+  let content;
+  try {
+    content = await readFile(join(root, "package.json"), "utf8");
+  } catch {
     return [];
   }
-  const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']\.\.\/execution\//u.exec(
-    content,
-  );
-  if (match === null || match.index === undefined) {
-    return [];
+  const manifest = JSON.parse(content);
+  const diagnostics = [];
+  let licenseDigest = null;
+  try {
+    const license = await readFile(join(root, "LICENSE"));
+    licenseDigest = createHash("sha256").update(license).digest("hex");
+  } catch {
+    // Report the missing or unreadable canonical license below.
   }
-  return [
-    {
-      path: relativePath,
-      line: lineNumberAt(content, match.index),
-      code: "PROJECT_EXECUTION_BOUNDARY_BYPASSED",
-      message:
-        "Keep project resolution independent from optional execution exports.",
-    },
+  if (
+    licenseDigest !==
+    "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  ) {
+    diagnostics.push({
+      path: "LICENSE",
+      line: 1,
+      code: "PACKAGE_LICENSE_INVALID",
+      message: "Keep the canonical Apache License 2.0 text at the repository root.",
+    });
+  }
+  if (manifest.private !== true) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_PUBLICATION_ENABLED",
+      message: "Keep the package private until publication is explicitly authorized.",
+    });
+  }
+  const expectedBetaMetadata = [
+    ["version", manifest.version, "0.1.0-beta.1"],
+    ["license", manifest.license, "Apache-2.0"],
+    ["engines.node", manifest.engines?.node, "^22.0.0 || ^24.0.0"],
+    [
+      "repository.url",
+      manifest.repository?.url,
+      "git+https://github.com/lorekkusu/agentdevflow.git",
+    ],
+    ["publishConfig.access", manifest.publishConfig?.access, "public"],
+    ["publishConfig.tag", manifest.publishConfig?.tag, "next"],
+    ["publishConfig.provenance", manifest.publishConfig?.provenance, true],
   ];
+  for (const [field, actual, expected] of expectedBetaMetadata) {
+    if (actual !== expected) {
+      diagnostics.push({
+        path: "package.json",
+        line: 1,
+        code: "PACKAGE_BETA_METADATA_INVALID",
+        message: `Keep ${field} equal to ${JSON.stringify(expected)} until a new accepted release decision changes it.`,
+      });
+    }
+  }
+  if (manifest.bin?.agentdevflow !== "dist/src/cli/private-local-cli.js") {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_BIN_INVALID",
+      message: "Keep the private package bin bound to the qualified local CLI entry.",
+    });
+  }
+  if (!Array.isArray(manifest.files)) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_ALLOWLIST_MISSING",
+      message: "Use an explicit npm files allowlist for the runtime package.",
+    });
+    return diagnostics;
+  }
+  if (!manifest.files.includes("CHANGELOG.md")) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_CHANGELOG_MISSING",
+      message: "Include the public changelog in the beta package allowlist.",
+    });
+  }
+  const forbidden = manifest.files.find(
+    (entry) =>
+      typeof entry !== "string" ||
+      (!entry.startsWith("!") &&
+        /(?:^|\/)(?:test|experiments|transaction|execution|adapters)(?:\/|$)/u.test(
+          entry,
+        )),
+  );
+  if (forbidden !== undefined) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_ALLOWLIST_TOO_BROAD",
+      message: `Remove forbidden runtime package entry: ${String(forbidden)}`,
+    });
+  }
+  return diagnostics;
 }
 
 function markdownLinkTargets(content) {
@@ -338,6 +457,8 @@ async function inspectMarkdownLinks(absolutePath, relativePath, content) {
 
 const diagnostics = [];
 const files = await collectTextFiles();
+
+diagnostics.push(...(await inspectPackageBoundary()));
 
 for (const absolutePath of files) {
   const relativePath = relative(root, absolutePath).replaceAll("\\", "/");

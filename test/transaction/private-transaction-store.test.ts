@@ -32,7 +32,7 @@ import {
   createPrivateTemporaryIntentRegistry,
   createPrivateTemporaryMutationIntent,
   serializePrivateTemporaryIntentRegistry,
-} from "../../src/transaction/private-temporary-intent.js";
+} from "../../src/workspace/private-temporary-intent.js";
 import {
   preparePrivateRenderRecovery,
   PrivateFilesystemTransactionStore,

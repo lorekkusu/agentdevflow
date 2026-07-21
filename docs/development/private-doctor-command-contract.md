@@ -63,7 +63,7 @@ Current manual evidence produces a degraded result but remains available to the 
 
 Reports, diagnostics, and capability availability are sorted deterministically. The service does not mutate observations and does not record timestamps, hostnames, absolute paths, credentials, tokens, environment variable values, or command output.
 
-The durable repository should contain probe contracts and reproducible fixtures, not private local observation output. A future CLI must define redaction and persistence before exposing environment reports.
+The durable repository should contain probe contracts and reproducible fixtures, not private local observation output. The current private CLI reads an explicit bounded observation file, emits only the semantic report, and persists nothing. A public CLI must define redaction and persistence before exposing environment reports.
 
 ## Explicit non-claims
 
@@ -80,3 +80,9 @@ The private service does not define:
 - broad provider support beyond the current candidate model.
 
 Probe adapters must remain narrower than this provider-neutral result model and require separate evidence before use.
+
+## Private local composition
+
+The installed private command supports only the `local-reviewed-change` workflow. It parses the active revision-1 project document, reads a caller-selected observation envelope capped at 262,144 UTF-8 bytes, requires current filesystem-read and filesystem-write observations, and evaluates project-instructions capability evidence for the configured provider set.
+
+This composition does not authenticate the observation producer. A healthy result means only that the supplied closed envelope is structurally valid, current by its own assertion, identity-consistent with the configuration, and sufficient for the current local requirements. Hosted workflows fail explicitly rather than reusing fixture observations or implying unavailable tracker, pull-request, CI, review-service, or merge adapters.

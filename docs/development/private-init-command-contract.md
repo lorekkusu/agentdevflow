@@ -2,11 +2,24 @@
 
 ## Status
 
-This contract defines an internal, read-only, non-interactive initialization proposal service. It is not a stable CLI, API, configuration schema, configuration filename, import protocol, discovery extension point, or apply authorization.
+This contract defines the retained schema-version-0 read-only initialization proposal service and the shared disposition semantics now reused by the active revision-1 local application path. It is not a stable CLI, API, configuration schema, configuration filename, import protocol, discovery extension point, or apply authorization.
+
+## Active revision-1 composition
+
+The experimental local entry generates only the currently executable local revision-1 intent from explicit Fast or Balanced, provider, responsibility, workflow, and tracker flags. It creates the caller-selected relative configuration path only when absent. A repeated byte-exact configuration is adopted without a write; different existing configuration bytes, a present lock, path collisions, unsafe paths, and invalid intent abort before configuration mutation.
+
+The active application planner stages the native provider targets when no lock exists and applies the same four dispositions:
+
+- absent provider bytes become `create`;
+- byte-exact target bytes become `adopt`;
+- different bytes become `import` only when the narrow project-instructions analyzer proves exact logical preservation and binds both digests;
+- every unsupported, unreadable, stale, or foreign case becomes `abort`.
+
+Init reports these outcomes but does not write provider files or the render lock. A later `diff` exposes the complete exact plan. Exact-plan approval and a second analysis and plan match authorize the sole render command. This avoids translating revision-1 intent into schema-version-0 and avoids inventing a persisted approval format.
 
 ## Boundary
 
-The service accepts a candidate configuration, deterministic target bytes, optional caller-supplied import assessments, and a read-only workspace. It returns a complete proposal and never writes, removes, adopts, imports, stages, commits, resets, or otherwise mutates repository state.
+The retained service accepts a candidate configuration, deterministic target bytes, optional caller-supplied import assessments, and a read-only workspace. It returns a complete proposal and never writes, removes, adopts, imports, stages, commits, resets, or otherwise mutates repository state.
 
 Revision 1 recognizes only the project-level instruction paths already validated by the native renderer:
 
@@ -79,4 +92,4 @@ The private service does not define:
 - mutation, lock creation, adoption authorization, or import application;
 - Git status, reset, clean, stash, branch, commit, or push behavior.
 
-The [private approved-init render bridge](private-approved-init-render-contract.md) preserves this read-only proposal boundary, revalidates lossless import evidence, and routes approved mutation through the existing exact-plan render command.
+The [private approved-init render bridge](private-approved-init-render-contract.md) preserves this read-only proposal boundary for schema-version-0 compatibility evidence. The active revision-1 exact-plan successor revalidates the same adoption and import facts and routes approved mutation through the existing render command without an additional approval file.

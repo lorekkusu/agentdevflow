@@ -4,15 +4,15 @@ Snapshot date: 2026-07-20.
 
 ## Follow-on status
 
-The dependency decision and repository-integrated parser, schema, edit, bounded project-resolution, and private preset-reconciliation work requested by this earlier candidate are now complete. See [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md), the [private project document contract](../development/private-project-document-contract.md), [private preset expansion evidence](private-preset-expansion.md), and [dependency security evidence](parser-schema-dependency-security.md). Public filenames, discovery, compatibility, and migrations remain deferred.
+The dependency decision and repository-integrated parser, schema, edit, bounded project-resolution, private preset reconciliation, and [private local CLI](private-local-cli.md) are complete through the offline local vertical slice. ADR 0004 subsequently accepts the initial beta exact-root filename and discovery rules, stable exit classes, and bounded versioned JSON output. Configuration fields, JSON fields, and lock bytes retain beta migration authority. See [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md), [ADR 0004](../decisions/0004-initial-beta-public-surface.md), and the [beta CLI contract](../development/beta-cli-contract.md).
 
-The schema-version-0 file and flag specimens are no longer a complete representation of current private project intent: they cannot express workflow family, hosted tracker intent, pull-request initial state, auxiliary review, or logical capability targets. They remain useful historical evidence for argument parsing and deterministic normalization, but must not become the public schema or be auto-promoted without an explicit migration contract.
+The schema-version-0 file specimen is no longer a complete representation of current private project intent: it cannot express workflow family, hosted tracker intent, pull-request initial state, auxiliary review, or logical capability targets. Its old CLI flag specimen has been replaced rather than retained as an active invocation. The schema-version-0 normalizer and document generator remain useful compatibility and regression evidence, but must not become the public schema or be auto-promoted without an explicit migration contract.
 
 ## Verdict
 
-**Pass for the historical schema-version-0 representation boundary.** That bounded candidate can be expressed through explicit flags, normalized into its existing digest, and emitted as deterministic strict JSON that is also valid JSONC. All five candidate V1 command names fit a strict Node.js `util.parseArgs` option matrix without a CLI framework or filesystem access. This does not establish complete representation of the newer private project intent.
+**Pass for the retained representation techniques, superseded for active init semantics.** The historical schema-version-0 candidate can still be normalized and emitted as deterministic strict JSON that is also valid JSONC. The current revision-1 local init and all five candidate command names fit a strict Node.js `util.parseArgs` option matrix without a CLI framework. This does not accept the private flags as a public contract or make the older schema complete.
 
-This result does not accept a public configuration schema, filename, parser dependency, CLI syntax, help text, exit code, output format, discovery rule, or approval format.
+The verdict and observations below describe the 2026-07-20 candidate snapshot. Later acceptance is governed by ADR 0004 and executable beta tests rather than retroactively changing the historical measurements.
 
 ## Reproduction
 
@@ -43,12 +43,14 @@ Observed local results:
 
 | Check | Result |
 | --- | --- |
-| Focused representation tests | 10 passed, 0 failed, 0 skipped |
+| Focused representation tests | 12 passed, 0 failed, 0 skipped |
 | Selected V1 qualification | 24 test files; 164 passed, 0 failed, 0 skipped |
-| Complete stronger suite | 264 passed, 0 failed, 0 skipped |
-| Repository publication audit | 156 text files passed |
+| Complete repository suite | 384 passed, 0 failed, 0 skipped |
+| Repository publication audit | 208 text files passed |
 
-The Balanced flag specimen produced configuration digest `3e37b935270c34b4e412183203c1a5873b2eeb5a080ee81fa24caebaeb604068`, matching the existing Balanced object fixture. Its generated document content digest is `08295129f0f57d8c0b55c6204d0e4c25e1261929adcc1b4ed736fab494596a5f`.
+The historical Balanced flag specimen produced configuration digest `3e37b935270c34b4e412183203c1a5873b2eeb5a080ee81fa24caebaeb604068`, matching the retained schema-version-0 object fixture. The active fixture command now emits revision-1 local intent instead; the historical digest is retained as an observation, not a current CLI result.
+
+The active revision-1 local fixture produces normalized intent digest `333467d5623f78a76cfd18ed94b09e0a5e3a10bb2ecd4e610a4fd65094d52e0a` and generated content digest `99be667409889cec59ef376bbc35cd9cf85fcf5601cda442e0a23ec378651344`.
 
 ## Candidate command matrix
 
@@ -58,7 +60,7 @@ The Balanced flag specimen produced configuration digest `3e37b935270c34b4e41218
 | `diff` | `--config <path>` | Representable without discovery or mutation. Public diff formatting remains open. |
 | `doctor` | `--config <path> --observations <path>` | Reproducible evidence can be supplied without authorizing live probes. |
 | `render` | `--config <path> --approve-plan <sha256>` | A non-interactive mutation request can name an exact plan digest; this is not an authentication mechanism. |
-| `init` | `--config`, preset, repeated provider tuples, role bindings, tracker, review requirement, reviewer separation, repeated artifacts, and optional `--approval` | Every field in the current schema-version-0 specimen has an explicit flag representation. Existing-file disposition approval storage remains undefined. |
+| `init` | Explicit repository, configuration, lock, local workflow, Fast or Balanced preset, local/no tracker, repeated provider tuples, and role bindings | The active private local path generates complete revision-1 local intent. Hosted workflow choices remain unavailable because their external capabilities do not exist. |
 
 The specimen provider tuple uses `id,product,surface` only to exercise repeated structured input. The tuple syntax and specimen path are not public contracts.
 
@@ -124,7 +126,7 @@ Defer Zod adoption until the parser experiment is integrated. Then compare the e
 
 ## Limitations
 
-- The argument parser is a pure experiment, not an executable CLI.
+- The active private executable consumes revision-1 local `init`, `check`, `diff`, and `render`; doctor remains an isolated semantic service and parser representation.
 - The option matrix has no help, version, completion, environment-variable, standard-input, output-format, color, or verbosity behavior.
 - The parser does not read configuration, observation, approval, plan, or lock files.
 - The generated document has no accepted filename, discovery precedence, schema URI, comments, or migration behavior.

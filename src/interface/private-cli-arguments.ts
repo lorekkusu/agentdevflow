@@ -1,22 +1,17 @@
 import { parseArgs } from "node:util";
 
 import {
-  candidateArtifactTypes,
-  candidatePresets,
   candidateProviderProducts,
   candidateProviderSurfaces,
-  candidateReviewSeparations,
-  candidateTrackerModes,
-  type CandidateArtifactType,
-  type CandidatePreset,
   type CandidateProviderInstance,
   type CandidateProviderProduct,
   type CandidateProviderSurface,
-  type CandidateReviewSeparation,
-  type CandidateTrackerMode,
-  type NormalizedCandidateProjectConfig,
 } from "../config/candidate.js";
-import { normalizeCandidateProjectConfig } from "../config/normalize-candidate.js";
+import {
+  resolvePrivateDomainProject,
+  type PrivateDomainProjectIntent,
+} from "../project/private-domain-project-resolution.js";
+import { privateLocalReviewedChangeCapabilityObservations } from "../workflows/private-local-reviewed-change.js";
 
 export const privateCliCommands = [
   "check",
@@ -26,6 +21,11 @@ export const privateCliCommands = [
   "render",
 ] as const;
 export type PrivateCliCommand = (typeof privateCliCommands)[number];
+export type PrivateCliOutputFormat = "human" | "json";
+
+export const defaultProjectConfigPath = "agentdevflow.config.jsonc";
+export const defaultRenderLockPath = ".agentdevflow/lock.json";
+export const defaultRepositoryPath = ".";
 
 export type PrivateCliDiagnosticCode =
   | "DUPLICATE_OPTION"
@@ -47,24 +47,33 @@ export type PrivateCliInvocation =
   | {
       readonly command: "check" | "diff";
       readonly projectConfigPath: string;
+      readonly repositoryPath: string;
+      readonly lockPath: string;
+      readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
       readonly command: "doctor";
       readonly projectConfigPath: string;
+      readonly repositoryPath: string;
       readonly observationsPath: string;
+      readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
       readonly command: "render";
       readonly projectConfigPath: string;
-      readonly approvedPlanDigest: string;
+      readonly repositoryPath: string;
+      readonly lockPath: string;
+      readonly approvedPlanSnapshotDigest: string;
+      readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
       readonly command: "init";
       readonly projectConfigPath: string;
-      readonly approvalPath?: string;
-      readonly configuration: NormalizedCandidateProjectConfig;
-      readonly canonicalConfigurationJson: string;
-      readonly configurationDigest: string;
+      readonly repositoryPath: string;
+      readonly lockPath: string;
+      readonly intent: PrivateDomainProjectIntent;
+      readonly configurationContent: string;
+      readonly outputFormat: PrivateCliOutputFormat;
     };
 
 export type PrivateCliArgumentResult =
@@ -74,13 +83,14 @@ export type PrivateCliArgumentResult =
 type PrivateCliFailure = Extract<PrivateCliArgumentResult, { ok: false }>;
 
 type OptionDefinition = {
-  readonly type: "string";
+  readonly type: "boolean" | "string";
   readonly multiple?: boolean;
 };
 
-type ParsedValue = string | boolean | string[] | boolean[] | undefined;
+type ParsedValue = string | boolean | (string | boolean)[] | undefined;
 
 const stringOption = { type: "string" } as const;
+const booleanOption = { type: "boolean" } as const;
 const multipleStringOption = { type: "string", multiple: true } as const;
 const sha256Pattern = /^[a-f0-9]{64}$/u;
 
@@ -111,6 +121,10 @@ function stringValues(
   return Array.isArray(value) && value.every((entry) => typeof entry === "string")
     ? value
     : [];
+}
+
+function outputFormat(values: Record<string, ParsedValue>): PrivateCliOutputFormat {
+  return values.json === true ? "json" : "human";
 }
 
 function parseCommandOptions(
@@ -231,26 +245,27 @@ function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(
     args,
     {
-      approval: stringOption,
       config: stringOption,
       developer: stringOption,
+      lock: stringOption,
+      json: booleanOption,
       preset: stringOption,
       provider: multipleStringOption,
+      repository: stringOption,
       reviewer: stringOption,
-      "review-artifact": multipleStringOption,
-      "review-required": stringOption,
-      "reviewer-separation": stringOption,
       steward: stringOption,
       tracker: stringOption,
+      workflow: stringOption,
     },
-    new Set(["provider", "review-artifact"]),
+    new Set(["provider"]),
   );
   if (!parsed.ok) {
     return parsed.result;
   }
 
-  const configPath = requireStringOption(parsed.values, "config");
-  if (isFailure(configPath)) return configPath;
+  const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
+  const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
+  const lockPath = stringValue(parsed.values, "lock") ?? defaultRenderLockPath;
   const presetValue = requireStringOption(parsed.values, "preset");
   if (isFailure(presetValue)) return presetValue;
   const developer = requireStringOption(parsed.values, "developer");
@@ -261,56 +276,30 @@ function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
   if (isFailure(steward)) return steward;
   const trackerValue = requireStringOption(parsed.values, "tracker");
   if (isFailure(trackerValue)) return trackerValue;
-  const reviewRequiredValue = requireStringOption(
-    parsed.values,
-    "review-required",
-  );
-  if (isFailure(reviewRequiredValue)) return reviewRequiredValue;
-  const reviewerSeparationValue = requireStringOption(
-    parsed.values,
-    "reviewer-separation",
-  );
-  if (isFailure(reviewerSeparationValue)) return reviewerSeparationValue;
+  const workflowValue = requireStringOption(parsed.values, "workflow");
+  if (isFailure(workflowValue)) return workflowValue;
 
   const providerValues = stringValues(parsed.values, "provider");
   if (providerValues.length === 0) return missingOption("provider");
-  const artifactValues = stringValues(parsed.values, "review-artifact");
-  if (artifactValues.length === 0) return missingOption("review-artifact");
-  const approvalPath = stringValue(parsed.values, "approval");
-  if (
-    Object.hasOwn(parsed.values, "approval") &&
-    approvalPath === undefined
-  ) {
+  if (presetValue !== "balanced" && presetValue !== "fast") {
     return failure(
       "INVALID_OPTION_VALUE",
-      "Option --approval must not be empty when provided.",
-      "--approval",
+      "Option --preset must be one of: balanced, fast.",
+      "--preset",
     );
   }
-
-  const preset = parseClosedValue<CandidatePreset>(
-    presetValue,
-    candidatePresets,
-    "preset",
-  );
-  if (typeof preset !== "string") return preset;
-  const tracker = parseClosedValue<CandidateTrackerMode>(
-    trackerValue,
-    candidateTrackerModes,
-    "tracker",
-  );
-  if (typeof tracker !== "string") return tracker;
-  const reviewerSeparation = parseClosedValue<CandidateReviewSeparation>(
-    reviewerSeparationValue,
-    candidateReviewSeparations,
-    "reviewer-separation",
-  );
-  if (typeof reviewerSeparation !== "string") return reviewerSeparation;
-  if (reviewRequiredValue !== "true" && reviewRequiredValue !== "false") {
+  if (trackerValue !== "local" && trackerValue !== "none") {
     return failure(
       "INVALID_OPTION_VALUE",
-      "Option --review-required must be true or false.",
-      "--review-required",
+      "Option --tracker must be one of: local, none.",
+      "--tracker",
+    );
+  }
+  if (workflowValue !== "local-reviewed-change") {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Option --workflow must be local-reviewed-change for the current offline init path.",
+      "--workflow",
     );
   }
 
@@ -320,49 +309,50 @@ function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
     if ("ok" in provider) return provider;
     providers.push(provider);
   }
-  const artifactTypes: CandidateArtifactType[] = [];
-  for (const value of artifactValues) {
-    const artifact = parseClosedValue<CandidateArtifactType>(
-      value,
-      candidateArtifactTypes,
-      "review-artifact",
-    );
-    if (typeof artifact !== "string") return artifact;
-    artifactTypes.push(artifact);
-  }
-
-  const normalized = normalizeCandidateProjectConfig({
-    schemaVersion: 0,
-    preset,
+  providers.sort((left, right) => left.id.localeCompare(right.id));
+  const intent: PrivateDomainProjectIntent = {
+    revision: 1,
+    preset: presetValue,
     providers,
     roles: { developer, reviewer, steward },
-    tracker: { mode: tracker },
-    review: {
-      requiredBeforeMerge: reviewRequiredValue === "true",
-      reviewerSeparation,
-      artifactTypes,
-    },
+    tracker: { mode: trackerValue },
+    workflow: { family: workflowValue },
+    capabilityBindings: [
+      {
+        binding: "developer",
+        target: { kind: "responsibility", responsibility: "developer" },
+      },
+      {
+        binding: "reviewer",
+        target: { kind: "responsibility", responsibility: "reviewer" },
+      },
+    ],
+  };
+  const resolved = resolvePrivateDomainProject(intent, {
+    capabilityObservations: privateLocalReviewedChangeCapabilityObservations,
   });
-  if (!normalized.ok) {
+  if (!resolved.ok) {
     return {
       ok: false,
-      diagnostics: normalized.diagnostics.map((diagnostic) => ({
+      diagnostics: resolved.diagnostics.map((diagnostic) => ({
         code: "INVALID_CONFIGURATION" as const,
         path: diagnostic.path,
         message: diagnostic.message,
       })),
     };
   }
+  const normalizedIntent = resolved.normalizedIntent;
 
   return {
     ok: true,
     invocation: {
       command: "init",
       projectConfigPath: configPath,
-      ...(approvalPath === undefined ? {} : { approvalPath }),
-      configuration: normalized.config,
-      canonicalConfigurationJson: normalized.canonicalJson,
-      configurationDigest: normalized.digest,
+      repositoryPath,
+      lockPath,
+      intent: normalizedIntent,
+      configurationContent: `${JSON.stringify(normalizedIntent, null, 2)}\n`,
+      outputFormat: outputFormat(parsed.values),
     },
   };
 }
@@ -371,24 +361,38 @@ function parseConfigCommand(
   command: "check" | "diff",
   args: readonly string[],
 ): PrivateCliArgumentResult {
-  const parsed = parseCommandOptions(args, { config: stringOption });
+  const parsed = parseCommandOptions(args, {
+    config: stringOption,
+    json: booleanOption,
+    lock: stringOption,
+    repository: stringOption,
+  });
   if (!parsed.ok) return parsed.result;
-  const configPath = requireStringOption(parsed.values, "config");
-  if (isFailure(configPath)) return configPath;
+  const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
+  const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
+  const lockPath = stringValue(parsed.values, "lock") ?? defaultRenderLockPath;
   return {
     ok: true,
-    invocation: { command, projectConfigPath: configPath },
+    invocation: {
+      command,
+      projectConfigPath: configPath,
+      repositoryPath,
+      lockPath,
+      outputFormat: outputFormat(parsed.values),
+    },
   };
 }
 
 function parseDoctorArguments(args: readonly string[]): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(args, {
     config: stringOption,
+    json: booleanOption,
     observations: stringOption,
+    repository: stringOption,
   });
   if (!parsed.ok) return parsed.result;
-  const configPath = requireStringOption(parsed.values, "config");
-  if (isFailure(configPath)) return configPath;
+  const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
+  const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
   const observationsPath = requireStringOption(parsed.values, "observations");
   if (isFailure(observationsPath)) return observationsPath;
   return {
@@ -396,7 +400,9 @@ function parseDoctorArguments(args: readonly string[]): PrivateCliArgumentResult
     invocation: {
       command: "doctor",
       projectConfigPath: configPath,
+      repositoryPath,
       observationsPath,
+      outputFormat: outputFormat(parsed.values),
     },
   };
 }
@@ -405,22 +411,36 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
   const parsed = parseCommandOptions(args, {
     "approve-plan": stringOption,
     config: stringOption,
+    json: booleanOption,
+    lock: stringOption,
+    repository: stringOption,
   });
   if (!parsed.ok) return parsed.result;
-  const configPath = requireStringOption(parsed.values, "config");
-  if (isFailure(configPath)) return configPath;
-  const approvedPlanDigest = requireStringOption(parsed.values, "approve-plan");
-  if (isFailure(approvedPlanDigest)) return approvedPlanDigest;
-  if (!sha256Pattern.test(approvedPlanDigest)) {
+  const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
+  const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
+  const lockPath = stringValue(parsed.values, "lock") ?? defaultRenderLockPath;
+  const approvedPlanSnapshotDigest = requireStringOption(
+    parsed.values,
+    "approve-plan",
+  );
+  if (isFailure(approvedPlanSnapshotDigest)) return approvedPlanSnapshotDigest;
+  if (!sha256Pattern.test(approvedPlanSnapshotDigest)) {
     return failure(
       "INVALID_OPTION_VALUE",
-      "Option --approve-plan must be a lowercase SHA-256 digest.",
+      "Option --approve-plan must be a lowercase exact-plan SHA-256 digest.",
       "--approve-plan",
     );
   }
   return {
     ok: true,
-    invocation: { command: "render", projectConfigPath: configPath, approvedPlanDigest },
+    invocation: {
+      command: "render",
+      projectConfigPath: configPath,
+      repositoryPath,
+      lockPath,
+      approvedPlanSnapshotDigest,
+      outputFormat: outputFormat(parsed.values),
+    },
   };
 }
 

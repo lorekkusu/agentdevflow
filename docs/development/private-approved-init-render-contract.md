@@ -2,7 +2,9 @@
 
 ## Status
 
-This contract defines the internal bridge from a complete private init proposal to the existing exact-plan render command. It is not a public approval protocol, authentication mechanism, CLI contract, configuration format, snapshot location, lock location, or general overwrite facility.
+This contract defines the retained schema-version-0 bridge from a complete private init proposal to the existing exact-plan render command. It is not a public approval protocol, authentication mechanism, CLI contract, configuration format, snapshot location, lock location, or general overwrite facility.
+
+The active revision-1 local path does not translate its richer project intent into this older proposal shape. Instead, the application planner rederives exact adoption and lossless-import authorization from current native targets whenever the lock is absent. `diff` displays the complete resulting snapshot, and `render` rereads configuration, reanalyzes every current provider path, replans, and requires the same complete snapshot approval before invoking the same render command. This is the evidence-backed successor allowed by the original boundary; it introduces no second writer or generic overwrite flag.
 
 ## Eligible proposals
 
@@ -44,6 +46,8 @@ The staged adapter accepts an unowned initialization import only when its curren
 Execution revalidates the proposal, approval envelope, prepared-plan digest, exact snapshot, and proposal-to-plan mapping. It then invokes the existing private render command with explicit absence of a base lock. No second filesystem writer is introduced.
 
 The retained snapshot contains the original before and target digests. If execution stops after some outputs reach the target, the same prepared package can resume through the existing before-or-after convergence rules and publish the target lock. Re-running preparation is not required and may correctly fail because the repository no longer matches the original all-before observation.
+
+The revision-1 CLI persists neither this prepared package nor another journal. Fresh creates can reconstruct the original all-before plan from exact target bytes and the original approval. If an initialization import reaches its target and loses the original different before-bytes before lock publication, the old import snapshot cannot be reconstructed from a digest alone. The CLI then requires a new diff and approval of the exact adopt-and-complete plan; it does not invent the lost observation or silently reuse the stale import approval.
 
 The existing private render command remains responsible for output convergence, verification, lock-path separation, base-or-target lock validation, target-lock publication, and exact post-write verification.
 

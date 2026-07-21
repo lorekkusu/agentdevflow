@@ -10,7 +10,9 @@ The service accepts the same caller-supplied private materialization, exact plan
 
 It does not discover, parse, compile, plan, render, or persist state. It calls the private check service first and produces no change entries when check is blocked.
 
-The separate private application planner may supply its exact local plan and materialization. Diff remains a read-only consumer and does not duplicate configuration, lock parsing, or staging behavior.
+The separate private application planner may supply its exact local plan and materialization. With no lock, that plan can include exact adoption or analyzer-proven lossless import. Diff remains a read-only consumer and does not duplicate configuration, lock parsing, staging, or import-analysis behavior.
+
+The private local CLI composes that planner with this service from explicit repository, configuration, and lock paths. It does not accept a caller-supplied compiler result, materialization, plan, snapshot, or lock object.
 
 ## Change entries
 
@@ -59,6 +61,8 @@ The service still does not provide a multi-file atomic snapshot. Another process
 The workspace interface contains only `read(path)`. The service reads only plan-declared managed paths and the caller-supplied lock path. It does not scan the repository, inspect Git status, or return foreign content when a digest does not match the retained plan.
 
 Exact before and after content is retained only for recognized managed state. A future formatter must make terminal disclosure, redaction, truncation, and machine-output behavior explicit before this shape becomes public.
+
+The experimental local formatter emits the complete snapshot digest as `exact-plan-digest`, the lower-level renderer digest separately, and exact recognized before and after text as JSON-quoted strings. A blocked result emits no change entries, and end-to-end fixtures verify that foreign bytes are absent from output. The private render entry requires `--approve-plan` to equal that exact snapshot digest. This formatter is deliberately untruncated so approval can bind to the complete exact target. It is unsuitable as a public terminal contract until output-size limits, sensitive managed content, paging, redaction, and machine-output behavior are decided.
 
 ## Explicit non-claims
 

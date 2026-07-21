@@ -25,8 +25,24 @@ function expectFailure(
 test("represents all five candidate commands without filesystem discovery", () => {
   const digest = "a".repeat(64);
   const cases = [
-    ["check", "--config", "project.jsonc"],
-    ["diff", "--config", "project.jsonc"],
+    [
+      "check",
+      "--config",
+      "project.jsonc",
+      "--repository",
+      ".",
+      "--lock",
+      ".agentdevflow/render-lock.json",
+    ],
+    [
+      "diff",
+      "--config",
+      "project.jsonc",
+      "--repository",
+      ".",
+      "--lock",
+      ".agentdevflow/render-lock.json",
+    ],
     [
       "doctor",
       "--config",
@@ -34,7 +50,17 @@ test("represents all five candidate commands without filesystem discovery", () =
       "--observations",
       "observations.json",
     ],
-    ["render", "--config", "project.jsonc", "--approve-plan", digest],
+    [
+      "render",
+      "--config",
+      "project.jsonc",
+      "--repository",
+      ".",
+      "--lock",
+      ".agentdevflow/render-lock.json",
+      "--approve-plan",
+      digest,
+    ],
     balancedInitArguments,
   ] as const;
 
@@ -46,23 +72,78 @@ test("represents all five candidate commands without filesystem discovery", () =
   assert.deepEqual(commands, ["check", "diff", "doctor", "render", "init"]);
 });
 
-test("maps complete Balanced flags to the existing normalized configuration", () => {
+test("retains explicit repository, configuration, and lock paths", () => {
+  const result = parsePrivateCliArguments([
+    "check",
+    "--repository",
+    "repository",
+    "--config",
+    "project.jsonc",
+    "--lock",
+    ".state/render-lock.json",
+  ]);
+  expectSuccess(result);
+  assert.deepEqual(result.invocation, {
+    command: "check",
+    projectConfigPath: "project.jsonc",
+    repositoryPath: "repository",
+    lockPath: ".state/render-lock.json",
+    outputFormat: "human",
+  });
+});
+
+test("binds private render approval to an explicit exact plan snapshot", () => {
+  const digest = "b".repeat(64);
+  const result = parsePrivateCliArguments([
+    "render",
+    "--repository",
+    "repository",
+    "--config",
+    "project.jsonc",
+    "--lock",
+    ".state/render-lock.json",
+    "--approve-plan",
+    digest,
+  ]);
+  expectSuccess(result);
+  assert.deepEqual(result.invocation, {
+    command: "render",
+    projectConfigPath: "project.jsonc",
+    repositoryPath: "repository",
+    lockPath: ".state/render-lock.json",
+    approvedPlanSnapshotDigest: digest,
+    outputFormat: "human",
+  });
+});
+
+test("maps complete Balanced flags to the active revision-1 local intent", () => {
   const result = parsePrivateCliArguments(balancedInitArguments);
   expectSuccess(result);
   assert.equal(result.invocation.command, "init");
   if (result.invocation.command !== "init") return;
-  assert.equal(
-    result.invocation.configurationDigest,
-    "3e37b935270c34b4e412183203c1a5873b2eeb5a080ee81fa24caebaeb604068",
-  );
   assert.deepEqual(
-    result.invocation.configuration.providers.map(({ id }) => id),
+    result.invocation.intent.providers.map(({ id }) => id),
     ["claude-reviewer", "codex-developer", "cursor-steward"],
   );
-  assert.deepEqual(result.invocation.configuration.review.artifactTypes, [
-    "BlockingFinding",
-    "ReviewVerdict",
+  assert.equal(result.invocation.intent.revision, 1);
+  assert.equal(
+    result.invocation.intent.workflow.family,
+    "local-reviewed-change",
+  );
+  assert.deepEqual(result.invocation.intent.capabilityBindings, [
+    {
+      binding: "developer",
+      target: { kind: "responsibility", responsibility: "developer" },
+    },
+    {
+      binding: "reviewer",
+      target: { kind: "responsibility", responsibility: "reviewer" },
+    },
   ]);
+  assert.deepEqual(
+    JSON.parse(result.invocation.configurationContent),
+    result.invocation.intent,
+  );
 });
 
 test("normalizes reorder-equivalent flag sequences identically", () => {
@@ -75,27 +156,24 @@ test("normalizes reorder-equivalent flag sequences identically", () => {
   if (first.invocation.command !== "init" || second.invocation.command !== "init") {
     return;
   }
-  assert.deepEqual(second.invocation.configuration, first.invocation.configuration);
+  assert.deepEqual(second.invocation.intent, first.invocation.intent);
   assert.equal(
-    second.invocation.canonicalConfigurationJson,
-    first.invocation.canonicalConfigurationJson,
-  );
-  assert.equal(
-    second.invocation.configurationDigest,
-    first.invocation.configurationDigest,
+    second.invocation.configurationContent,
+    first.invocation.configurationContent,
   );
 });
 
-test("retains an explicit initialization approval path without reading it", () => {
-  const result = parsePrivateCliArguments([
-    ...balancedInitArguments,
-    "--approval",
-    "approval.json",
-  ]);
+test("retains explicit initialization repository, configuration, and lock paths", () => {
+  const result = parsePrivateCliArguments(balancedInitArguments);
   expectSuccess(result);
   assert.equal(result.invocation.command, "init");
   if (result.invocation.command !== "init") return;
-  assert.equal(result.invocation.approvalPath, "approval.json");
+  assert.equal(result.invocation.repositoryPath, ".");
+  assert.equal(result.invocation.projectConfigPath, "project-config.jsonc");
+  assert.equal(
+    result.invocation.lockPath,
+    ".agentdevflow/render-lock.json",
+  );
 });
 
 test("rejects duplicate singleton options instead of accepting last-wins", () => {
@@ -129,11 +207,25 @@ test("rejects unknown, missing, and malformed candidate inputs", () => {
   const cases = [
     [],
     ["unknown"],
-    ["check"],
+    ["doctor"],
     ["check", "--unknown"],
-    ["render", "--config", "project.jsonc", "--approve-plan", "not-a-digest"],
+    [
+      "render",
+      "--config",
+      "project.jsonc",
+      "--repository",
+      ".",
+      "--lock",
+      ".agentdevflow/render-lock.json",
+      "--approve-plan",
+      "not-a-digest",
+    ],
     [...balancedInitArguments, "--provider", "invalid"],
-    [...balancedInitArguments, "--approval="],
+    balancedInitArguments.map((value) =>
+      value === "local-reviewed-change"
+        ? "issue-to-reviewed-pull-request"
+        : value,
+    ),
   ] as const;
 
   const codes = cases.map((args) => {
@@ -152,18 +244,29 @@ test("rejects unknown, missing, and malformed candidate inputs", () => {
   ]);
 });
 
-test("surfaces normalized configuration failures from flag input", () => {
-  const sharedReviewer = balancedInitArguments.map((value) =>
-    value === "claude-reviewer" ? "codex-developer" : value,
+test("applies exact-root beta defaults and selects versioned JSON output", () => {
+  const result = parsePrivateCliArguments(["check", "--json"]);
+  expectSuccess(result);
+  assert.deepEqual(result.invocation, {
+    command: "check",
+    projectConfigPath: "agentdevflow.config.jsonc",
+    repositoryPath: ".",
+    lockPath: ".agentdevflow/lock.json",
+    outputFormat: "json",
+  });
+});
+
+test("surfaces revision-1 project resolution failures from flag input", () => {
+  const unknownReviewer = balancedInitArguments.map((value, index, values) =>
+    values[index - 1] === "--reviewer" ? "missing-reviewer" : value,
   );
-  const result = parsePrivateCliArguments(sharedReviewer);
+  const result = parsePrivateCliArguments(unknownReviewer);
   expectFailure(result);
   assert.deepEqual(result.diagnostics, [
     {
       code: "INVALID_CONFIGURATION",
       path: "$.roles.reviewer",
-      message:
-        "The reviewer must use a different provider instance from the developer for the selected review separation.",
+      message: "Responsibility reviewer references unknown provider missing-reviewer.",
     },
   ]);
 });

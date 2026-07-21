@@ -11,7 +11,7 @@ import {
   serializePrivateTemporaryIntentRegistry,
   serializePrivateWriterClearanceRegistry,
   validatePrivateTemporaryMutationIntent,
-} from "../../src/transaction/private-temporary-intent.js";
+} from "../../src/workspace/private-temporary-intent.js";
 
 const transactionDigest = "1".repeat(64);
 const writerFingerprint = "2".repeat(64);

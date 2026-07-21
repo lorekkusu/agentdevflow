@@ -55,7 +55,7 @@ interface PlanDigestInput {
   readonly files: readonly PlannedFile[];
 }
 
-function createPlanDigest(input: PlanDigestInput): string {
+export function createRenderPlanDigest(input: PlanDigestInput): string {
   return digest(
     JSON.stringify({
       backend: input.backend,
@@ -113,7 +113,7 @@ export function validateRenderPlanIntegrity(plan: RenderPlan): void {
   if (plan.safeToApply !== expectedSafeToApply) {
     throw new Error("Render plan safety flag does not match its contents.");
   }
-  if (plan.planDigest !== createPlanDigest(plan)) {
+  if (plan.planDigest !== createRenderPlanDigest(plan)) {
     throw new Error("Render plan digest does not match its contents.");
   }
 }
@@ -337,7 +337,7 @@ export class StagedRendererAdapter implements RendererBackend {
       ownershipKey: this.backend.ownershipKey,
       inputDigest: request.inputDigest,
       sourceDigest: request.sourceDigest,
-      planDigest: createPlanDigest({
+      planDigest: createRenderPlanDigest({
         backend: this.backend.name,
         backendVersion: this.backend.version,
         ownershipKey: this.backend.ownershipKey,

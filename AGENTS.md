@@ -6,9 +6,9 @@
 
 Keep the implementation provider-neutral. Codex, Claude Code, and Cursor are the initial adapter validation set; Steward, Developer, and Reviewer are responsibilities, not provider brands.
 
-Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The next product milestone is one local configuration-to-check/diff/render vertical path. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
+Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The initial beta five-command boundary is accepted; release hardening is next and publication remains separately authorized. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
 
-Do not freeze a public API, configuration syntax, configuration filename, lockfile format, or production framework before its roadmap acceptance gate.
+Do not extend the accepted beta API, configuration syntax, discovery rules, JSON schema, lock format, or production framework without its roadmap acceptance gate. Follow ADR 0004 and the beta CLI contract for the currently accepted surface.
 
 ## Repository language
 
@@ -25,10 +25,15 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/development/project-health-review.md` defines trigger-based independent scope and complexity reviews, disclosure classes, and outcome routing.
 - `docs/development/project-health.md` defines the current sanitized health assessment, disposition, next milestone, and expansion stop conditions.
 - `docs/development/tooling.md` records current reversible tooling choices.
+- `docs/development/beta-cli-contract.md` defines accepted initial beta discovery, commands, exits, output, and release boundaries.
+- `docs/development/release-checklist.md` defines the review, authorization, publication, and post-publication gates for the beta candidate.
+- `docs/evidence/beta-release-candidate.md` records current local package, installed-bin, security, and verification observations plus remaining release blockers.
 - `docs/development/v1-recovery-contract.md` defines the accepted forward-convergence behavior and non-claims.
 - `docs/development/private-render-command-contract.md` defines exact-plan and private lock publication behavior.
 - `docs/development/private-check-command-contract.md` defines the candidate read-only check outcomes and diagnostics.
 - `docs/development/private-diff-command-contract.md` defines exact-byte read-only diff behavior and disclosure boundaries.
+- `docs/evidence/private-local-cli.md` records the private path-facing `init`, `check`, `diff`, and approved-render verification and non-claims.
+- `docs/evidence/private-package-qualification.md` records the allowlisted tarball, installed npm-bin, offline five-command qualification, and release blockers.
 - `docs/development/private-doctor-command-contract.md` defines provider-neutral observation validation and compiler evidence.
 - `docs/development/private-approved-init-render-contract.md` defines exact approval, reread, plan preparation, and routing into the existing render command.
 - `docs/development/interruption-contract.md` defines the stronger experimental write-ahead behavior.
@@ -65,11 +70,13 @@ npm run phase1:domain-workflows
 npm run phase1:execution-contract
 npm run phase1:execution-transport
 npm run phase1:github-ci-evidence
+npm run phase1:local-cli -- --help
 npm run phase1:project-resolution
 npm run phase1:project-document
 npm run phase1:preset
 npm run phase1:representation
 npm run test:v1-recovery
+npm pack --dry-run --json
 ```
 
 `npm run check` is the required local verification. It audits repository publication hygiene, type-checks, builds, and runs the automated tests. `npm run check:v1-qualification` runs the explicitly selected V1 platform suite and fails if any selected test is skipped. `npm run check:qualification` runs the complete stronger write-ahead suite, requires directory synchronization, and also fails on skips. The repository audit is intentionally limited and does not replace human disclosure review or a dedicated secret scanner. There is currently no lint or format command; do not claim one has run.
@@ -82,11 +89,13 @@ npm run test:v1-recovery
 - Keep the renderer adapter narrow and replaceable. Do not leak backend-specific types into candidate public configuration.
 - Route renderer filesystem experiments through `src/workspace/private-filesystem-workspace.ts`; do not bypass its root, path, symlink, and regular-file checks. Use its process-termination mode only with `applyPrivateConvergentRenderPlan`; it does not prove directory or power-loss durability.
 - Use staged before-or-after digest convergence as the V1 apply path. Generate active revision-1 exact plans through `src/application/private-domain-project-plan.ts`; keep the lock path caller-supplied until discovery and migration are decided. Never authorize mutation from repository-wide Git cleanliness or run reset, clean, stash, commit, or branch operations automatically.
-- Keep the private transaction store and executor as frozen non-default research. Do not extend, expose, or include it in a future runtime package without a material requirement that reopens ADR 0002. Before package qualification, remove the normal workspace's runtime import of transaction-only code by moving the shared primitive or isolating the experimental extension.
-- Route future mutating render behavior through the private render command service. Keep its snapshot and lock paths caller-supplied until public discovery and migration contracts are accepted.
-- Route future check behavior through the private check command service. Preserve its read-only workspace boundary and keep its exit codes private candidates until CLI qualification.
-- Route future diff behavior through the private diff command service. Do not return partial entries for blocked or foreign state, and defer public formatting and disclosure policy.
-- Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. Add probe adapters only with narrow permission and evidence contracts.
+- Keep the private transaction store and executor as frozen non-default research. Do not extend, expose, or include it in the runtime package without a material requirement that reopens ADR 0002. Keep the normal workspace graph free of `src/transaction/` imports; shared temporary-intent primitives live under `src/workspace/`.
+- Route mutating render behavior through the private render command service. Require the private CLI's exact snapshot-digest approval, read-only planning, configuration reread, mutable-workspace replan, and second digest match before mutation. Keep the lock path caller-supplied until public discovery and migration contracts are accepted.
+- Reconstruct an interrupted all-before plan only when current managed bytes are at exact approved target digests and the base lock or explicit absence remains authoritative. Require the original exact snapshot approval and normal convergent preflight; never use reconstruction as silent adoption or foreign-drift repair.
+- Route check behavior through the private check command service. Preserve its read-only workspace boundary and the accepted beta exit classes.
+- Route diff behavior through the private diff command service. Do not return partial entries for blocked or foreign state, and keep the current exact JSON-quoted formatter private until disclosure and output limits are accepted.
+- Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. The private CLI may evaluate only explicit bounded observation envelopes for the local workflow. Add probe adapters only with narrow permission and evidence contracts.
+- Keep npm package contents allowlisted through `package.json`. Do not include tests, experiments, frozen transaction code, Rulesync process integration, or private evidence in the runtime tarball. Keep `private: true` until publication receives separate authorization.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Keep domain-specific workflow artifacts and capabilities under `src/workflows/`; do not add issue, pull-request, CI, or merge assumptions to the generic compiler. Preserve the local no-pull-request workflow as an anti-coupling regression fixture.
 - Keep the private execution contract pure and filesystem-free. It verifies caller-supplied traces but must not schedule steps, monitor systems, hold credentials, retry work, or mutate external state. Route manifest-required evidence through the closed payload-package validator; do not accept an opaque digest where a typed requirement exists. Treat envelope and payload digests as integrity bindings, not authentication.
@@ -96,11 +105,11 @@ npm run test:v1-recovery
 - Keep private application planning read-only. It may derive the local workflow's native project-instructions observations, but it must not reuse fixture observations to claim unavailable tracker, pull-request, CI, review-service, or merge adapters. Read and validate canonical lock bytes inside the planner rather than accepting a caller-supplied private lock object.
 - Keep presets orthogonal to workflow family, pull-request readiness, auxiliary review, providers, trackers, and capability targets. Fast and Balanced are private executable profiles. Keep Strict unavailable until its additional evidence and stronger completion gates are executable; do not silently downgrade it. Custom remains deferred.
 - Import `jsonc-parser` only through `src/interface/private-domain-project-document.ts` and Zod only through `src/interface/private-zod.ts`; the repository audit enforces this boundary. Keep Zod jitless, reject all JSONC syntax errors, duplicate keys, and `__proto__`, and retain byte, depth, collection, and diagnostic limits. Schema success must still pass project resolution and policy compilation.
-- Keep private initialization read-only and non-interactive. Exact adoption, import assessment, and abort decisions must bind observed bytes to the candidate configuration; never infer ownership from Git cleanliness.
-- Open private initialization workspaces through `PrivateFilesystemWorkspace.openReadOnly`; do not require write-durability probes or expose mutation methods for observation-only commands.
+- Keep private initialization non-interactive. Begin through `PrivateFilesystemWorkspace.openReadOnly`; the only init mutation is exclusive creation of an absent exact revision-1 configuration after a read-only recheck. Never overwrite different configuration bytes or infer ownership from Git cleanliness.
+- With no lock, derive provider create, exact-adopt, lossless-import, and abort outcomes from current native targets and exact observations. Provider mutation remains behind diff and the normal exact approved render path. Reread, reanalyze, and replan before mutation.
 - Keep public-representation experiments pure and filesystem-free until configuration discovery, parsing, approval persistence, and output contracts are accepted. Do not treat specimen paths, flags, or schema revision `0` as public compatibility promises.
 - Keep project-instructions import limited to deterministic logical equivalence with exact observed, configuration, and target digests. Do not invent merges or infer provider semantics from natural language.
-- Route initialization mutation through the private approved-init render service. Retain its exact prepared snapshot before mutation; do not bypass it with a generic overwrite authorization.
+- Keep the schema-version-0 approved-init bridge as compatibility evidence. The active revision-1 successor binds adoption and lossless-import authorization into the complete exact plan reviewed through diff and executed only by the private render command service; do not add a generic overwrite authorization.
 - Model finite nodes, transitions, artifact production, and artifact invalidation explicitly. Cycles are allowed.
 - Treat guards as potentially enabled and diagnose guard-blind false positives. Do not add executable predicates, dynamic topology, general liveness, or fairness reasoning.
 - Make diagnostics and counterexample traces deterministic.

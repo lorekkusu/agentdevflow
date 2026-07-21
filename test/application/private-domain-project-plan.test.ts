@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
 
-import { preparePrivateDomainProjectPlan } from "../../src/application/private-domain-project-plan.js";
+import {
+  preparePrivateDomainProjectPlan,
+  reconstructPrivateDomainProjectConvergentPlan,
+} from "../../src/application/private-domain-project-plan.js";
 import { executePrivateCheckCommand } from "../../src/commands/private-check-command-service.js";
 import { executePrivateDiffCommand } from "../../src/commands/private-diff-command-service.js";
 import { executePrivateRenderCommand } from "../../src/commands/private-render-command-service.js";
@@ -203,6 +206,99 @@ test("feeds the exact plan into check, diff, render, and clean recheck", async (
     repeated.plan.files.map((file) => file.action),
     ["unchanged", "unchanged", "unchanged"],
   );
+});
+
+test("reconstructs the approved base plan after a partial owned update", async (t) => {
+  const repository = await temporaryRepository(t);
+  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+    repository,
+  );
+  const balanced = await preparePrivateDomainProjectPlan({
+    content: document(localIntent()),
+    lockPath,
+    workspace,
+  });
+  expectPrepared(balanced);
+  await executePrivateRenderCommand({
+    materialization: balanced.materialization,
+    snapshot: balanced.snapshot,
+    baseLock: balanced.baseLock,
+    lockPath,
+    workspace,
+  });
+
+  const fastContent = document({ ...localIntent(), preset: "fast" });
+  const original = await preparePrivateDomainProjectPlan({
+    content: fastContent,
+    lockPath,
+    workspace,
+  });
+  expectPrepared(original);
+  await assert.rejects(
+    () =>
+      executePrivateRenderCommand({
+        materialization: original.materialization,
+        snapshot: original.snapshot,
+        baseLock: original.baseLock,
+        lockPath,
+        workspace,
+        applyFaultInjector(event) {
+          if (event.kind === "path-applied" && event.path === "AGENTS.md") {
+            throw new Error("Injected partial owned update.");
+          }
+        },
+      }),
+    /Injected partial owned update/u,
+  );
+
+  const partial = await preparePrivateDomainProjectPlan({
+    content: fastContent,
+    lockPath,
+    workspace,
+  });
+  expectPrepared(partial);
+  assert.equal(partial.plan.safeToApply, false);
+  const reconstructed = reconstructPrivateDomainProjectConvergentPlan(partial);
+  assert.deepEqual(reconstructed.snapshot, original.snapshot);
+
+  const resumed = await executePrivateRenderCommand({
+    materialization: reconstructed.materialization,
+    snapshot: reconstructed.snapshot,
+    baseLock: reconstructed.baseLock,
+    lockPath,
+    workspace,
+  });
+  assert.equal(resumed.verification.ok, true);
+});
+
+test("does not reconstruct foreign bytes as an approved after-state", async (t) => {
+  const repository = await temporaryRepository(t);
+  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+    repository,
+  );
+  const original = await preparePrivateDomainProjectPlan({
+    content: document(localIntent()),
+    lockPath,
+    workspace,
+  });
+  expectPrepared(original);
+  await writeFile(join(repository, "AGENTS.md"), "foreign bytes\n", "utf8");
+
+  const conflicted = await preparePrivateDomainProjectPlan({
+    content: document(localIntent()),
+    lockPath,
+    workspace,
+  });
+  expectPrepared(conflicted);
+  const reconstructed =
+    reconstructPrivateDomainProjectConvergentPlan(conflicted);
+
+  assert.equal(reconstructed.plan.safeToApply, false);
+  assert.equal(
+    reconstructed.plan.files.find((file) => file.path === "AGENTS.md")?.action,
+    "conflict",
+  );
+  assert.notEqual(reconstructed.snapshot.digest, original.snapshot.digest);
 });
 
 test("retains a foreign project-instructions file as an exact conflict", async (t) => {

@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components do not yet form a user-operable product. The package remains private and has no executable `bin`. Revision-1 is now the active private forward path from bounded configuration bytes through policy compilation, native materialization, canonical lock observation, and exact repository planning; schema-version-0 remains compatibility and regression evidence. The current objective is to expose the local path through one experimental CLI before another provider integration or evidence boundary.
+These components now form an accepted initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The private package has an allowlisted npm `bin`, clean offline installation evidence, exact-root defaults, and bounded JSON schema version 1. The current objective is beta release hardening without publishing or expanding product scope.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -20,7 +20,9 @@ See [project health](project-health.md) for the current sanitized scope and comp
 | Native project-instructions renderer | Complete for project-wide Codex, Claude Code, and Cursor output | [Renderer integration](../evidence/renderer-integration.md) |
 | Ownership, lock, drift, and conflict behavior | Complete as private boundaries | [Private render lock](../evidence/private-render-lock.md) and [render command](../evidence/private-render-command-service.md) |
 | V1 apply and interruption recovery | Complete for staged forward convergence | [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md), [V1 recovery contract](v1-recovery-contract.md), and [convergent apply evidence](../evidence/private-convergent-apply.md) |
-| Private command semantics | Complete for isolated `check`, `diff`, `render`, `doctor`, and `init` services | [Check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
+| Private command semantics | Complete for isolated services and executable local `init`, `check`, `diff`, approved `render`, and explicit-observation `doctor` | [Local CLI](../evidence/private-local-cli.md), [check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
+| Private package qualification | Complete for one allowlisted local tarball and offline installed-bin exercise | [Private package qualification](../evidence/private-package-qualification.md) |
+| Initial beta candidate qualification | Complete locally on Node.js 24; final Node.js 22/24 hosted matrix pending | [Beta release-candidate evidence](../evidence/beta-release-candidate.md) and [ADR 0004](../decisions/0004-initial-beta-public-surface.md) |
 | Existing-file initialization bridge | Complete for create, exact adopt, lossless import, abort, and exact approved render | [Project-instructions import](../evidence/private-project-instructions-import.md) and [approved init render](../evidence/private-approved-init-render.md) |
 | V1 candidate platform qualification | Complete as candidate evidence, not a public support promise | [V1 platform qualification](../evidence/v1-platform-qualification.md) |
 | Domain workflow validation | Complete as a private prototype for issue-to-reviewed-PR and local reviewed change | [Domain workflow evidence](../evidence/private-domain-workflows.md) |
@@ -55,9 +57,9 @@ Exit criteria:
 - repository audit, type checking, build, and all automated tests pass;
 - no change is staged, committed, or pushed without explicit authorization.
 
-## Current: one experimental local vertical CLI path
+## Completed local vertical CLI path
 
-The next milestone must connect existing private components before adding another horizontal capability.
+This milestone connected existing private components before any additional horizontal capability.
 
 Target path:
 
@@ -108,9 +110,18 @@ Exit criteria:
 
 ### 2. Add executable read-only `check` and `diff`
 
-Status: **Current.** The private planner can already feed the existing services; the missing boundary is a user-level executable, path handling, and output contract.
+Status: **Complete as a private experimental entry point.**
 
 Use Node.js `util.parseArgs` unless real help, completion, nesting, or output requirements justify a framework. Accept explicit configuration and lock paths before deciding public discovery precedence.
+
+Progress:
+
+- `npm run phase1:local-cli -- check ...` and `diff ...` compose explicit repository, configuration, and lock paths into the revision-1 planner and existing semantic services;
+- the repository is opened through `PrivateFilesystemWorkspace.openReadOnly` and the command boundary contains no mutation operation;
+- output includes deterministic human-readable diagnostics, plan and snapshot identity, and exact JSON-quoted recognized diff content;
+- blocked diff output contains no change entries or foreign bytes;
+- temporary-repository subprocess tests cover clean, changes-required, invalid input, unowned conflicts, retained-ownership drift, and unavailable capabilities;
+- options, formatting, exit codes, discovery, filenames, npm `bin`, and machine output remain private and unaccepted.
 
 Exit criteria:
 
@@ -121,7 +132,19 @@ Exit criteria:
 
 ### 3. Add explicit approved `render`
 
+Status: **Complete as a private experimental entry point.**
+
 Use only the accepted staged forward-convergent apply path. Do not make the write-ahead transaction experiment a runtime dependency.
+
+Progress:
+
+- `diff` exposes complete exact target bytes and the full snapshot digest separately from the narrower renderer plan digest;
+- `render` requires the exact snapshot digest, rereads configuration, opens mutable authority only after the first approval match, replans, and requires a second match;
+- stale configuration or repository state fails closed before the existing render service receives authority;
+- exact current-plan repetition is a no-op;
+- interrupted before-or-after output state reconstructs the originally approved all-before plan only from exact target bytes and an authoritative base lock or absence;
+- the original approval and normal convergent preflight remain mandatory, so reconstruction is not silent adoption or foreign-drift repair;
+- no journal, snapshot file, Git reset, CLI framework, discovery rule, or second writer was added.
 
 Exit criteria:
 
@@ -133,7 +156,21 @@ Exit criteria:
 
 ### 4. Add minimal non-interactive `init`
 
-Generate the active revision-1 private domain project intent and retain only deterministic create, exact adopt, lossless import, and abort outcomes. Defer an interactive wizard and managed-region merging.
+Status: **Complete as a private experimental entry point.**
+
+The private entry generates only the currently executable revision-1 local workflow intent from explicit flags. It requires Fast or Balanced, an explicit local or no-tracker mode, explicit provider instances, and explicit responsibility bindings. It creates the caller-selected relative configuration path only when absent, adopts only byte-exact repeated configuration, and never overwrites different configuration bytes.
+
+When no render lock exists, the active planner stages the native provider targets and classifies every selected provider path as create, exact adopt, lossless import, or abort. Exact adopt and import authorization are carried into the same exact plan displayed by `diff`; `render` rereads, reanalyzes, replans, and requires approval of the complete matching snapshot. This is the revision-1 evidence-backed successor to the schema-version-0 proposal envelope. It adds no approval file, discovery path, merge algorithm, second writer, or Git operation.
+
+Progress:
+
+- initialization opens a read-only repository first and validates configuration, lock, provider, role, workflow, and path boundaries before mutation authority exists;
+- the only init mutation is exclusive creation of an absent exact configuration file through the hardened workspace;
+- provider outputs and the lock remain unchanged until a later exact approved `render`;
+- existing target bytes are adopted only through an explicit exact plan, and differing bytes are importable only when the narrow analyzer proves exact logical preservation;
+- unsupported or foreign bytes abort without disclosure, and a present lock routes the user to normal check/diff/render behavior;
+- two independent temporary repositories reproduce identical offline init, diff, render, clean-check, and empty-diff results;
+- fresh-create interruption retains original-approval recovery; an interrupted initialization import that has consumed its original before-bytes requires a newly reviewed exact diff rather than inventing the lost observation.
 
 Exit criteria:
 
@@ -148,9 +185,20 @@ fresh repository
 
 The path must reproduce in a second temporary repository without network access.
 
-### 5. Package and local doctor qualification
+## Completed private package and local doctor qualification
+
+Status: **Complete as private candidate evidence; public-surface decisions remain gated.**
 
 Keep `doctor` local and honest. Report unknown external capability truth rather than adding a provider runtime merely to fill a diagnostic.
+
+Observed closure:
+
+- the normal workspace runtime graph no longer imports the frozen transaction subsystem;
+- the installed npm bin executes through npm-style symbolic links;
+- the tarball uses an explicit runtime allowlist and excludes tests, experiments, frozen transaction code, Rulesync process integration, and private evidence;
+- an isolated installation using only local tarballs completes `init`, `diff`, approved `render`, clean `check`, and `doctor` with network-disabled npm resolution;
+- doctor consumes a bounded revisioned observation file and performs no live provider, credential, process, or network probe;
+- the package remains `private: true`, and no package was published or reserved.
 
 Exit criteria:
 
@@ -160,13 +208,33 @@ Exit criteria:
 - Node.js and platform claims match qualified evidence;
 - publication remains separately authorized.
 
+## Completed public-surface decision packet
+
+Status: **Complete; accepted by [ADR 0004](../decisions/0004-initial-beta-public-surface.md).**
+
+The accepted packet covers exact-root configuration and lock discovery, explicit overrides, stable exit classes, bounded versioned JSON, Node.js 22 and 24, Apache-2.0, and the separately authorized `0.1.0-beta.1` release candidate on npm's `next` tag with provenance. See the [beta CLI contract](beta-cli-contract.md).
+
+## Current: beta release hardening
+
+Status: **Current; publication remains unauthorized.**
+
+Required sequence:
+
+1. enforce accepted package metadata, publication guard, exact-root path behavior, JSON version, and output limits in repository checks and tests;
+2. repeat complete repository verification and Node.js 22/24 qualification against the accepted beta surface;
+3. inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, and license inclusion;
+4. define a minimal public release checklist and changelog without adding a release framework;
+5. stop for explicit authorization before removing `private: true`, configuring any external trusted publisher, creating a tag or release, or publishing to npm.
+
+No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
+
 ## Frozen research
 
 Frozen work remains reviewable evidence but receives no feature expansion unless a material accepted requirement reopens it.
 
 ### Strong write-ahead transaction
 
-The transaction store, executor, cleanup lifecycle, receipts, and stronger platform workflow are not the V1 default. Do not extend them, expose them, or include them in a future runtime package. The normal workspace currently imports a temporary-intent validator from the transaction area; move that shared primitive or isolate the transaction-only extension before package qualification. Revisit the frozen subsystem only under the triggers in ADR 0002.
+The transaction store, executor, cleanup lifecycle, receipts, and stronger platform workflow are not the V1 default. Do not extend them, expose them, or include them in the runtime package. The shared temporary-intent primitive now lives under `src/workspace/`, and the normal workspace graph has no `src/transaction/` import. Revisit the frozen subsystem only under the triggers in ADR 0002.
 
 ### Execution transport
 
@@ -182,11 +250,11 @@ The pure observation validator remains available. Do not add provider command ex
 
 ## Later
 
-After the local vertical path and package qualification:
+After the private local vertical path and package qualification:
 
 - reevaluate one read-only authenticated provider observation only if a real consumer requires it;
 - stabilize `ProjectConfig`, configuration discovery, lock storage, and migration behavior with synthetic migration evidence;
-- qualify package contents, offline behavior, supported Node.js lines, and platform guarantees;
+- decide supported Node.js lines and platform guarantees before a public support promise;
 - add broader import or managed-region behavior only from real adoption failures;
 - reconsider Strict only when its stronger evidence and completion gates are executable;
 - reconsider Custom only after multiple built-in workflows demonstrate a stable composition model;
@@ -212,7 +280,7 @@ Accepting a public filename, schema, lock format, exit-code contract, major depe
 
 ## Stop and pivot conditions
 
-Until the next milestone is complete:
+During beta release hardening:
 
 - do not add a live GitHub probe;
 - do not extend the strong transaction subsystem;
@@ -220,7 +288,7 @@ Until the next milestone is complete:
 - do not generalize execution transport;
 - do not require users to construct private compiler, materialization, manifest, evidence, lock, or snapshot values;
 - do not use additional tests, fixtures, or evidence documents as a substitute for a user-operable outcome;
-- stop for an explicit project-model decision if the two private configuration paths cannot converge without silent intent loss.
+- do not extend public discovery, filenames, schema compatibility, output, exit classes, or support claims without package evidence and explicit approval.
 
 Reconsider or pivot when:
 

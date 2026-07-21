@@ -14,9 +14,9 @@ This is a product, architecture, maintainability, documentation, and delivery re
 
 Phase 0 established independent value for a provider-neutral policy compiler and a replaceable native project-instructions renderer. The working tree also contains private project-intent parsing, workflow resolution, typed execution evidence, deterministic transport, and one GitHub Check Runs mapping.
 
-The intended npm product is not yet usable through `npx agentdevflow`. The package remains private and has no `bin` entry. A private application planner now connects local revision-1 configuration and canonical lock bytes to exact plans consumable by the command services, but no executable command handler or user-facing output contract exists.
+The intended npm product is not yet published or stable for 1.0. The package remains `private: true`, but its `agentdevflow` bin qualifies the installed local path for non-interactive `init`, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`. ADR 0004 accepts the initial beta discovery, support, licensing, command, exit, and output boundaries while retaining documented beta migration authority.
 
-The smallest current outcome is therefore a collection of executable private fixtures and semantic services, not a user-operable CLI.
+The smallest current outcome is one reproducible offline init-to-check/diff/render vertical path, bounded local doctor composition, exact-root project defaults, bounded JSON schema version 1, and an allowlisted clean-installed package candidate. Publication, external trusted-publisher configuration, and normal-user beta feedback remain outstanding.
 
 ## Progress since assessment
 
@@ -26,13 +26,27 @@ The first convergence slice after that checkpoint removes project resolution's d
 
 The next convergence slice adds a read-only private application planner. Local revision-1 configuration bytes now combine with repository observations and canonical lock bytes to produce an exact plan and snapshot consumable by existing check, diff, and render services. The planner never requests mutation access. Issue-to-reviewed-pull-request planning remains blocked because the repository does not contain live tracker, pull-request, CI, review-service, or merge adapters.
 
-The current convergence candidate passes the repository audit over 205 text files, strict type checking, the build, and 368 automated tests with zero failures, skips, or todos.
+The following slice adds one experimental development entry for read-only `check` and `diff`. It accepts explicit repository, configuration, and lock paths, emits plan-bound human-readable diagnostics and exact recognized diff content, and preserves repository bytes across subprocess tests. Later slices extend the same entry without accepting its interface as public.
+
+The next slice adds exact approved render to the same entry. Approval binds the complete plan snapshot, mutable authority is acquired only after a read-only match, and configuration plus repository state are replanned before mutation. Interrupted exact target bytes can reconstruct the original all-before plan under the still-authoritative base lock and original approval, avoiding both Git reset and a second journal.
+
+The following slice adds minimal non-interactive initialization for the active revision-1 local workflow. Init creates only an absent exact configuration file. With no lock, the planner reuses the narrow project-instructions analyzer to classify provider targets as create, exact adopt, lossless import, or abort; provider mutation remains behind diff and exact approved render. No approval file, interactive wizard, discovery convention, or managed-region merge was introduced.
+
+The package slice moves the shared temporary-intent primitive out of the frozen transaction subsystem, adds bounded explicit-observation doctor composition, allowlists the runtime tarball, and exercises all five installed command names offline. The first installed-bin run exposed and fixed symbolic-link entry detection; automated coverage retains that regression case.
+
+The pre-beta-surface convergence candidate passed the repository audit over 211 text files, strict type checking, the build, and 388 automated tests with zero failures, skips, or todos.
+
+The accepted beta-surface slice adds Apache-2.0 licensing, the `0.1.0-beta.1` candidate version, a Node.js 22/24 engine range, exact-root `agentdevflow.config.jsonc` and `.agentdevflow/lock.json` defaults, explicit repository-relative overrides, stable exit classes, and bounded JSON schema version 1. Tests prove default discovery does not walk to a parent and that oversized machine output fails closed. The package remains mechanically private pending release authorization.
+
+Current Node.js 24 release-candidate verification passes strict type checking, build, and 392 tests with zero failures, skips, or todos; the final documentation audit passes over 218 text files. The selected V1 suite passes 292 tests from 36 files. A new 118-entry tarball installs offline and completes all five commands through the installed npm bin. Registry advisory matching reports zero production vulnerabilities, and installed dependency queries report no preinstall, install, or postinstall scripts. See [beta release-candidate evidence](../evidence/beta-release-candidate.md).
+
+Read-only unauthenticated checks found no visible npm package record and no publicly accessible GitHub repository page. The package name is not reserved, and repository visibility must not change without a full disclosure review and separate authorization. Public source accessibility is required before the planned provenance claim can be completed.
 
 ## Roadmap alignment
 
 - **Completed:** Phase 0 renderer and policy gates, the native initial-provider renderer, deterministic ownership and lock semantics, and staged forward-convergent apply have executable evidence.
-- **Partial:** the local private application path reaches exact planning and existing command services, but no executable accepts user paths or emits user-level diagnostics.
-- **Blocked:** packaging and a user-operable CLI are blocked by the missing executable and output boundary and a normal workspace import from frozen transaction code. Project-resolution manifest coupling and exact-planning integration are no longer blockers.
+- **Completed for the initial beta boundary:** the local application path reaches revision-1 init, exact planning, executable `check` and `diff`, and approved `render`, including fresh, exact-adopt, lossless-import, abort, exact-root discovery, bounded JSON, and stable outcome fixtures.
+- **Current:** beta hardening must repeat platform and package qualification against the accepted surface, add a minimal release checklist and changelog, and then stop for explicit publication authority.
 - **Prematurely advanced:** strict execution transport and one GitHub observation mapper answered bounded research questions before the local CLI dependency was complete. Both are now frozen.
 
 ## Measured observations
@@ -61,7 +75,7 @@ At the assessment baseline, the newer model represented workflow family, hosted 
 
 The first convergence slice resolves those two defects: revision-1 project resolution now returns the authoritative workflow compilation, direct renderer materialization preserves its domain intent, and execution-manifest creation is an explicit optional downstream operation. The next slice adds a private read-only application planner that prepares exact values for the existing command services from configuration, lock, and repository bytes.
 
-Disposition: **Invest.** Continue the accepted revision-1 path through a user-level read-only command entry point. Retain the older model only as an explicit compatibility input or regression fixture, and fail rather than translating unsupported revision-1 intent back into it.
+Disposition: **Invest.** Continue the accepted revision-1 path through package and local-doctor qualification. Retain the older model only as an explicit compatibility input or regression fixture, and fail rather than translating unsupported revision-1 intent back into it.
 
 ### High: a non-default transaction experiment is disproportionately large
 
@@ -69,17 +83,17 @@ Confidence: **High.** Categories: architecture and maintainability. Evidence: `s
 
 ADR 0002 selects staged digest-aware forward convergence as the V1 apply path and pauses stronger durability work. The retained write-ahead store, executor, cleanup lifecycle, receipts, and platform qualification are useful research evidence but are not the product default.
 
-The normal filesystem workspace still imports one temporary-intent validator from the transaction area, so runtime-package exclusion is an intended packaging gate rather than a mechanically complete separation today.
+The temporary-intent primitive now lives under the workspace boundary. The normal filesystem workspace has no transaction import, and the package allowlist excludes `dist/src/transaction/`.
 
-Disposition: **Freeze.** Do not extend or expose the strong transaction subsystem without a new accepted requirement. Before packaging, move the shared temporary primitive out of the transaction area or isolate transaction-only workspace extensions so the runtime path has no frozen transaction import. Then review whether transaction-only APIs should move under experiments or be removed while preserving the ADR, compact evidence, and Git history.
+Disposition: **Freeze.** Do not extend or expose the strong transaction subsystem without a new accepted requirement. Keep it outside the runtime tarball. A later bounded removal review may move or delete transaction-only code while preserving the ADR, compact evidence, and Git history.
 
 ### High: roadmap execution advanced beyond an incomplete CLI dependency
 
 Confidence: **High.** Categories: product and delivery. Evidence: `package.json`, `src/commands/`, and `src/interface/`.
 
-Private `check`, `diff`, `render`, `doctor`, and `init` semantics exist, and the local application planner now reaches them from revision-1 bytes. The package still has no executable handler, configuration-file reading, user-level output contract, or path-facing end-to-end command.
+Private `check`, `diff`, `render`, `doctor`, and `init` semantics exist, and the local application planner reaches the file-oriented commands from revision-1 bytes. The experimental installed entry provides explicit-path revision-1 init, read-only `check` and `diff`, exact approved `render`, and bounded doctor evaluation over explicit observations. It deliberately does not define public discovery, compatibility, live probes, or publication.
 
-Disposition: **Invest in vertical integration; freeze horizontal expansion.** The next milestone must connect one configuration input to policy compilation, materialization, plan creation, read-only check and diff, explicit render, and clean recheck.
+Disposition: **Resolved for the private offline package path.** Present public-surface, licensing, support, and prerelease decisions before accepting them. Do not add an interactive wizard, another provider, or another integration first.
 
 ### Medium: execution transport and GitHub evidence mapping answered their current questions
 
@@ -87,7 +101,7 @@ Confidence: **High.** Categories: architecture and delivery. Evidence: `src/exec
 
 Typed revision-bound evidence and pure replay demonstrate policy-compiler value beyond instruction rendering. The strict transport proves deterministic private byte boundaries, and the GitHub adapter proves one source observation can map into provider-neutral `CiResult` evidence.
 
-No product command currently consumes a live GitHub observation. A live probe would add authentication, API-version, pagination, rate-limit, revision-selection, and operational failure concerns before the local CLI path exists.
+No product command currently consumes a live GitHub observation. A live probe would add authentication, API-version, pagination, rate-limit, revision-selection, and operational failure concerns before the local initialization and package path is complete.
 
 Disposition: **Freeze.** Retain the current private prototypes and non-claims. Defer live acquisition, more source adapters, and further transport generalization until a real external consumer requires them.
 
@@ -156,40 +170,37 @@ Disposition: **Resolved for the assessed closure.** The cumulative change was di
 
 Do not remove these items during the current closure merely to reduce line counts. Git history and compact durable evidence should preserve technically useful conclusions before any later deletion.
 
-## Next milestone
+## Completed package and public-surface milestones
 
-The next milestone is one experimental but executable local vertical path:
+The private offline vertical path and package/local-doctor qualification are complete without publication:
 
 ```text
-explicit configuration bytes
--> parse and validate
--> resolve project, preset, workflow, providers, and capabilities
--> compile policy
--> materialize provider instructions
--> inspect repository and lock
--> check and diff
--> explicit approved render
--> repeated check reports clean
+verified private local entry
+-> isolate the runtime package graph from frozen research
+-> compose bounded local doctor input
+-> inspect npm package contents
+-> install into a clean temporary project
+-> execute all five candidate command names offline
+-> report public-surface decisions for explicit approval
 ```
 
-Use explicit caller paths before selecting public discovery precedence. A user must not supply compiler output, materialization, manifest, evidence envelope, or render snapshot.
+Exact-root defaults and explicit repository-relative path overrides are accepted. A user must not supply compiler output, materialization, manifest, evidence envelope, or render snapshot.
 
 Exit criteria:
 
-- one revision-1 configuration produces one deterministic exact plan;
-- one authoritative compiled representation reaches renderer materialization, or one explicit bridge proves semantic parity and reports unsupported intent without inference;
-- required project and workflow compilation no longer depends on optional execution-manifest export;
-- `check` and `diff` execute through a real entry point and never mutate project files;
-- explicit render uses the accepted forward-convergent apply path;
-- repeated render is a no-op and repeated check is clean;
-- stale approval, foreign drift, ownership conflict, and unsupported capability fail closed with user-level diagnostics;
-- a temporary fresh repository completes the path without network access;
-- the older candidate configuration is either an explicit one-way compatibility input or no longer part of the active pipeline;
-- the future package graph contains no import from the frozen transaction subsystem.
+- the future package graph contains no import from the frozen transaction subsystem;
+- `npm pack` contains only intended runtime and public documentation files;
+- a clean temporary installation can invoke `init`, `render`, `diff`, `check`, and `doctor` without network access;
+- doctor reports unknown external capability truth rather than adding live probes;
+- Node.js and platform claims match selected qualification evidence;
+- public filename, discovery, schema-versioning, output, and exit-code boundaries match ADR 0004 and executable tests;
+- no package is published or reserved.
+
+The next milestone is beta release hardening. It must repeat Node.js 22/24 and installed-package qualification, verify the final tarball and license, repeat dependency security checks, and create a minimal release checklist and changelog. It must stop before any external trusted-publisher configuration, tag, release, package reservation, or npm publication.
 
 ## Stop conditions
 
-Until the next milestone is complete:
+During beta release hardening:
 
 - do not add a live GitHub probe;
 - do not extend the strong transaction subsystem;
@@ -197,25 +208,25 @@ Until the next milestone is complete:
 - do not generalize the private execution transport;
 - do not count additional fixture, test, or evidence volume as product completion;
 - do not require callers to construct private compiler, materialization, manifest, evidence, lock, or snapshot values;
-- stop for an explicit product-model decision if the two configuration paths cannot converge without silent intent loss;
+- do not extend the accepted public filename, discovery rule, schema revision, output contract, or exit-code classes without a new explicit decision;
 - reconsider the product if the vertical path cannot demonstrate policy-compiler value beyond file rendering.
 
 ## Decision requests
 
-None for this closure. Public filenames, public schema, discovery precedence, CLI output, render approval UX, and package publication remain candidate decisions gated by the next vertical milestone and explicit approval.
+ADR 0004 accepts the initial beta public surface. Package publication remains an explicit later decision after release-hardening evidence is complete. Any change to product direction, provider scope, arbitrary workflow extensibility, live integrations, release authority, or the Node.js/TypeScript/npm ecosystem remains separately gated.
 
 ## Limitations
 
-- This assessment is not a security audit, threat model, dedicated secret scan, package-installation test, or publication review.
+- This assessment is not a security audit, threat model, dedicated secret scan, licensing review, or publication review. Package installation now has separate private qualification evidence.
 - The initial measurements describe the declared pre-closure target. They are preserved as assessment evidence rather than presented as current repository counts.
 - The published closure was independently verified per commit. The later convergence slice is a new working-tree candidate until it receives its own verification and publication decision.
-- No public compatibility, Node.js support, configuration-discovery, lockfile, exit-code, or release promise is accepted by this assessment.
+- The accepted claims are limited to the initial beta contract. No 1.0 compatibility, lock-byte stability, authenticated external observation, automatic orchestration, or publication claim is made.
 
 ## Closure verification
 
 The coordinating review completed the repository audit, strict type check, build, and complete automated test suite with Node.js 24.14.0. The audit passed over 201 text files, and 356 tests passed with zero failures, skips, or todos. Focused deterministic fixtures for both workflow families, execution manifest and transport, project resolution, project-document parsing, presets, schema-version-0 representation, and GitHub Check Runs mapping also passed.
 
-The local tool environment did not expose the `npm` executable, so the coordinator invoked the exact `check` constituent commands directly with the available Node.js runtime. This is equivalent source verification but is not an npm installation, package-content, or clean-install qualification result.
+The earlier closure environment did not expose npm directly. The later package milestone used the repository's NVM-managed Node.js 24.18.0 and npm, an isolated writable npm cache, locally packed exact runtime dependencies, and an offline temporary installation. See the package evidence for the separate result and limitations.
 
 ## Published checkpoint groups
 

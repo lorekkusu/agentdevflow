@@ -19,7 +19,7 @@ import { renderRequestFromMaterialization } from "../../src/renderer/from-compil
 import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
-import { createPrivateTemporaryMutationIntent } from "../../src/transaction/private-temporary-intent.js";
+import { createPrivateTemporaryMutationIntent } from "../../src/workspace/private-temporary-intent.js";
 import {
   PrivateFilesystemWorkspace,
   PrivateFilesystemWorkspaceError,

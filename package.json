@@ -1,11 +1,49 @@
 {
   "name": "agentdevflow",
-  "version": "0.0.0",
+  "version": "0.1.0-beta.1",
   "private": true,
   "description": "Configure, validate, and compile portable software-development flows for coding agents.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lorekkusu/agentdevflow.git"
+  },
   "type": "module",
+  "bin": {
+    "agentdevflow": "dist/src/cli/private-local-cli.js"
+  },
+  "files": [
+    "CHANGELOG.md",
+    "dist/src/application/",
+    "dist/src/cli/",
+    "dist/src/commands/",
+    "dist/src/compiler/",
+    "dist/src/config/",
+    "dist/src/import/",
+    "dist/src/interface/",
+    "dist/src/lock/",
+    "dist/src/policy/",
+    "dist/src/project/",
+    "dist/src/renderer/",
+    "dist/src/workflows/",
+    "dist/src/workspace/",
+    "!dist/src/commands/private-approved-init-render-service.*",
+    "!dist/src/commands/private-init-command-service.*",
+    "!dist/src/compiler/built-in-definitions.*",
+    "!dist/src/compiler/compile-candidate.*",
+    "!dist/src/config/normalize-candidate.*",
+    "!dist/src/import/private-assessment.*",
+    "!dist/src/interface/private-project-config-document.*",
+    "!dist/src/project/private-legacy-candidate-convergence.*",
+    "!dist/src/renderer/rulesync-process.*"
+  ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^22.0.0 || ^24.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "tag": "next"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -21,11 +59,13 @@
     "phase1:execution-contract": "npm run build && node dist/test/fixtures/execution/run.js",
     "phase1:execution-transport": "npm run build && node dist/test/fixtures/execution/transport-run.js",
     "phase1:github-ci-evidence": "npm run build && node dist/test/fixtures/adapters/github-check-runs-run.js",
+    "phase1:local-cli": "npm run build && node dist/src/cli/private-local-cli.js",
     "phase1:project-resolution": "npm run build && node dist/test/fixtures/project/run.js",
     "phase1:project-document": "npm run build && node dist/test/fixtures/project/document-run.js",
     "phase1:representation": "npm run build && node dist/test/fixtures/interface/run.js",
     "phase1:preset": "npm run build && node dist/test/fixtures/project/preset-run.js",
     "test:v1-recovery": "npm run build && node --test dist/test/renderer/private-convergent-apply.test.js dist/test/renderer/private-convergent-subprocess.test.js",
+    "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test \"dist/**/*.test.js\"",
     "check": "npm run check:repository && npm run typecheck && npm test"

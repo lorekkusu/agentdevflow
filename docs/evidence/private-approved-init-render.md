@@ -8,6 +8,8 @@ Snapshot date: 2026-07-20.
 
 This result does not qualify a public initialization command, approval file, configuration file, lock location, or interactive workflow.
 
+Follow-on status: the active revision-1 local CLI now rederives the same exact-adopt and lossless-import facts during application planning and binds them into the complete diff snapshot. It does not translate richer revision-1 intent into the older schema-version-0 proposal envelope. A second reanalysis and exact-plan match precede the same render command, so the qualified safety semantics remain while no new approval file is introduced.
+
 ## Reproduction
 
 Implementation:
@@ -58,4 +60,4 @@ Preparation and execution are separate so the exact snapshot can be retained bef
 
 ## Recommendation
 
-Use this bridge as the only initialization route into the private render command. Evaluate the public configuration and CLI representation next, using the qualified private semantics as constraints rather than freezing the current internal shapes.
+Keep this bridge as schema-version-0 compatibility evidence and preserve its qualified semantics in the active revision-1 successor. Evaluate package and public CLI representation next without freezing either private approval shape.

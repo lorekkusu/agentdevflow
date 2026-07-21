@@ -77,7 +77,7 @@ A complete `migrate` command is deferred until a real schema transition exists. 
 
 ## Compiler model
 
-- `ProjectConfig` is the candidate stable user-facing API.
+- `ProjectConfig` is the beta user-facing API and candidate stable 1.0 API.
 - `WorkflowDefinition` remains experimental until multiple distinct workflows and runtime exports validate it.
 - `WorkflowIR` remains private so compiler internals can change without breaking users.
 - Policies remain separate from workflow topology so adding a transition cannot silently bypass a gate represented only as a node.
@@ -88,7 +88,7 @@ A complete `migrate` command is deferred until a real schema transition exists. 
 - Narrow source adapters may translate authenticated provider observations into provider-neutral evidence, but acquisition trust, credentials, and provider API behavior remain explicit integration boundaries.
 - Lock state should capture immutable workflow, skill, adapter, and generated-artifact resolution.
 
-The exact public configuration syntax, directory names, configuration filenames, and lockfile format remain open.
+The initial beta uses versioned JSONC at `agentdevflow.config.jsonc` and tool-owned lock state at `.agentdevflow/lock.json` in the exact selected repository root. Beta configuration fields and lock bytes retain documented migration authority; arbitrary workflow topology and 1.0 compatibility remain open.
 
 ## Ownership and enforcement
 
