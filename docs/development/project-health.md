@@ -16,7 +16,7 @@ Phase 0 established independent value for a provider-neutral policy compiler and
 
 The npm product is published as `agentdevflow@0.1.0-beta.2`; both `latest` and `next` resolve to it. It is the qualified repair for non-interactive `init`, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; the deprecated immutable `0.1.0-beta.1` tarball retains a `0644` bin even though npm 11.16 was later observed normalizing its installed target to `0755`. Publication remains protected by a manual exact-commit workflow, the `npm-publish` Environment, and an npm OIDC trusted publisher without a stored GitHub publishing secret.
 
-The smallest current outcome is one reproducible init-to-check/diff/render vertical path through a directly invoked packed bin, bounded local doctor composition, exact-root project defaults, and bounded JSON schema version 1. Local, selected-platform, protected-publication, and public-registry first-run qualification pass. Maintainer-operated dogfood replaces waiting for unavailable normal-user feedback.
+The smallest current outcome is one reproducible init-to-check/diff/render vertical path through a directly invoked packed bin, bounded local doctor composition, exact-root project defaults, and bounded JSON schema version 1. Local, selected-platform, protected-publication, and public-registry first-run qualification pass. One bounded maintainer-dogfood observation also passes, confirming native instruction discovery and one advisory three-role handoff while preserving the explicit non-claim that messages are authenticated or mechanically transition workflow state.
 
 ## Progress since assessment
 
@@ -46,7 +46,8 @@ The first public npm publication made exact version `0.1.0-beta.1` available wit
 
 - **Completed:** Phase 0 renderer and policy gates, the native initial-provider renderer, deterministic ownership and lock semantics, and staged forward-convergent apply have executable evidence.
 - **Completed for the initial beta boundary:** the local application path reaches revision-1 init, exact planning, executable `check` and `diff`, and approved `render`, including fresh, exact-adopt, lossless-import, abort, exact-root discovery, bounded JSON, and stable outcome fixtures.
-- **Current:** the repaired package entrypoint and onboarding contract pass locally, across the selected hosted matrix, and from the public registry as `0.1.0-beta.2`. Complete maintainer-operated dogfood from a private non-sensitive repository before expanding product scope.
+- **Completed:** the repaired package entrypoint and onboarding contract pass locally, across the selected hosted matrix, and from the public registry as `0.1.0-beta.2`. A bounded maintainer observation also covers the initial three provider products.
+- **Current decision gate:** determine whether a bounded local consumer of compiled transition and artifact policy provides the next independently useful outcome before any live tracker, pull-request, CI, review-service, or merge integration.
 - **Prematurely advanced:** strict execution transport and one GitHub observation mapper answered bounded research questions before the local CLI dependency was complete. Both are now frozen.
 
 ## Measured observations
@@ -196,7 +197,7 @@ Exit criteria:
 - public filename, discovery, schema-versioning, output, and exit-code boundaries match ADR 0004 and executable tests;
 - the public exact-version artifact matches the qualified package bytes, source commit, and provenance evidence.
 
-Beta release hardening, publication, registry identity, and credential closure are complete. Version `0.1.0-beta.1` was published from commit `e4b3014`, but its packed JavaScript bin has mode `0644`; a recorded direct-entrypoint audit failed, while a later npm 11.16 clean-cache recheck normalized the installed target and succeeded. Version `0.1.0-beta.2` removes that ambiguity, repairs public onboarding, passed the six-cell protected path, and was published from exact commit `13bb07c0aea48df8dfd4bb8fbed7201ef30d4962` with OIDC provenance. Unqualified, exact-version, `next`, `npm exec`, and README first-run registry paths pass. An explicitly authorized registry correction moved `latest` to beta.2 and deprecated beta.1. The current gate is maintainer dogfood. Git tags, GitHub Releases, versions after `0.1.0-beta.2`, later package-setting changes, and scope expansion remain separately gated.
+Beta release hardening, publication, registry identity, and credential closure are complete. Version `0.1.0-beta.1` was published from commit `e4b3014`, but its packed JavaScript bin has mode `0644`; a recorded direct-entrypoint audit failed, while a later npm 11.16 clean-cache recheck normalized the installed target and succeeded. Version `0.1.0-beta.2` removes that ambiguity, repairs public onboarding, passed the six-cell protected path, and was published from exact commit `13bb07c0aea48df8dfd4bb8fbed7201ef30d4962` with OIDC provenance. Unqualified, exact-version, `next`, `npm exec`, and README first-run registry paths pass. An explicitly authorized registry correction moved `latest` to beta.2 and deprecated beta.1. One bounded local-workflow [maintainer observation](maintainer-dogfood.md) also passes without becoming compatibility qualification. The current gate is a decision about the smallest compiled-policy consumer. Git tags, GitHub Releases, versions after `0.1.0-beta.2`, later package-setting changes, and scope expansion remain separately gated.
 
 ## Stop conditions
 
