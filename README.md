@@ -6,7 +6,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 `agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 has private prototypes for project-intent parsing, policy compilation, native project-instructions rendering, ownership-aware application, domain workflows, and typed execution evidence.
 
-The first beta CLI boundary is now accepted and executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`. It uses project-local defaults, stable outcome classes, and bounded versioned JSON output. The package remains non-publishable through `private: true`; no npm package has been published or reserved. Beta configuration and machine-output details may still change through documented migration before 1.0.
+The first beta CLI boundary is now accepted and executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`. It uses project-local defaults, stable outcome classes, and bounded versioned JSON output. The release-preparation manifest is packageable and a manually triggered publish workflow is under qualification, but no npm package has been published or reserved and no external publishing state is configured. Beta configuration and machine-output details may still change through documented migration before 1.0.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -48,7 +48,7 @@ The accepted V1 apply path is the smaller staged forward-convergent implementati
 
 The selected V1 suite has candidate qualification across explicit Ubuntu, macOS, and Windows hosted runners on Node.js 22 and 24. This is test evidence, not a published support guarantee. See [V1 platform qualification](docs/evidence/v1-platform-qualification.md).
 
-The private npm tarball has a local allowlist and one clean offline installed-bin exercise. This is qualification evidence, not a release. See [private package qualification](docs/evidence/private-package-qualification.md).
+The npm candidate tarball has a local allowlist and one clean offline installed-bin exercise. This is qualification evidence, not a release. See [private package qualification](docs/evidence/private-package-qualification.md).
 
 The initial beta defaults are `agentdevflow.config.jsonc` and `.agentdevflow/lock.json` in the selected repository root. The CLI does not search parent directories. Human-readable output is the default; `--json` emits schema version 1. Exit codes are `0` for success or clean state, `1` for reviewable changes or degraded observations, and `2` for blocked or invalid state.
 

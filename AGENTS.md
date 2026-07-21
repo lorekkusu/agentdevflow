@@ -6,7 +6,7 @@
 
 Keep the implementation provider-neutral. Codex, Claude Code, and Cursor are the initial adapter validation set; Steward, Developer, and Reviewer are responsibilities, not provider brands.
 
-Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The initial beta five-command boundary is accepted; release hardening is next and publication remains separately authorized. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
+Phase 0 validated a replaceable renderer boundary and a finite-state policy core. Follow `docs/development/roadmap.md` for the current sequence and `docs/development/project-health.md` for the current scope and complexity disposition. The initial beta five-command boundary and release-preparation direction are accepted; external publication remains separately authorized. Do not expand the project into a public workflow DSL, scheduler, marketplace, tracker runtime, broad provider matrix, GUI, SaaS service, automatic merge or release system, or repository analyzer without an explicit project decision.
 
 Do not extend the accepted beta API, configuration syntax, discovery rules, JSON schema, lock format, or production framework without its roadmap acceptance gate. Follow ADR 0004 and the beta CLI contract for the currently accepted surface.
 
@@ -49,6 +49,7 @@ Do not store conversation transcripts or temporary deliberation records in the r
 - `docs/evidence/` contains public, reproducible technical evidence and gate conclusions.
 - `CONTRIBUTING.md` defines the public contribution, issue, pull-request, and AI-assisted-work expectations.
 - `SECURITY.md` defines the public vulnerability-reporting and coordinated-disclosure route.
+- `.github/workflows/publish.yml` is the only reviewed npm publication path and remains manually triggered.
 
 Keep critical constraints in this file. Link to detailed documents for context instead of duplicating them here.
 
@@ -96,7 +97,7 @@ npm pack --dry-run --json
 - Route check behavior through the private check command service. Preserve its read-only workspace boundary and the accepted beta exit classes.
 - Route diff behavior through the private diff command service. Do not return partial entries for blocked or foreign state, and keep the current exact JSON-quoted formatter private until disclosure and output limits are accepted.
 - Keep the doctor semantic core free of provider command execution, network access, credentials, and environment inspection. The private CLI may evaluate only explicit bounded observation envelopes for the local workflow. Add probe adapters only with narrow permission and evidence contracts.
-- Keep npm package contents allowlisted through `package.json`. Do not include tests, experiments, frozen transaction code, Rulesync process integration, or private evidence in the runtime tarball. Keep `private: true` until publication receives separate authorization.
+- Keep npm package contents allowlisted through `package.json`. Do not include tests, experiments, frozen transaction code, Rulesync process integration, or private evidence in the runtime tarball. The accepted release-preparation manifest omits `private`; this does not authorize publication. Never invoke `npm publish` locally. Keep the only reviewed publish path manually triggered, exact-version and exact-commit bound, environment-gated, and limited to `contents: read` plus `id-token: write`.
 - Keep the policy validator independent of provider adapters, trackers, and runtime schedulers.
 - Keep domain-specific workflow artifacts and capabilities under `src/workflows/`; do not add issue, pull-request, CI, or merge assumptions to the generic compiler. Preserve the local no-pull-request workflow as an anti-coupling regression fixture.
 - Keep the private execution contract pure and filesystem-free. It verifies caller-supplied traces but must not schedule steps, monitor systems, hold credentials, retry work, or mutate external state. Route manifest-required evidence through the closed payload-package validator; do not accept an opaque digest where a typed requirement exists. Treat envelope and payload digests as integrity bindings, not authentication.

@@ -57,7 +57,8 @@ npm query ':attr(scripts, [postinstall])'
 ## 4. Package qualification
 
 - Build and inspect `npm pack --dry-run --json` output.
-- Confirm the manifest remains `private: true` during review.
+- Confirm omission of the manifest `private` field is the accepted release-preparation change and does not by itself authorize publication.
+- Confirm `.github/workflows/publish.yml` is manual-only, exact-version and exact-commit bound, environment-gated, and limited to `contents: read` plus `id-token: write`.
 - Confirm the tarball includes `LICENSE`, `README.md`, `package.json`, and only the allowlisted runtime graph.
 - Confirm tests, fixtures, experiments, frozen transaction code, private evidence, local caches, and credentials are absent.
 - Install the packed candidate into a clean temporary directory from exact local tarballs and exercise all five command names offline.
@@ -68,7 +69,7 @@ npm query ':attr(scripts, [postinstall])'
 
 Stop and obtain explicit authorization before any of these actions:
 
-- removing `private: true`;
+- committing or pushing a release-preparation change that omits `private`;
 - reserving or publishing the package name;
 - changing repository visibility or another repository access setting;
 - configuring an npm trusted publisher or repository environment;
@@ -83,7 +84,7 @@ For a brand-new npm package, treat first-publication authentication as a separat
 
 ## 6. Authorized publication
 
-After authorization, confirm the reviewed source repository is publicly accessible, then use npm trusted publishing when available. Confirm provenance is attached and publish with the non-default `next` tag. Never publish the beta as `latest`.
+After authorization, confirm the reviewed source repository is publicly accessible. Dispatch only the exact reviewed `main` commit through the `npm-publish` environment, and require the exact `0.1.0-beta.1` version input. For the first publication, use only the separately authorized environment-scoped bootstrap secret. Confirm provenance is attached and publish with the non-default `next` tag. Never publish the beta as `latest`.
 
 The final publish command must name the tag explicitly:
 
@@ -92,6 +93,8 @@ npm publish --access public --tag next --provenance
 ```
 
 The package version cannot be reused after publication. If publication partially succeeds, inspect registry state before retrying; do not assume rollback or overwrite is possible.
+
+Immediately after the first successful publication, remove the GitHub secret and revoke the bootstrap token. Configure the package's trusted publisher interactively with 2FA, then remove `NODE_AUTH_TOKEN` from the workflow before a later release.
 
 ## 7. Post-publication verification
 

@@ -21,7 +21,7 @@ The initial beta adopts these public boundaries:
 - `ProjectConfig` is the intended user-facing configuration concept. The beta exposes only built-in workflow families. A general `WorkflowDefinition` and arbitrary workflow topology remain experimental and non-public.
 - The command set is `init`, `render`, `diff`, `check`, and `doctor`. Exit code `0` means success or clean state, `1` means reviewable changes or degraded observations, and `2` means invalid, blocked, unsafe, or unexpected failure.
 - Human-readable output is the default. `--json` uses an explicitly versioned bounded envelope. Beta fields may evolve through documented migration; secret, credential, and unrecognized foreign file bytes are never output.
-- The first release candidate is `0.1.0-beta.1`, published under the npm `next` distribution tag with package provenance. Publication remains separately authorized, and the current manifest remains mechanically non-publishable until that authorization.
+- The first release candidate is `0.1.0-beta.1`, published under the npm `next` distribution tag with package provenance. Release preparation omits the manifest `private` field and adds one manually triggered workflow bound to an exact `main` commit, exact version, restricted environment, and narrow permissions. Those repository changes do not authorize repository visibility, credentials, tags, releases, or npm publication.
 - Node.js built-ins remain sufficient for command parsing until measured usability requirements justify a CLI framework.
 
 The detailed executable behavior belongs in the beta CLI contract and tests. This ADR accepts the boundary, not every private type name, diagnostic wording, JSON field, lock byte, or configuration field as a permanent 1.0 guarantee.
@@ -32,7 +32,7 @@ Users receive predictable project-local discovery without hidden parent-director
 
 The project must provide migration notes for incompatible beta configuration or machine-output changes. Supporting only built-in workflow families limits early extensibility but prevents the compiler's private finite-state representation from becoming an accidental public DSL.
 
-The package remains blocked from publication until a separate release review confirms package ownership, public repository metadata, provenance configuration, tarball contents, supported-platform checks, security review, and explicit publish authority.
+The package remains blocked from publication until a separate release review confirms package ownership, public repository metadata, provenance configuration, tarball contents, supported-platform checks, security review, external environment and credential state, and explicit publish authority.
 
 ## Alternatives considered
 

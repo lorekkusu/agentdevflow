@@ -198,7 +198,7 @@ Observed closure:
 - the tarball uses an explicit runtime allowlist and excludes tests, experiments, frozen transaction code, Rulesync process integration, and private evidence;
 - an isolated installation using only local tarballs completes `init`, `diff`, approved `render`, clean `check`, and `doctor` with network-disabled npm resolution;
 - doctor consumes a bounded revisioned observation file and performs no live provider, credential, process, or network probe;
-- the package remains `private: true`, and no package was published or reserved.
+- at this historical qualification snapshot the package remained `private: true`, and no package was published or reserved.
 
 Exit criteria:
 
@@ -224,7 +224,7 @@ Required sequence:
 2. **Complete:** repeat complete repository verification and Node.js 22/24 qualification against the accepted beta surface;
 3. **Complete:** inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, signatures, and license inclusion;
 4. **Complete:** define a minimal public release checklist, changelog, vulnerability-reporting policy, and bounded full-history disclosure audit without adding a release framework;
-5. **Current gate:** review and publish the closure commit through normal CI, then stop for explicit authorization before changing visibility, removing `private: true`, configuring first-publication or trusted-publisher state, creating a tag or release, or publishing to npm.
+5. **Complete locally; next gate:** the manual release-preparation workflow and packageable manifest passed local qualification. Stop for explicit authorization before committing or pushing that change, then require hosted qualification on the exact pushed commit. Visibility, first-publication or trusted-publisher state, tags, releases, and npm publication remain separately authorized actions.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
 

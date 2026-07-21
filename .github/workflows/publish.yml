@@ -1,0 +1,76 @@
+name: Publish npm beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package version to publish
+        required: true
+        type: string
+      commit:
+        description: Exact 40-character main commit to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish npm beta
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: npm-publish
+    steps:
+      - name: Check out exact release commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Validate release identity
+        shell: bash
+        env:
+          EXPECTED_VERSION: ${{ inputs.version }}
+          EXPECTED_COMMIT: ${{ inputs.commit }}
+          ACTUAL_COMMIT: ${{ github.sha }}
+          ACTUAL_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          test "$ACTUAL_REF" = "refs/heads/main"
+          test "$EXPECTED_COMMIT" = "$ACTUAL_COMMIT"
+          test "$EXPECTED_VERSION" = "$(node -p "require('./package.json').version")"
+          test "$(node -p "String(require('./package.json').private)")" = "undefined"
+          test "$(node -p "require('./package.json').publishConfig.tag")" = "next"
+      - name: Install exact dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run release-candidate verification
+        run: npm run check
+      - name: Verify production advisories and package signatures
+        run: |
+          npm audit --omit=dev
+          npm audit signatures
+      - name: Verify installed lifecycle scripts remain absent
+        run: |
+          test "$(npm query ':attr(scripts, [preinstall])' --json)" = "[]"
+          test "$(npm query ':attr(scripts, [install])' --json)" = "[]"
+          test "$(npm query ':attr(scripts, [postinstall])' --json)" = "[]"
+      - name: Inspect publish contents
+        run: npm pack --dry-run --json
+      - name: Verify tracked files remain unchanged
+        run: git diff --exit-code
+      - name: Publish exact beta to npm
+        run: npm publish --access public --tag next --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

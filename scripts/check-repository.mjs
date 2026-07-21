@@ -158,6 +158,22 @@ function inspectWorkflowSecurity(relativePath, content) {
     return [];
   }
   const diagnostics = [];
+  const isPublishWorkflow = relativePath === ".github/workflows/publish.yml";
+  const secretReferencePattern = /\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}/gmu;
+  for (const match of content.matchAll(secretReferencePattern)) {
+    if (
+      match.index !== undefined &&
+      (!isPublishWorkflow || match[1] !== "NPM_TOKEN")
+    ) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "WORKFLOW_SECRET_UNEXPECTED",
+        message:
+          "Qualification workflows use no secrets; the manual publish workflow may use only NPM_TOKEN for first-publication bootstrap.",
+      });
+    }
+  }
   const actionReferencePattern = /^\s*uses:\s*[^\s@]+@([^\s#]+).*$/gmu;
   for (const match of content.matchAll(actionReferencePattern)) {
     const reference = match[1];
@@ -193,24 +209,93 @@ function inspectWorkflowSecurity(relativePath, content) {
       message: "Do not hide workflow failures with continue-on-error.",
     });
   }
-  const writePermissionIndex = content.search(
-    /^\s+[a-z-]+:\s+write\s*$/mu,
-  );
-  if (writePermissionIndex >= 0) {
-    diagnostics.push({
-      path: relativePath,
-      line: lineNumberAt(content, writePermissionIndex),
-      code: "WORKFLOW_WRITE_PERMISSION",
-      message: "Qualification workflows must not request write permission.",
-    });
+  const writePermissionPattern = /^\s+([a-z-]+):\s+write\s*$/gmu;
+  for (const match of content.matchAll(writePermissionPattern)) {
+    if (
+      match.index !== undefined &&
+      (!isPublishWorkflow || match[1] !== "id-token")
+    ) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, match.index),
+        code: "WORKFLOW_WRITE_PERMISSION",
+        message:
+          "Permit only id-token write access in the manual npm publish workflow.",
+      });
+    }
   }
-  if (!/^permissions:\s*\n\s+contents:\s+read\s*$/mu.test(content)) {
+  const expectedPermissions = isPublishWorkflow
+    ? /^permissions:\s*\n\s+contents:\s+read\s*\n\s+id-token:\s+write\s*$/mu
+    : /^permissions:\s*\n\s+contents:\s+read\s*$/mu;
+  if (!expectedPermissions.test(content)) {
     diagnostics.push({
       path: relativePath,
       line: 1,
       code: "WORKFLOW_PERMISSIONS_MISSING",
-      message: "Declare top-level read-only contents permission.",
+      message: isPublishWorkflow
+        ? "Declare only contents read and id-token write permissions for npm publishing."
+        : "Declare top-level read-only contents permission.",
     });
+  }
+  if (isPublishWorkflow) {
+    const requiredPatterns = [
+      {
+        code: "PUBLISH_WORKFLOW_TRIGGER_INVALID",
+        pattern: /^on:\s*\n\s+workflow_dispatch:\s*$/mu,
+        message: "Keep npm publishing manually triggered.",
+      },
+      {
+        code: "PUBLISH_WORKFLOW_ENVIRONMENT_MISSING",
+        pattern: /^\s+environment:\s+npm-publish\s*$/mu,
+        message: "Bind npm publishing to the npm-publish environment.",
+      },
+      {
+        code: "PUBLISH_WORKFLOW_COMMAND_INVALID",
+        pattern:
+          /^\s+(?:-\s+)?run:\s+npm publish --access public --tag next --provenance\s*$/mu,
+        message: "Publish the beta explicitly to the next tag with provenance.",
+      },
+      {
+        code: "PUBLISH_WORKFLOW_SECRET_INVALID",
+        pattern: /^\s+NODE_AUTH_TOKEN:\s+\$\{\{ secrets\.NPM_TOKEN \}\}\s*$/mu,
+        message: "Use only the environment-scoped bootstrap npm secret.",
+      },
+    ];
+    for (const requirement of requiredPatterns) {
+      if (!requirement.pattern.test(content)) {
+        diagnostics.push({
+          path: relativePath,
+          line: 1,
+          code: requirement.code,
+          message: requirement.message,
+        });
+      }
+    }
+    const triggerBlock = /^on:\s*\n([\s\S]*?)^permissions:/mu.exec(content);
+    const triggers = triggerBlock
+      ? [...triggerBlock[1].matchAll(/^\s{2}([A-Za-z_]+):/gmu)].map(
+          (match) => match[1],
+        )
+      : [];
+    if (triggers.length !== 1 || triggers[0] !== "workflow_dispatch") {
+      diagnostics.push({
+        path: relativePath,
+        line: 1,
+        code: "PUBLISH_WORKFLOW_TRIGGER_INVALID",
+        message: "Keep workflow_dispatch as the only npm publishing trigger.",
+      });
+    }
+    const forbiddenTriggerIndex = content.search(
+      /^\s+(?:pull_request|pull_request_target|push|release|schedule):\s*$/mu,
+    );
+    if (forbiddenTriggerIndex >= 0) {
+      diagnostics.push({
+        path: relativePath,
+        line: lineNumberAt(content, forbiddenTriggerIndex),
+        code: "PUBLISH_WORKFLOW_AUTOMATIC_TRIGGER",
+        message: "Do not trigger npm publishing from repository events.",
+      });
+    }
   }
   return diagnostics;
 }
@@ -320,12 +405,13 @@ async function inspectPackageBoundary() {
       message: "Keep the canonical Apache License 2.0 text at the repository root.",
     });
   }
-  if (manifest.private !== true) {
+  if (manifest.private !== undefined) {
     diagnostics.push({
       path: "package.json",
       line: 1,
-      code: "PACKAGE_PUBLICATION_ENABLED",
-      message: "Keep the package private until publication is explicitly authorized.",
+      code: "PACKAGE_PUBLICATION_GUARD_INVALID",
+      message:
+        "Omit the private field only for the explicitly accepted release candidate.",
     });
   }
   const expectedBetaMetadata = [
@@ -396,7 +482,7 @@ async function inspectPackageBoundary() {
 }
 
 async function inspectRequiredRootFiles() {
-  const requiredFiles = ["SECURITY.md"];
+  const requiredFiles = [".github/workflows/publish.yml", "SECURITY.md"];
   const diagnostics = [];
 
   for (const requiredFile of requiredFiles) {

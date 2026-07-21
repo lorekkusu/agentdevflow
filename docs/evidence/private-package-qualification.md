@@ -6,7 +6,7 @@ Snapshot date: 2026-07-21.
 
 **Pass for one private local npm-package candidate on the tested Darwin and Node.js 24.18.0 environment.** The allowlisted tarball installs from local exact-version tarballs with npm offline resolution, exposes the `agentdevflow` bin through npm's symbolic-link layout, and completes the local `init`, `diff`, approved `render`, clean `check`, and explicit-observation `doctor` path.
 
-This is not publication authorization, a stable CLI contract, an `npx` registry test, a public support promise, a license decision, or release provenance evidence. The package remains `private: true`.
+This is not publication authorization, a stable CLI contract, an `npx` registry test, a public support promise, a license decision, or release provenance evidence. At this historical qualification snapshot, the package remained `private: true`.
 
 Follow-on decision: ADR 0004 accepts Apache-2.0, Node.js 22 and 24, exact-root project defaults, stable exit classes, bounded JSON schema version 1, and the `0.1.0-beta.1` release candidate. Those decisions do not alter this snapshot's tarball measurements or authorize publication; beta release hardening must produce a new final package observation.
 

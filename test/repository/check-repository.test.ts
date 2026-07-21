@@ -32,10 +32,15 @@ test("enforces dependency boundaries for direct import forms", async () => {
   const root = await mkdtemp(join(tmpdir(), "agentdevflow-repository-audit-"));
   try {
     await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, ".github", "workflows"), { recursive: true });
     await mkdir(join(root, "src", "interface"), { recursive: true });
     await mkdir(join(root, "src", "other"), { recursive: true });
     const script = join(root, "scripts", "check-repository.mjs");
     await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await copyFile(
+      resolve(".github/workflows/publish.yml"),
+      join(root, ".github", "workflows", "publish.yml"),
+    );
     await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
     await writeFile(
       join(root, "src", "interface", "private-zod.ts"),
@@ -91,6 +96,74 @@ test("requires a root security policy", async () => {
   }
 });
 
+test("limits write access to the manual npm publish workflow", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-publish-workflow-"));
+  const allowedWorkflow = `name: Publish npm beta
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  publish:
+    environment: npm-publish
+    steps:
+      - run: npm publish --access public --tag next --provenance
+        env:
+          NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}
+`;
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, ".github", "workflows"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    const workflow = join(root, ".github", "workflows", "publish.yml");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
+    await writeFile(workflow, allowedWorkflow);
+
+    const allowed = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(allowed.status, 0, allowed.stderr);
+
+    await writeFile(
+      workflow,
+      allowedWorkflow.replace("contents: read", "contents: write"),
+    );
+    const writableContents = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(writableContents.status, 1);
+    assert.match(writableContents.stderr, /WORKFLOW_WRITE_PERMISSION/u);
+
+    await writeFile(
+      workflow,
+      allowedWorkflow.replace("secrets.NPM_TOKEN", "secrets.OTHER_TOKEN"),
+    );
+    const unexpectedSecret = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(unexpectedSecret.status, 1);
+    assert.match(unexpectedSecret.stderr, /WORKFLOW_SECRET_UNEXPECTED/u);
+
+    await writeFile(
+      workflow,
+      allowedWorkflow.replace("  workflow_dispatch:\n", "  workflow_dispatch:\n  push:\n"),
+    );
+    const automatic = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(automatic.status, 1);
+    assert.match(automatic.stderr, /PUBLISH_WORKFLOW_AUTOMATIC_TRIGGER/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("keeps project resolution independent from execution exports", async () => {
   const root = await mkdtemp(join(tmpdir(), "agentdevflow-project-boundary-"));
   try {
@@ -137,7 +210,7 @@ test("keeps normal source independent from frozen transaction code", async () =>
   }
 });
 
-test("requires a private allowlisted package boundary", async () => {
+test("requires the accepted release-candidate package boundary", async () => {
   const root = await mkdtemp(join(tmpdir(), "agentdevflow-package-boundary-"));
   try {
     await mkdir(join(root, "scripts"), { recursive: true });
@@ -146,7 +219,7 @@ test("requires a private allowlisted package boundary", async () => {
     await writeFile(
       join(root, "package.json"),
       `${JSON.stringify({
-        private: false,
+        private: true,
         bin: { agentdevflow: "dist/src/other.js" },
         files: ["dist/src/transaction/"],
       })}\n`,
@@ -157,7 +230,7 @@ test("requires a private allowlisted package boundary", async () => {
       encoding: "utf8",
     });
     assert.equal(result.status, 1);
-    assert.match(result.stderr, /PACKAGE_PUBLICATION_ENABLED/u);
+    assert.match(result.stderr, /PACKAGE_PUBLICATION_GUARD_INVALID/u);
     assert.match(result.stderr, /PACKAGE_BETA_METADATA_INVALID/u);
     assert.match(result.stderr, /PACKAGE_LICENSE_INVALID/u);
     assert.match(result.stderr, /PACKAGE_BIN_INVALID/u);
