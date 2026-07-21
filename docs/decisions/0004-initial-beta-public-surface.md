@@ -44,6 +44,14 @@ The package was blocked from publication until a separate release review confirm
 
 Post-publication observation: the workflow published the first version with an explicit `next` tag, but the npm registry also established `latest` at the package's only version and rejected removal with HTTP 400. The canonical package metadata format requires at least a `latest` field. This does not change the rejection of direct beta publication to `latest`; it records a first-version registry constraint. The project will not publish a fabricated stable version to move the tag, and later prereleases must preserve an existing stable `latest` value.
 
+Follow-on correction: after beta.1 was found to have a packed-bin mode defect,
+the separately authorized beta.2 release passed protected and public-registry
+qualification. Because no stable release existed and unqualified installs still
+selected the defective first beta, a separate package-setting authorization
+moved `latest` to beta.2 and deprecated beta.1 with upgrade guidance. This
+bounded correction does not authorize a future prerelease to replace an
+existing stable `latest` tag.
+
 ## Evidence
 
 - [Private package qualification](../evidence/private-package-qualification.md)

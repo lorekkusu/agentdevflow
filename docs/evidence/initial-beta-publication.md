@@ -4,7 +4,7 @@ Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**Pass for exact-commit publication, registry artifact identity, provenance, and installed command behavior; fail for the shell-visible `npx` entrypoint discovered after publication.** `agentdevflow@0.1.0-beta.1` is publicly available from npm and matches the qualified candidate and source commit. Its packed JavaScript bin has mode `0644`, so direct npm executable invocation fails before the command starts. See [public first-run qualification](public-first-run.md).
+**Pass for exact-commit publication, registry artifact identity, provenance, and installed command behavior; historical fail for the recorded shell-visible `npx` environment discovered after publication.** `agentdevflow@0.1.0-beta.1` is publicly available from npm and matches the qualified candidate and source commit. Its packed JavaScript bin has mode `0644`. A later npm 11.16 clean-cache recheck normalized the installed target to `0755` and succeeded, so the failure is not generalized to every current npm client. See [public first-run qualification](public-first-run.md).
 
 This evidence does not make a 1.0 compatibility claim, authenticate caller-supplied doctor observations, establish broad provider or workflow support, or authorize a Git tag, GitHub Release, later npm version, or automatic release process.
 
@@ -52,11 +52,11 @@ The exact public version was installed into a clean temporary prefix with depend
 
 The exact plan digest remained `9c88f27c7ccd30ede0861455a555a324599b6397c61b05da9f5e87f7d118baae`.
 
-That exercise did not directly execute the shell-visible package bin. A later public first-run audit showed that both `npx` and `npm exec` return exit `127` because the packed JavaScript target is not executable. Command behavior and artifact identity remain valid observations, but the earlier installation exercise was insufficient evidence for public executable usability.
+That exercise did not directly execute the shell-visible package bin. A later public first-run audit observed both `npx` and `npm exec` returning exit `127` while the packed JavaScript target was not executable. Command behavior and artifact identity remain valid observations, but the earlier installation exercise was insufficient evidence for public executable usability. A subsequent npm 11.16 clean-cache recheck normalized the target mode and succeeded; the original result is therefore environment-specific rather than universal.
 
 ## Distribution-tag constraint
 
-The workflow explicitly published with `--tag next`, and `next` resolves to `0.1.0-beta.1`. For this brand-new package, the registry also established `latest` at the only published version. An authenticated `npm dist-tag rm agentdevflow latest` attempt was rejected with HTTP 400.
+The workflow explicitly published with `--tag next`; at this historical snapshot, `next` resolved to `0.1.0-beta.1`. For this brand-new package, the registry also established `latest` at the only published version. An authenticated `npm dist-tag rm agentdevflow latest` attempt was rejected with HTTP 400. After the qualified beta.2 repair, a separate authorization moved both tags to beta.2 and deprecated beta.1; current state is recorded in [public first-run qualification](public-first-run.md).
 
 The canonical npm registry package format requires `dist-tags` to contain at least `latest`. This is a first-version registry constraint, not evidence that the workflow omitted the explicit non-default tag. A bare `npm install agentdevflow` therefore resolves the beta until a stable version exists. Documentation must direct beta users to the explicit `next` tag, and the project must not publish a fabricated stable version merely to move `latest`. Later prereleases must preserve an existing stable `latest` value.
 
@@ -64,12 +64,12 @@ The canonical npm registry package format requires `dist-tags` to contain at lea
 
 The first publication used a separately authorized granular bootstrap token stored only as the protected `npm-publish` Environment secret. The GitHub secret was deleted immediately after the successful publish. The named npm bootstrap token was then revoked through npm proof-of-presence, and a subsequent token-list query returned no tokens. The package is now bound to the GitHub Actions trusted publisher for repository `lorekkusu/agentdevflow`, workflow `publish.yml`, environment `npm-publish`, and `npm publish` permission. The repository workflow no longer supplies `NODE_AUTH_TOKEN` and retains `id-token: write` solely for OIDC publication.
 
-## Remaining external actions
+## Follow-on controls
 
 - Keep future publication behind the protected Environment, exact version and commit inputs, complete release checks, and explicit authorization.
-- Publish no later beta until the packed installed entrypoint and documented first-use path pass directly.
+- Require every later beta to pass the packed installed entrypoint and documented first-use path directly; beta.2 is the first version with that complete evidence.
 - Create a Git tag or GitHub Release only under separate authorization and only for this verified artifact.
-- Collect normal-user beta feedback before expanding provider, workflow, integration, or runtime scope.
+- Complete maintainer-operated dogfood before expanding provider, workflow, integration, or runtime scope; incorporate normal-user feedback when it becomes available.
 
 ## References
 

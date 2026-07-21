@@ -4,7 +4,7 @@ Snapshot date: 2026-07-21.
 
 This document records the final pre-publication candidate. The completed external outcome is recorded separately in [initial beta publication evidence](initial-beta-publication.md).
 
-Follow-on correction: the qualification exercised command behavior from the installed module but did not directly execute the shell-visible packed bin. The later [public first-run qualification](public-first-run.md) found that the JavaScript bin had mode `0644`; public `npx` invocation therefore failed. References to installed-bin success below are narrowed by this correction.
+Follow-on correction: the qualification exercised command behavior from the installed module but did not directly execute the shell-visible packed bin. The later [public first-run qualification](public-first-run.md) found that the JavaScript bin had mode `0644` and recorded a failing public `npx` invocation. A subsequent npm 11.16 clean-cache recheck normalized the installed mode and succeeded, so references below remain narrowed without claiming universal failure.
 
 ## Verdict
 

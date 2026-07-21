@@ -51,7 +51,7 @@ The finite-state compiler representation, arbitrary workflow topology, and `Work
 
 ## Release boundary
 
-Version `0.1.0-beta.1` was published through npm's `next` tag with provenance. Before every later publication, the release review must confirm:
+Version `0.1.0-beta.1` was published with provenance but its tarball records the POSIX bin as `0644`; some npm clients may normalize that mode during installation. Version `0.1.0-beta.2` is the installer-independent repaired public beta and is available through npm's `next` tag with OIDC provenance. Before every later publication, the release review must confirm:
 
 - package ownership and repository URL;
 - Apache-2.0 metadata and inclusion of `LICENSE`;
