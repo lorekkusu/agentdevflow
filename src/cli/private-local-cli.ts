@@ -207,11 +207,14 @@ async function runPrivateInit(
   const configurationDisposition =
     existingConfiguration === null ? "create" : "adopt";
   if (configurationDisposition === "create") {
-    let mutableWorkspace: Awaited<ReturnType<typeof PrivateFilesystemWorkspace.open>>;
+    let mutableWorkspace: Awaited<
+      ReturnType<typeof PrivateFilesystemWorkspace.openForProcessTermination>
+    >;
     try {
-      mutableWorkspace = await PrivateFilesystemWorkspace.open(
-        invocation.repositoryPath,
-      );
+      mutableWorkspace =
+        await PrivateFilesystemWorkspace.openForProcessTermination(
+          invocation.repositoryPath,
+        );
       const [freshConfiguration, freshLock] = await Promise.all([
         mutableWorkspace.read(invocation.projectConfigPath),
         mutableWorkspace.read(invocation.lockPath),
@@ -467,12 +470,13 @@ export async function runPrivateLocalCli(
   }
 
   let mutableWorkspace: Awaited<
-    ReturnType<typeof PrivateFilesystemWorkspace.open>
+    ReturnType<typeof PrivateFilesystemWorkspace.openForProcessTermination>
   >;
   try {
-    mutableWorkspace = await PrivateFilesystemWorkspace.open(
-      invocation.repositoryPath,
-    );
+    mutableWorkspace =
+      await PrivateFilesystemWorkspace.openForProcessTermination(
+        invocation.repositoryPath,
+      );
   } catch (error) {
     const code =
       error instanceof PrivateFilesystemWorkspaceError

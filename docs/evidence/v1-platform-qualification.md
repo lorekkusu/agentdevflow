@@ -1,10 +1,10 @@
 # V1 platform qualification
 
-Snapshot date: 2026-07-20.
+Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**All six candidate cells requalified with the private initialization path.** Hosted run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed its V1 primitive probe, 154 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 254-test stronger regression suite.
+**The candidate contract passed its prior six-cell requalification, but the first beta release-candidate revision exposed a Windows-only CLI mutation regression.** Hosted run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Hosted run [29800201872](https://github.com/lorekkusu/agentdevflow/actions/runs/29800201872) later passed all Ubuntu and macOS cells but failed both Windows cells after the CLI selected the stronger directory-synchronizing workspace for V1 mutations. A focused correction routes those mutations through the already qualified process-termination workspace; its replacement hosted result is pending.
 
 This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
 
@@ -155,6 +155,21 @@ Run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/2974164
 | `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 154 passed, 0 failed, 0 skipped | Pass |
 
 The requalification covers the complete private initialization observation and approved render bridge without adding a Windows skip or making directory synchronization a V1 read requirement.
+
+## Beta CLI mutation regression
+
+Run [29800201872](https://github.com/lorekkusu/agentdevflow/actions/runs/29800201872) tested beta release-candidate commit `96d1a45f7192fea5c23284a5814152fb5ac25ccd` on 2026-07-21 UTC. Both Ubuntu cells and both macOS cells passed. Both Windows cells passed the V1 primitive probe, then failed the same four CLI integration tests with 288 of 292 tests passing and zero skips:
+
+- offline init through render and clean recheck;
+- exact adoption and lossless import initialization;
+- approved exact render and repeated no-op;
+- interrupted-plan resumption with the original approval.
+
+Source inspection identified one shared cause. The CLI opened `PrivateFilesystemWorkspace.open()` before configuration creation and approved rendering. That stronger frozen transaction workspace probes directory synchronization, which is deliberately outside the accepted V1 contract and is unsupported by the hosted Windows environment. Read-only CLI operations and already-rendered checks did not acquire that workspace and continued to pass.
+
+The focused correction opens both V1 mutation paths through `openForProcessTermination()`. This retains canonical root and path checks, symbolic-link and non-file refusal, synchronized temporary-file content, same-directory replacement, and the tested forward-convergence behavior. It does not weaken the stronger workspace or claim directory durability or power-loss safety.
+
+Local Node.js 24.18.0 verification after the correction passed the repository audit over 218 text files, all 392 repository tests, and all 292 selected V1 tests with zero skips. A hosted replacement run is still required before the beta revision can be considered requalified.
 
 ## Qualification record requirements
 
