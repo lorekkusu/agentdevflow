@@ -72,5 +72,3 @@ jobs:
         run: git diff --exit-code
       - name: Publish exact beta to npm
         run: npm publish --access public --tag next --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

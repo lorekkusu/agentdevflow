@@ -32,7 +32,7 @@ Users receive predictable project-local discovery without hidden parent-director
 
 The project must provide migration notes for incompatible beta configuration or machine-output changes. Supporting only built-in workflow families limits early extensibility but prevents the compiler's private finite-state representation from becoming an accidental public DSL.
 
-The package remains blocked from publication until a separate release review confirms package ownership, public repository metadata, provenance configuration, tarball contents, supported-platform checks, security review, external environment and credential state, and explicit publish authority.
+The package was blocked from publication until a separate release review confirmed package ownership, public repository metadata, provenance configuration, tarball contents, supported-platform checks, security review, external environment and credential state, and explicit publish authority. Those conditions were satisfied for exact version `0.1.0-beta.1`; later releases remain separately gated.
 
 ## Alternatives considered
 
@@ -42,11 +42,14 @@ The package remains blocked from publication until a separate release review con
 - Exposing the private finite-state model as a public workflow language was rejected because its safety representation and migration requirements are not yet stable.
 - Adding a CLI framework was deferred because the current five-command surface does not yet demonstrate a requirement that outweighs another production dependency.
 
+Post-publication observation: the workflow published the first version with an explicit `next` tag, but the npm registry also established `latest` at the package's only version and rejected removal with HTTP 400. The canonical package metadata format requires at least a `latest` field. This does not change the rejection of direct beta publication to `latest`; it records a first-version registry constraint. The project will not publish a fabricated stable version to move the tag, and later prereleases must preserve an existing stable `latest` value.
+
 ## Evidence
 
 - [Private package qualification](../evidence/private-package-qualification.md)
 - [Private local CLI evidence](../evidence/private-local-cli.md)
 - [V1 platform qualification](../evidence/v1-platform-qualification.md)
+- [Initial beta publication evidence](../evidence/initial-beta-publication.md)
 - [Apache guidance for applying Apache License 2.0](https://www.apache.org/legal/apply-license)
 - [Apache License 2.0 canonical text](https://www.apache.org/licenses/LICENSE-2.0.txt)
 - [Node.js release status](https://nodejs.org/en/about/previous-releases)

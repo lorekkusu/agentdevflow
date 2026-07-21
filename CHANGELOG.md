@@ -4,7 +4,7 @@ All notable public changes will be recorded in this file. During beta, incompati
 
 ## Unreleased
 
-### Candidate: 0.1.0-beta.1
+## 0.1.0-beta.1 - 2026-07-21
 
 #### Added
 
@@ -22,4 +22,4 @@ All notable public changes will be recorded in this file. During beta, incompati
 - `doctor` validates caller-supplied observations and does not run provider commands, inspect credentials, or use the network.
 - Strict and Custom presets are unavailable.
 - Beta configuration and JSON report fields may change through documented migration before 1.0.
-- No npm package has been published or reserved.
+- The first registry version is available through `next`. npm also requires `latest` to identify the only published version, so an unqualified install currently resolves this beta; this does not make it stable.

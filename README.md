@@ -6,7 +6,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 `agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 has private prototypes for project-intent parsing, policy compilation, native project-instructions rendering, ownership-aware application, domain workflows, and typed execution evidence.
 
-The first beta CLI boundary is now accepted and executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`. It uses project-local defaults, stable outcome classes, and bounded versioned JSON output. The release-preparation manifest and manually triggered publish workflow are qualified, and the protected `npm-publish` environment is configured without a publishing credential. No npm package has been published or reserved. Beta configuration and machine-output details may still change through documented migration before 1.0.
+The first beta CLI boundary is accepted and published as [`agentdevflow@0.1.0-beta.1`](https://www.npmjs.com/package/agentdevflow/v/0.1.0-beta.1). It is executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`, with project-local defaults, stable outcome classes, and bounded versioned JSON output. Publication uses a protected manual GitHub Actions workflow and an npm OIDC trusted publisher. Beta configuration and machine-output details may still change through documented migration before 1.0.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
@@ -48,7 +48,7 @@ The accepted V1 apply path is the smaller staged forward-convergent implementati
 
 The selected V1 suite has candidate qualification across explicit Ubuntu, macOS, and Windows hosted runners on Node.js 22 and 24. This is test evidence, not a published support guarantee. See [V1 platform qualification](docs/evidence/v1-platform-qualification.md).
 
-The npm candidate tarball has a local allowlist and one clean offline installed-bin exercise. This is qualification evidence, not a release. See [private package qualification](docs/evidence/private-package-qualification.md).
+The npm tarball has a local allowlist, clean offline candidate qualification, and a clean exact-version registry installation exercise. See [private package qualification](docs/evidence/private-package-qualification.md) and [initial beta publication evidence](docs/evidence/initial-beta-publication.md).
 
 The initial beta defaults are `agentdevflow.config.jsonc` and `.agentdevflow/lock.json` in the selected repository root. The CLI does not search parent directories. Human-readable output is the default; `--json` emits schema version 1. Exit codes are `0` for success or clean state, `1` for reviewable changes or degraded observations, and `2` for blocked or invalid state.
 
@@ -88,4 +88,4 @@ Release preparation follows the [beta release checklist](docs/development/releas
 - Intended npm package: `agentdevflow`
 - Intended CLI: `agentdevflow`
 
-The candidate package version is `0.1.0-beta.1`, licensed under Apache-2.0 and intended for npm's `next` tag with provenance. Package publication remains separately gated and unauthorized.
+Version `0.1.0-beta.1` is published under Apache-2.0 with npm provenance. During beta, install the explicit `next` tag with `npx agentdevflow@next`. Because this is the package's first and only version, the npm registry also requires `latest` to resolve to it; this does not make the beta stable or a 1.0 compatibility promise.

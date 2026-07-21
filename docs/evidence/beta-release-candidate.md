@@ -2,9 +2,11 @@
 
 Snapshot date: 2026-07-21.
 
+This document records the final pre-publication candidate. The completed external outcome is recorded separately in [initial beta publication evidence](initial-beta-publication.md).
+
 ## Verdict
 
-**Pass for local Node.js 24 beta-surface, package-content, dependency-advisory, clean offline installed-bin, and hosted Node.js 22/24 platform qualification.** Publication remains blocked by external authorization and first-publication setup, not by a missing product feature.
+**Pass for local Node.js 24 beta-surface, package-content, dependency-advisory, clean offline installed-bin, and hosted Node.js 22/24 platform qualification at the pre-publication snapshot.** Publication was blocked by external authorization and first-publication setup, not by a missing product feature.
 
 ## Candidate boundary
 
@@ -92,7 +94,7 @@ The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed
 
 The final candidate was packed again, installed into a clean temporary prefix from exact local tarballs with offline resolution and lifecycle scripts disabled, and exercised through `init`, changing `diff`, approved `render`, clean `check`, repeated clean `diff`, and healthy explicit-observation `doctor`. The exact plan digest remained `9c88f27c7ccd30ede0861455a555a324599b6397c61b05da9f5e87f7d118baae`. The repeated production audit reported zero known vulnerabilities, all lifecycle-script queries were empty, npm verified six registry signatures plus one attestation, and exact-version OSV queries for `jsonc-parser` 3.3.1 and Zod 4.4.3 returned no vulnerability records. These are point-in-time observations with the limitations stated above.
 
-## Remaining publication gates
+## Publication gates at this snapshot
 
 - Keep the release source clean and require the normal repository and hosted checks on any later source commit.
 - Repeat package, advisory, lifecycle-script, and clean-install checks if the final release commit changes packaged artifact bytes or dependency state.
@@ -104,4 +106,4 @@ The final candidate was packed again, installed into a clean temporary prefix fr
 
 ## Conclusion
 
-The beta implementation passes its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate is separate short-lived credential handling and exact-commit first-publication authorization, not feature expansion.
+At this snapshot, the beta implementation passed its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development was at a release-candidate boundary, with separate short-lived credential handling and exact-commit first-publication authorization next rather than feature expansion.
