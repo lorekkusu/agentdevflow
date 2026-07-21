@@ -22,17 +22,17 @@ The repository audit mechanically checks these candidate metadata values, omissi
 
 ## Package observation
 
-The release-preparation `npm pack --dry-run --json` and a real local pack produced the same candidate summary:
+After the first-publication-readiness closure, `npm pack --dry-run --json` and a real local pack produced the same final candidate summary:
 
 | Property | Observation |
 | --- | --- |
 | Entry count | 118 |
-| Compressed size | 109,380 bytes |
-| Unpacked size | 598,950 bytes |
-| SHA-1 | `b840722a3fc99a422fda15a33dff33bff2650849` |
-| npm integrity | `sha512-j27i7MTvTa/5nYIGTXj64r5Pzhh4ESo/le/HboZeNoaOE7dp1GDnWC0+wAbKc20bN7mLVONrHtyZiMO+jUpFog==` |
+| Compressed size | 109,398 bytes |
+| Unpacked size | 598,964 bytes |
+| SHA-1 | `8470ad016311cca09df5e1888016587d06fcfb36` |
+| npm integrity | `sha512-fmpw5jXrokuNtj6marjkdFkvrypHfajRTMEpoOD1aWESw6yXKMTDQ+xw1012QkMG/X8x3SRB9xRACvApajKdGQ==` |
 
-The tarball contains `LICENSE`, `README.md`, `CHANGELOG.md`, `package.json`, and the allowlisted emitted runtime. It excludes repository tests, fixtures, development scripts, public evidence, experiments, the frozen transaction subsystem, execution transport, GitHub mapping, and Rulesync process integration.
+The tarball contains `LICENSE`, `README.md`, `CHANGELOG.md`, `package.json`, and the allowlisted emitted runtime. It excludes repository tests, fixtures, development scripts, public evidence, experiments, the frozen transaction subsystem, execution transport, GitHub mapping, and Rulesync process integration. Between release-preparation commit `96c253c` and first-publication-readiness commit `e75572f`, only `README.md` changed among the packaged source and metadata paths; runtime source, dependencies, manifest, license, and changelog remained unchanged.
 
 ## Clean offline installation
 
@@ -88,7 +88,9 @@ Using Node.js 24.18.0:
 - `npm run check:v1-qualification` selected 36 test files and passed 294 tests with zero failures, skips, or todos;
 - focused CLI tests cover exact-root defaults, no parent discovery, repository-relative reads, installed symlink invocation, stable exit classes, JSON schema version 1, output limiting, foreign-byte non-disclosure, stale approval, interruption convergence, and all five commands.
 
-The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29807660977](https://github.com/lorekkusu/agentdevflow/actions/runs/29807660977). The disclosure-preflight commit `e6461f4552704cc3b549cbacca867775005e0a2d` then passed the same six cells in [GitHub Actions run 29808741036](https://github.com/lorekkusu/agentdevflow/actions/runs/29808741036). The repository was clean and matched `origin/main` after both runs.
+The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29807660977](https://github.com/lorekkusu/agentdevflow/actions/runs/29807660977). The disclosure-preflight commit `e6461f4552704cc3b549cbacca867775005e0a2d` then passed the same six cells in [GitHub Actions run 29808741036](https://github.com/lorekkusu/agentdevflow/actions/runs/29808741036). First-publication-readiness commit `e75572fc7467566ce8227c2e950061bd93b2236a` passed the same six cells in [GitHub Actions run 29813134916](https://github.com/lorekkusu/agentdevflow/actions/runs/29813134916).
+
+The final candidate was packed again, installed into a clean temporary prefix from exact local tarballs with offline resolution and lifecycle scripts disabled, and exercised through `init`, changing `diff`, approved `render`, clean `check`, repeated clean `diff`, and healthy explicit-observation `doctor`. The exact plan digest remained `9c88f27c7ccd30ede0861455a555a324599b6397c61b05da9f5e87f7d118baae`. The repeated production audit reported zero known vulnerabilities, all lifecycle-script queries were empty, npm verified six registry signatures plus one attestation, and exact-version OSV queries for `jsonc-parser` 3.3.1 and Zod 4.4.3 returned no vulnerability records. These are point-in-time observations with the limitations stated above.
 
 ## Remaining publication gates
 
