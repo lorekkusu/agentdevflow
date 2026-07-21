@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components now form an accepted initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The private package has an allowlisted npm `bin`, clean offline installation evidence, exact-root defaults, and bounded JSON schema version 1. The current objective is first-publication readiness without expanding product scope.
+These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted bin, clean offline and registry installation evidence, exact-root defaults, and bounded JSON schema version 1. The current objective is post-publication closure and normal-user beta feedback without expanding product scope.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -214,9 +214,9 @@ Status: **Complete; accepted by [ADR 0004](../decisions/0004-initial-beta-public
 
 The accepted packet covers exact-root configuration and lock discovery, explicit overrides, stable exit classes, bounded versioned JSON, Node.js 22 and 24, Apache-2.0, and the separately authorized `0.1.0-beta.1` release candidate on npm's `next` tag with provenance. See the [beta CLI contract](beta-cli-contract.md).
 
-## Current: beta release hardening
+## Current: initial beta feedback and publication closure
 
-Status: **Technical qualification and repository hardening complete; credential creation and publication remain separately gated.**
+Status: **`agentdevflow@0.1.0-beta.1` published and verified; repository OIDC closure remains before feedback collection.**
 
 Required sequence:
 
@@ -228,7 +228,8 @@ Required sequence:
 6. **Complete:** the bounded disclosure preflight found no publication blocker; unauthenticated checks verified the public repository and release-facing documents; private vulnerability reporting, Dependabot security updates, secret scanning, push protection, full-SHA Actions pinning, and the active no-bypass `Protect main` ruleset establish the accepted public security baseline;
 7. **Complete:** public-hardening pull request 1 and purpose-based branch-name pull request 2 passed the protected path, were squash-merged, and had their source branches removed; the active branch-name ruleset rejects identity-based remote branch prefixes;
 8. **Complete:** the `npm-publish` environment accepts only `main`, requires an explicit approval from `lorekkusu`, and currently contains no publishing secret. Self-approval and administrator bypass remain possible, so this is a proof-of-intent gate rather than independent approval;
-9. **Current gate:** prepare a one-day, least-privilege npm bootstrap token outside repository and conversation content, store it directly as the environment's `NPM_TOKEN`, repeat the package-name lookup, and dispatch only the exact reviewed `main` commit and version after explicit publication authorization.
+9. **Complete:** a separately authorized bootstrap token published exact version `0.1.0-beta.1` from reviewed `main` commit `e4b3014`; the registry artifact, provenance, digest, contents, and installed five-command path match the final candidate;
+10. **Current gate:** the bootstrap token and GitHub secret are removed, and the package is bound to the exact OIDC trusted publisher. Merge the token-free workflow closure, then collect normal-user beta feedback before adding product scope. Git tags, GitHub Releases, later npm versions, and package-setting changes remain separately authorized.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
 

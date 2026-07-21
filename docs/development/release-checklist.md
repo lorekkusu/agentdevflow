@@ -84,7 +84,7 @@ For a brand-new npm package, treat first-publication authentication as a separat
 
 ## 6. Authorized publication
 
-After authorization, confirm the reviewed source repository is publicly accessible. Dispatch only the exact reviewed `main` commit through the `npm-publish` environment, and require the exact `0.1.0-beta.1` version input. For the first publication, use only the separately authorized environment-scoped bootstrap secret. Confirm provenance is attached and publish with the non-default `next` tag. Never publish the beta as `latest`.
+After authorization, confirm the reviewed source repository is publicly accessible. Dispatch only the exact reviewed `main` commit through the `npm-publish` environment, and require the exact version input. For a first publication that cannot yet use trusted publishing, use only a separately authorized environment-scoped bootstrap secret. Confirm provenance is attached and publish with the non-default `next` tag.
 
 The final publish command must name the tag explicitly:
 
@@ -92,13 +92,14 @@ The final publish command must name the tag explicitly:
 npm publish --access public --tag next --provenance
 ```
 
-The package version cannot be reused after publication. If publication partially succeeds, inspect registry state before retrying; do not assume rollback or overwrite is possible.
+The package version cannot be reused after publication. If publication partially succeeds, inspect registry state before retrying; do not assume rollback or overwrite is possible. For a brand-new package, verify whether the registry also establishes the required `latest` field at the only published version despite the explicit `next` request. Record that platform constraint rather than publishing a fabricated stable version. Later prereleases must not move an existing stable `latest` value.
 
 Immediately after the first successful publication, remove the GitHub secret and revoke the bootstrap token. Configure the package's trusted publisher interactively with 2FA, then remove `NODE_AUTH_TOKEN` from the workflow before a later release.
 
 ## 7. Post-publication verification
 
 - Verify the registry version, `next` distribution tag, license, repository link, engines, provenance, integrity, and tarball contents.
+- Record the observed `latest` behavior separately from the explicitly requested prerelease tag.
 - Install by exact version in a clean project and repeat the bounded offline command smoke test.
 - Enable GitHub private vulnerability reporting after the repository is public and verify that the route documented in `SECURITY.md` works.
 - Publish the changelog entry and GitHub release only for the exact verified artifact.
@@ -110,6 +111,7 @@ Immediately after the first successful publication, remove the GitHub secret and
 - [Initial beta public-surface decision](../decisions/0004-initial-beta-public-surface.md)
 - [Initial beta CLI contract](beta-cli-contract.md)
 - [Private package qualification](../evidence/private-package-qualification.md)
+- [Initial beta publication evidence](../evidence/initial-beta-publication.md)
 - [npm provenance](https://docs.npmjs.com/generating-provenance-statements/)
 - [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
 - [npm trusted-publisher CLI requirements](https://docs.npmjs.com/cli/v11/commands/npm-trust/)

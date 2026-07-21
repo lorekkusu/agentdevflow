@@ -109,8 +109,6 @@ jobs:
     environment: npm-publish
     steps:
       - run: npm publish --access public --tag next --provenance
-        env:
-          NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}
 `;
   try {
     await mkdir(join(root, "scripts"), { recursive: true });
@@ -140,7 +138,12 @@ jobs:
 
     await writeFile(
       workflow,
-      allowedWorkflow.replace("secrets.NPM_TOKEN", "secrets.OTHER_TOKEN"),
+      allowedWorkflow.replace(
+        "      - run: npm publish --access public --tag next --provenance",
+        `      - run: npm publish --access public --tag next --provenance
+        env:
+          NODE_AUTH_TOKEN: \${{ secrets.NPM_TOKEN }}`,
+      ),
     );
     const unexpectedSecret = spawnSync(process.execPath, [script], {
       cwd: root,

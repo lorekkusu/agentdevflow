@@ -161,16 +161,13 @@ function inspectWorkflowSecurity(relativePath, content) {
   const isPublishWorkflow = relativePath === ".github/workflows/publish.yml";
   const secretReferencePattern = /\$\{\{\s*secrets\.([A-Za-z0-9_]+)\s*\}\}/gmu;
   for (const match of content.matchAll(secretReferencePattern)) {
-    if (
-      match.index !== undefined &&
-      (!isPublishWorkflow || match[1] !== "NPM_TOKEN")
-    ) {
+    if (match.index !== undefined) {
       diagnostics.push({
         path: relativePath,
         line: lineNumberAt(content, match.index),
         code: "WORKFLOW_SECRET_UNEXPECTED",
         message:
-          "Qualification workflows use no secrets; the manual publish workflow may use only NPM_TOKEN for first-publication bootstrap.",
+          "Workflows use no stored secrets; npm publishing authenticates through the configured OIDC trusted publisher.",
       });
     }
   }
@@ -254,11 +251,6 @@ function inspectWorkflowSecurity(relativePath, content) {
         pattern:
           /^\s+(?:-\s+)?run:\s+npm publish --access public --tag next --provenance\s*$/mu,
         message: "Publish the beta explicitly to the next tag with provenance.",
-      },
-      {
-        code: "PUBLISH_WORKFLOW_SECRET_INVALID",
-        pattern: /^\s+NODE_AUTH_TOKEN:\s+\$\{\{ secrets\.NPM_TOKEN \}\}\s*$/mu,
-        message: "Use only the environment-scoped bootstrap npm secret.",
       },
     ];
     for (const requirement of requiredPatterns) {
