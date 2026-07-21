@@ -4,7 +4,7 @@ Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**The candidate contract passed its prior six-cell requalification, but the first beta release-candidate revision exposed a Windows-only CLI mutation regression.** Hosted run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Hosted run [29800201872](https://github.com/lorekkusu/agentdevflow/actions/runs/29800201872) later passed all Ubuntu and macOS cells but failed both Windows cells after the CLI selected the stronger directory-synchronizing workspace for V1 mutations. A focused correction routes those mutations through the already qualified process-termination workspace; its replacement hosted result is pending.
+**All six candidate cells pass after correcting a Windows-only CLI mutation regression in the first beta release-candidate revision.** Hosted run [29801066651](https://github.com/lorekkusu/agentdevflow/actions/runs/29801066651) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed the V1 primitive probe, all 292 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 392-test stronger regression suite.
 
 This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
 
@@ -169,7 +169,20 @@ Source inspection identified one shared cause. The CLI opened `PrivateFilesystem
 
 The focused correction opens both V1 mutation paths through `openForProcessTermination()`. This retains canonical root and path checks, symbolic-link and non-file refusal, synchronized temporary-file content, same-directory replacement, and the tested forward-convergence behavior. It does not weaken the stronger workspace or claim directory durability or power-loss safety.
 
-Local Node.js 24.18.0 verification after the correction passed the repository audit over 218 text files, all 392 repository tests, and all 292 selected V1 tests with zero skips. A hosted replacement run is still required before the beta revision can be considered requalified.
+Local Node.js 24.18.0 verification after the correction passed the repository audit over 218 text files, all 392 repository tests, and all 292 selected V1 tests with zero skips.
+
+Run [29801066651](https://github.com/lorekkusu/agentdevflow/actions/runs/29801066651) tested correction commit `a09cd1c81a44c4848b4c19fbaf3ec17dcfc987f9` on 2026-07-21 UTC:
+
+| Runner image | Node.js | V1 selected tests | Strong regression | Result |
+| --- | --- | --- | --- | --- |
+| `ubuntu-24.04` `20260714.240.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
+| `ubuntu-24.04` `20260714.240.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | 392 passed, 0 failed, 0 skipped | Pass |
+| `macos-15-arm64` `20260715.0234.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
+| `macos-15-arm64` `20260715.0234.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
+| `windows-2025-vs2026` `20260714.173.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
+| `windows-2025-vs2026` `20260714.173.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
+
+The replacement run confirms that the focused workspace selection restores the accepted cross-platform V1 behavior without skips, new dependencies, or changes to the stronger frozen transaction workspace.
 
 ## Qualification record requirements
 
