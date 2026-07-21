@@ -2,7 +2,7 @@
 
 ## Status
 
-This document defines the accepted boundary for the first public beta. It does not authorize npm publication and does not make beta configuration fields, lock bytes, or JSON report fields permanent 1.0 contracts.
+This document defines the accepted boundary published in the first public beta. It does not authorize a later version, tag, release, or package-setting change and does not make beta configuration fields, lock bytes, or JSON report fields permanent 1.0 contracts.
 
 ## Repository and path selection
 
@@ -45,13 +45,13 @@ The initial JSON schema version is `1`. Incompatible beta changes require a sche
 
 ## Configuration and workflows
 
-`ProjectConfig` is the user-facing configuration concept. The initial beta accepts versioned JSONC and built-in workflow families. Comments and trailing commas are syntax conveniences; parsing still rejects duplicate keys, unsafe keys, excessive size or nesting, and values outside the closed schema.
+`ProjectConfig` is the user-facing configuration concept. The initial beta accepts versioned JSONC and exposes `local-reviewed-change` as its only executable workflow. Comments and trailing commas are syntax conveniences; parsing still rejects duplicate keys, unsafe keys, excessive size or nesting, and values outside the closed schema. Hosted tracker and issue-to-pull-request values remain unavailable through the public init path because their external capabilities do not exist.
 
 The finite-state compiler representation, arbitrary workflow topology, and `WorkflowDefinition` are private implementation details. They are not a plugin API or general scheduler contract.
 
 ## Release boundary
 
-The first candidate version is `0.1.0-beta.1` for npm's `next` tag with provenance. Before publication, the release review must confirm:
+Version `0.1.0-beta.1` was published through npm's `next` tag with provenance. Before every later publication, the release review must confirm:
 
 - package ownership and repository URL;
 - Apache-2.0 metadata and inclusion of `LICENSE`;
@@ -59,7 +59,8 @@ The first candidate version is `0.1.0-beta.1` for npm's `next` tag with provenan
 - exact tarball contents and installed-bin behavior;
 - production dependency advisories and lifecycle scripts;
 - trusted publishing or an equivalently short-lived release credential;
-- explicit authorization to remove the package's private publication guard and publish.
+- exact packed installed-bin behavior through the shell-visible package entrypoint;
+- explicit authorization for that version and publication.
 
 Beta release work must not add provider integrations, a workflow runtime, a wizard, a framework, or a public arbitrary-workflow language merely to complete publication.
 

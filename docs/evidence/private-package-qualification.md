@@ -4,7 +4,9 @@ Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**Pass for one private local npm-package candidate on the tested Darwin and Node.js 24.18.0 environment.** The allowlisted tarball installs from local exact-version tarballs with npm offline resolution, exposes the `agentdevflow` bin through npm's symbolic-link layout, and completes the local `init`, `diff`, approved `render`, clean `check`, and explicit-observation `doctor` path.
+**Pass for one private local npm-package candidate's installed command behavior on the tested Darwin and Node.js 24.18.0 environment; not evidence for a shell-executable packed bin.** The allowlisted tarball installs from local exact-version tarballs with npm offline resolution, and its command implementation completes the local `init`, `diff`, approved `render`, clean `check`, and explicit-observation `doctor` path through the retained Node-compatible harness.
+
+Follow-on correction: the original snapshot described this as direct installed-bin execution. The retained procedure and later release audit do not prove that the packed JavaScript target had executable mode in a clean build. The exact published beta.1 tarball had mode `0644`, and direct `npx` failed. Shell-visible package-entrypoint qualification begins with the beta.2 repair evidence.
 
 This is not publication authorization, a stable CLI contract, an `npx` registry test, a public support promise, a license decision, or release provenance evidence. At this historical qualification snapshot, the package remained `private: true`.
 
@@ -46,7 +48,7 @@ npm install --prefix <clean-install-directory> --offline --ignore-scripts \
   <agentdevflow-tarball> <jsonc-parser-tarball> <zod-tarball>
 ```
 
-The qualification then invokes `<clean-install-directory>/node_modules/.bin/agentdevflow` through these outcomes:
+The qualification then exercises the installed command implementation through these outcomes:
 
 | Command | Expected private candidate exit | Observed result |
 | --- | ---: | --- |
@@ -60,9 +62,9 @@ The exact plan digest passed from diff to render was `503e9bde22b1cb5edabc43081c
 
 ## Defect found and retained coverage
 
-The first clean installation exposed a real entry-point defect: npm's bin path was a symbolic link, while the direct-invocation guard compared the unresolved `process.argv[1]` URL with the resolved module URL. Every installed command therefore exited successfully without running.
+The first clean installation exposed a real entry-point defect in the Node-compatible harness: npm's bin path was a symbolic link, while the direct-invocation guard compared the unresolved `process.argv[1]` URL with the resolved module URL. Every attempted installed command therefore exited successfully without running.
 
-The entry now compares filesystem real paths and falls back to URL equality only if resolution fails. `test/cli/private-local-cli.test.ts` retains an npm-style symbolic-link regression test, and the final tarball was reinstalled and rerun after the fix.
+The entry now compares filesystem real paths and falls back to URL equality only if resolution fails. `test/cli/private-local-cli.test.ts` retains an npm-style symbolic-link regression test. This fixed command entry detection but did not prove the separate packed executable-mode property.
 
 ## Limitations and release blockers
 

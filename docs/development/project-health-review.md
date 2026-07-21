@@ -17,7 +17,7 @@ Run a health review when one or more of these conditions applies:
 - the working tree or proposed pull request is no longer reasonably reviewable as one unit;
 - repository entry-point documentation and actual behavior appear inconsistent;
 - implementation work advances a later roadmap area while an earlier dependency remains incomplete;
-- a prerelease, major refactor, or security-sensitive integration is approaching;
+- a prerelease, public onboarding change, major refactor, or security-sensitive integration is approaching;
 - a maintainer requests an independent scope and complexity check.
 
 Do not run reviews merely on a high-frequency calendar. A review that cannot change a decision, milestone, or stop condition is unnecessary process.
@@ -29,6 +29,8 @@ Use at least three bounded perspectives when the change is material:
 1. product direction and roadmap alignment;
 2. implementation complexity and maintenance cost;
 3. smallest usable delivery path and milestone ordering.
+
+For every public version or onboarding change, one perspective must instead act as a zero-context user. It begins with only the README and installed package help, attempts the documented first-use path through the real package entrypoint, and records unanswered product, option, safety, and limitation questions before reading implementation or test files. Source inspection may verify the findings afterward.
 
 Initial reviewers must use clean conversation contexts. Give each reviewer only:
 
@@ -93,4 +95,6 @@ A review is complete when:
 - retained experiments have a clear default, frozen, or deferred status;
 - stop conditions prevent immediate repetition of the detected drift;
 - public content passes disclosure review;
+- a public-version review directly invokes the packed installed bin and completes the documented first-use path without prefixing the entry with its runtime;
+- a zero-context reviewer can explain the current executable product, valid choices, generated paths, approval sequence, and non-features from public user material;
 - no repository mutation was performed by independent reviewers.

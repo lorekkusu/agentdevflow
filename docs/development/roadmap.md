@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted bin, clean offline and registry installation evidence, exact-root defaults, and bounded JSON schema version 1. The current objective is post-publication closure and normal-user beta feedback without expanding product scope.
+These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The current objective is to repair the public package entrypoint and onboarding path, then run maintainer-operated dogfood without expanding product scope.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -21,7 +21,7 @@ See [project health](project-health.md) for the current sanitized scope and comp
 | Ownership, lock, drift, and conflict behavior | Complete as private boundaries | [Private render lock](../evidence/private-render-lock.md) and [render command](../evidence/private-render-command-service.md) |
 | V1 apply and interruption recovery | Complete for staged forward convergence | [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md), [V1 recovery contract](v1-recovery-contract.md), and [convergent apply evidence](../evidence/private-convergent-apply.md) |
 | Private command semantics | Complete for isolated services and executable local `init`, `check`, `diff`, approved `render`, and explicit-observation `doctor` | [Local CLI](../evidence/private-local-cli.md), [check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
-| Private package qualification | Complete for one allowlisted local tarball and offline installed-bin exercise | [Private package qualification](../evidence/private-package-qualification.md) |
+| Private package qualification | Complete for one allowlisted local tarball and offline installed-command exercise; later narrowed from shell-bin evidence | [Private package qualification](../evidence/private-package-qualification.md) |
 | Initial beta candidate qualification | Complete locally and on the selected hosted Node.js 22/24 matrix | [Beta release-candidate evidence](../evidence/beta-release-candidate.md) and [ADR 0004](../decisions/0004-initial-beta-public-surface.md) |
 | Existing-file initialization bridge | Complete for create, exact adopt, lossless import, abort, and exact approved render | [Project-instructions import](../evidence/private-project-instructions-import.md) and [approved init render](../evidence/private-approved-init-render.md) |
 | V1 candidate platform qualification | Complete as candidate evidence, not a public support promise | [V1 platform qualification](../evidence/v1-platform-qualification.md) |
@@ -194,7 +194,7 @@ Keep `doctor` local and honest. Report unknown external capability truth rather 
 Observed closure:
 
 - the normal workspace runtime graph no longer imports the frozen transaction subsystem;
-- the installed npm bin executes through npm-style symbolic links;
+- the installed command entry detects npm-style symbolic-link invocation, without proving packed executable mode;
 - the tarball uses an explicit runtime allowlist and excludes tests, experiments, frozen transaction code, Rulesync process integration, and private evidence;
 - an isolated installation using only local tarballs completes `init`, `diff`, approved `render`, clean `check`, and `doctor` with network-disabled npm resolution;
 - doctor consumes a bounded revisioned observation file and performs no live provider, credential, process, or network probe;
@@ -214,9 +214,9 @@ Status: **Complete; accepted by [ADR 0004](../decisions/0004-initial-beta-public
 
 The accepted packet covers exact-root configuration and lock discovery, explicit overrides, stable exit classes, bounded versioned JSON, Node.js 22 and 24, Apache-2.0, and the separately authorized `0.1.0-beta.1` release candidate on npm's `next` tag with provenance. See the [beta CLI contract](beta-cli-contract.md).
 
-## Current: initial beta feedback and publication closure
+## Current: public first-run repair and maintainer dogfood
 
-Status: **`agentdevflow@0.1.0-beta.1` published and verified; repository OIDC closure remains before feedback collection.**
+Status: **`agentdevflow@0.1.0-beta.1` is published but unusable through `npx`; `0.1.0-beta.2` is the locally qualified repair candidate.**
 
 Required sequence:
 
@@ -228,10 +228,13 @@ Required sequence:
 6. **Complete:** the bounded disclosure preflight found no publication blocker; unauthenticated checks verified the public repository and release-facing documents; private vulnerability reporting, Dependabot security updates, secret scanning, push protection, full-SHA Actions pinning, and the active no-bypass `Protect main` ruleset establish the accepted public security baseline;
 7. **Complete:** public-hardening pull request 1 and purpose-based branch-name pull request 2 passed the protected path, were squash-merged, and had their source branches removed; the active branch-name ruleset rejects identity-based remote branch prefixes;
 8. **Complete:** the `npm-publish` environment accepts only `main`, requires an explicit approval from `lorekkusu`, and currently contains no publishing secret. Self-approval and administrator bypass remain possible, so this is a proof-of-intent gate rather than independent approval;
-9. **Complete:** a separately authorized bootstrap token published exact version `0.1.0-beta.1` from reviewed `main` commit `e4b3014`; the registry artifact, provenance, digest, contents, and installed five-command path match the final candidate;
-10. **Current gate:** the bootstrap token and GitHub secret are removed, and the package is bound to the exact OIDC trusted publisher. Merge the token-free workflow closure, then collect normal-user beta feedback before adding product scope. Git tags, GitHub Releases, later npm versions, and package-setting changes remain separately authorized.
+9. **Complete with later entrypoint correction:** a separately authorized bootstrap token published exact version `0.1.0-beta.1` from reviewed `main` commit `e4b3014`; the registry artifact, provenance, digest, contents, and installed command behavior match the final candidate, while direct shell execution later failed because the packed bin was `0644`;
+10. **Complete:** the bootstrap token and GitHub secret were removed, the package was bound to the exact OIDC trusted publisher, and the token-free workflow closure passed the protected pull-request path;
+11. **Complete locally; hosted and registry verification pending:** repair the non-executable packed CLI entrypoint, add a truthful copy-pastable first-use path and current option reference, verify the packed installed bin rather than invoking it indirectly through Node, and repeat zero-context comprehension review;
+12. **Current external gate:** pass the protected pull-request path, publish exact version `0.1.0-beta.2` from the reviewed `main` commit, and verify exact-version, `next`, and `npm exec` registry entrypoints;
+13. **Next product gate:** use the repaired public package in a private, non-sensitive dogfood repository, beginning with the local workflow and clean agent-role comprehension before adding ready PR, draft PR, CI repair, or tracker scenarios.
 
-No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
+No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone. A Git tag, GitHub Release, package-setting change, or version after `0.1.0-beta.2` remains separately authorized.
 
 ## Frozen research
 

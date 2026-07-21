@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { open, type FileHandle } from "node:fs/promises";
 
 import {
   executePrivateDoctorCommand,
@@ -22,6 +22,79 @@ import {
 } from "./private-local-cli-output.js";
 
 const observationByteLimit = 262_144;
+
+class DoctorObservationReadError extends Error {
+  readonly code:
+    | "CLI_DOCTOR_INPUT_READ_FAILED"
+    | "CLI_DOCTOR_OBSERVATIONS_TOO_LARGE";
+
+  constructor(
+    code:
+      | "CLI_DOCTOR_INPUT_READ_FAILED"
+      | "CLI_DOCTOR_OBSERVATIONS_TOO_LARGE",
+    message: string,
+  ) {
+    super(message);
+    this.code = code;
+  }
+}
+
+async function readBoundedObservationFile(path: string): Promise<string> {
+  let file: FileHandle | undefined;
+  try {
+    file = await open(path, "r");
+    const metadata = await file.stat();
+    if (!metadata.isFile()) {
+      throw new DoctorObservationReadError(
+        "CLI_DOCTOR_INPUT_READ_FAILED",
+        "The observation envelope must be a regular file.",
+      );
+    }
+    if (metadata.size > observationByteLimit) {
+      throw new DoctorObservationReadError(
+        "CLI_DOCTOR_OBSERVATIONS_TOO_LARGE",
+        `The observation envelope exceeds ${observationByteLimit} UTF-8 bytes.`,
+      );
+    }
+
+    const bytes = Buffer.alloc(observationByteLimit + 1);
+    let length = 0;
+    while (length < bytes.length) {
+      const { bytesRead } = await file.read(
+        bytes,
+        length,
+        bytes.length - length,
+        length,
+      );
+      if (bytesRead === 0) break;
+      length += bytesRead;
+    }
+    if (length > observationByteLimit) {
+      throw new DoctorObservationReadError(
+        "CLI_DOCTOR_OBSERVATIONS_TOO_LARGE",
+        `The observation envelope exceeds ${observationByteLimit} UTF-8 bytes.`,
+      );
+    }
+    try {
+      return new TextDecoder("utf-8", { fatal: true }).decode(
+        bytes.subarray(0, length),
+      );
+    } catch {
+      throw new DoctorObservationReadError(
+        "CLI_DOCTOR_INPUT_READ_FAILED",
+        "The observation envelope must contain valid UTF-8.",
+      );
+    }
+  } catch (error) {
+    if (error instanceof DoctorObservationReadError) throw error;
+    throw new DoctorObservationReadError(
+      "CLI_DOCTOR_INPUT_READ_FAILED",
+      "The observation envelope could not be read.",
+    );
+  } finally {
+    await file?.close();
+  }
+}
 
 function blockedDoctor(
   io: PrivateLocalCliIo,
@@ -90,30 +163,23 @@ export async function runPrivateDoctor(
   try {
     const [configuration, observations] = await Promise.all([
       workspace.read(invocation.projectConfigPath),
-      readFile(invocation.observationsPath, "utf8"),
+      readBoundedObservationFile(invocation.observationsPath),
     ]);
     if (configuration === null) throw new Error("Configuration is absent.");
     configurationContent = configuration;
     observationContent = observations;
-  } catch {
+  } catch (error) {
+    const observationError =
+      error instanceof DoctorObservationReadError ? error : null;
     return blockedDoctor(io, [
       {
-        code: "CLI_DOCTOR_INPUT_READ_FAILED",
+        code: observationError?.code ?? "CLI_DOCTOR_INPUT_READ_FAILED",
         level: "error",
-        message:
+        message: observationError?.message ??
           "The project configuration and observation envelope must both be readable UTF-8 files.",
-        path: invocation.projectConfigPath,
-      },
-    ], invocation);
-  }
-
-  if (Buffer.byteLength(observationContent, "utf8") > observationByteLimit) {
-    return blockedDoctor(io, [
-      {
-        code: "CLI_DOCTOR_OBSERVATIONS_TOO_LARGE",
-        level: "error",
-        message: `The observation envelope exceeds ${observationByteLimit} UTF-8 bytes.`,
-        path: invocation.observationsPath,
+        path: observationError === null
+          ? invocation.projectConfigPath
+          : invocation.observationsPath,
       },
     ], invocation);
   }

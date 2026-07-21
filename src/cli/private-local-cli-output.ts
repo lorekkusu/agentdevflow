@@ -169,6 +169,7 @@ export function formatDoctor(
 ): string {
   const human = [
     `agentdevflow doctor: ${result.outcome}`,
+    "trust-boundary: caller assertions only; observation provenance is not authenticated",
     ...formatDiagnostics(result.diagnostics),
     `providers-observed: ${result.providerReports.length}`,
     `environment-capabilities-observed: ${result.environmentReports.length}`,

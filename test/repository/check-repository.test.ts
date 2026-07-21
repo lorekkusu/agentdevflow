@@ -237,6 +237,9 @@ test("requires the accepted release-candidate package boundary", async () => {
     assert.match(result.stderr, /PACKAGE_BETA_METADATA_INVALID/u);
     assert.match(result.stderr, /PACKAGE_LICENSE_INVALID/u);
     assert.match(result.stderr, /PACKAGE_BIN_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_BIN_PREPARATION_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_ENTRYPOINT_CHECK_INVALID/u);
+    assert.match(result.stderr, /PACKAGE_GETTING_STARTED_MISSING/u);
     assert.match(result.stderr, /PACKAGE_ALLOWLIST_TOO_BROAD/u);
   } finally {
     await rm(root, { recursive: true, force: true });

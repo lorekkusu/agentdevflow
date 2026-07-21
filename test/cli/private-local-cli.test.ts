@@ -143,37 +143,39 @@ function invoke(
   };
 }
 
-function invokeInit(project: TestProject): CommandResult {
+function invokeInit(project: TestProject, json = false): CommandResult {
+  const args = [
+    entryPoint,
+    "init",
+    "--repository",
+    project.repository,
+    "--config",
+    "project.jsonc",
+    "--lock",
+    lockPath,
+    "--workflow",
+    "local-reviewed-change",
+    "--preset",
+    "balanced",
+    "--tracker",
+    "none",
+    "--provider",
+    "codex-steward,codex,cli",
+    "--provider",
+    "cursor-developer,cursor,ide",
+    "--provider",
+    "claude-reviewer,claude-code,cli",
+    "--steward",
+    "codex-steward",
+    "--developer",
+    "cursor-developer",
+    "--reviewer",
+    "claude-reviewer",
+  ];
+  if (json) args.push("--json");
   const result = spawnSync(
     process.execPath,
-    [
-      entryPoint,
-      "init",
-      "--repository",
-      project.repository,
-      "--config",
-      "project.jsonc",
-      "--lock",
-      lockPath,
-      "--workflow",
-      "local-reviewed-change",
-      "--preset",
-      "balanced",
-      "--tracker",
-      "none",
-      "--provider",
-      "codex-steward,codex,cli",
-      "--provider",
-      "cursor-developer,cursor,ide",
-      "--provider",
-      "claude-reviewer,claude-code,cli",
-      "--steward",
-      "codex-steward",
-      "--developer",
-      "cursor-developer",
-      "--reviewer",
-      "claude-reviewer",
-    ],
+    args,
     { encoding: "utf8" },
   );
   assert.equal(result.error, undefined);
@@ -716,6 +718,44 @@ test("prints bounded private help without requiring a CLI framework", () => {
   assert.match(result.stdout, /Render requires an exact plan digest from diff\./u);
 });
 
+test("prints focused help for every beta command", () => {
+  for (const command of ["init", "check", "diff", "doctor", "render"]) {
+    const result = spawnSync(process.execPath, [entryPoint, command, "--help"], {
+      encoding: "utf8",
+    });
+    assert.equal(result.status, 0, `${command}: ${result.stderr}`);
+    assert.equal(result.stderr, "");
+    assert.match(result.stdout, new RegExp(`agentdevflow ${command}`, "u"));
+  }
+
+  const init = spawnSync(process.execPath, [entryPoint, "init", "--help"], {
+    encoding: "utf8",
+  });
+  assert.match(init.stdout, /local-reviewed-change/u);
+  assert.match(init.stdout, /fast\|balanced/u);
+  assert.match(init.stdout, /claude-code, codex, cursor/u);
+  assert.match(init.stdout, /complete provider path a managed file/u);
+
+  const diff = spawnSync(process.execPath, [entryPoint, "diff", "--help"], {
+    encoding: "utf8",
+  });
+  assert.match(diff.stdout, /exact-plan-digest/u);
+  assert.match(diff.stdout, /Exit 1/u);
+
+  const doctor = spawnSync(process.execPath, [entryPoint, "doctor", "--help"], {
+    encoding: "utf8",
+  });
+  assert.match(doctor.stdout, /caller-supplied/u);
+  assert.match(doctor.stdout, /does not run provider commands/u);
+  assert.match(doctor.stdout, /probe label is not authenticated/u);
+
+  const render = spawnSync(process.execPath, [entryPoint, "render", "--help"], {
+    encoding: "utf8",
+  });
+  assert.match(render.stdout, /stale or foreign state fails closed/u);
+  assert.match(render.stdout, /whole-file managed targets/u);
+});
+
 test("executes through an npm-style symbolic link", async (t) => {
   const project = await testProject(t);
   const linkedEntryPoint = join(project.container, "agentdevflow");
@@ -796,6 +836,7 @@ test("evaluates explicit local doctor observations without live probes", async (
   assert.equal(healthy.status, 0);
   assert.equal(healthy.stderr, "");
   assert.match(healthy.stdout, /^agentdevflow doctor: healthy\n/u);
+  assert.match(healthy.stdout, /observation provenance is not authenticated/u);
   assert.match(healthy.stdout, /providers-observed: 3/u);
   assert.match(healthy.stdout, /environment-capabilities-observed: 2/u);
   assert.deepEqual(await snapshotDirectory(project.repository), before);
@@ -804,4 +845,76 @@ test("evaluates explicit local doctor observations without live probes", async (
   const unsupported = invokeDoctor(project, observationsPath);
   assert.equal(unsupported.status, 2);
   assert.match(unsupported.stdout, /CLI_DOCTOR_WORKFLOW_UNSUPPORTED/u);
+});
+
+test("rejects an oversized doctor envelope before reading it into memory", async (t) => {
+  const project = await testProject(t);
+  await writeConfiguration(project, localIntent());
+  const observationsPath = join(project.container, "oversized-observations.json");
+  await writeFile(observationsPath, "x".repeat(262_145), "utf8");
+  const before = await snapshotDirectory(project.repository);
+
+  const result = invokeDoctor(project, observationsPath);
+
+  assert.equal(result.status, 2);
+  assert.equal(result.stderr, "");
+  assert.match(result.stdout, /CLI_DOCTOR_OBSERVATIONS_TOO_LARGE/u);
+  assert.deepEqual(await snapshotDirectory(project.repository), before);
+});
+
+test("keeps JSON output versioned when a managed target is a symbolic link", async (t) => {
+  const initProject = await testProject(t);
+  const initOutside = join(initProject.container, "outside-init.md");
+  await writeFile(initOutside, "outside init\n", "utf8");
+  await symlink(initOutside, join(initProject.repository, "AGENTS.md"));
+
+  const init = invokeInit(initProject, true);
+  assert.equal(init.status, 2);
+  assert.equal(init.stderr, "");
+  const initReport = JSON.parse(init.stdout) as {
+    readonly schemaVersion: number;
+    readonly command: string;
+    readonly outcome: string;
+    readonly exitCode: number;
+  };
+  assert.deepEqual(
+    [initReport.schemaVersion, initReport.command, initReport.outcome, initReport.exitCode],
+    [1, "init", "blocked", 2],
+  );
+
+  const project = await testProject(t);
+  await writeConfiguration(project, localIntent());
+  const outside = join(project.container, "outside.md");
+  await writeFile(outside, "outside\n", "utf8");
+  await symlink(outside, join(project.repository, "AGENTS.md"));
+
+  for (const command of ["check", "diff", "render"] as const) {
+    const args = [
+      entryPoint,
+      command,
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+      "--json",
+    ];
+    if (command === "render") {
+      args.push("--approve-plan", "0".repeat(64));
+    }
+    const result = spawnSync(process.execPath, args, { encoding: "utf8" });
+    assert.equal(result.status, 2, `${command}: ${result.stderr}`);
+    assert.equal(result.stderr, "");
+    const report = JSON.parse(result.stdout) as {
+      readonly schemaVersion: number;
+      readonly command: string;
+      readonly outcome: string;
+      readonly exitCode: number;
+    };
+    assert.deepEqual(
+      [report.schemaVersion, report.command, report.outcome, report.exitCode],
+      [1, command, "blocked", 2],
+    );
+  }
 });

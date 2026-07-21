@@ -407,7 +407,7 @@ async function inspectPackageBoundary() {
     });
   }
   const expectedBetaMetadata = [
-    ["version", manifest.version, "0.1.0-beta.1"],
+    ["version", manifest.version, "0.1.0-beta.2"],
     ["license", manifest.license, "Apache-2.0"],
     ["engines.node", manifest.engines?.node, "^22.0.0 || ^24.0.0"],
     [
@@ -452,6 +452,33 @@ async function inspectPackageBoundary() {
       line: 1,
       code: "PACKAGE_CHANGELOG_MISSING",
       message: "Include the public changelog in the beta package allowlist.",
+    });
+  }
+  if (!manifest.files.includes("docs/getting-started.md")) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_GETTING_STARTED_MISSING",
+      message: "Include the public beta getting-started guide in the package allowlist.",
+    });
+  }
+  if (manifest.scripts?.postbuild !== "node scripts/prepare-cli-bin.mjs") {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_BIN_PREPARATION_INVALID",
+      message: "Keep the cross-platform executable-bin preparation in the build lifecycle.",
+    });
+  }
+  if (
+    manifest.scripts?.["check:package-entrypoint"] !==
+    "node scripts/verify-package-entrypoint.mjs"
+  ) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_ENTRYPOINT_CHECK_INVALID",
+      message: "Keep the packed installed-bin entrypoint verification available.",
     });
   }
   const forbidden = manifest.files.find(
