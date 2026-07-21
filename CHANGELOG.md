@@ -2,7 +2,20 @@
 
 All notable public changes will be recorded in this file. During beta, incompatible configuration or JSON-output changes must include migration notes.
 
-## Unreleased
+## 0.1.0-beta.2 - 2026-07-21
+
+### Fixed
+
+- Preserve an executable POSIX mode on the built npm CLI and verify the packed, installed entrypoint directly.
+- Support command-specific help for all five beta commands.
+- Reject oversized doctor observation files with a bounded read instead of loading the complete file first.
+- Preserve bounded schema-version-1 JSON when repository observation or planning fails unexpectedly.
+
+### Documentation
+
+- Add a public quick start, complete current option reference, generated-file ownership behavior, caller-supplied doctor example, and explicit non-features.
+- Clarify advisory policy behavior, whole-file ownership and deletion, and the unauthenticated doctor-observation trust boundary.
+- Synchronize the published beta, OIDC closure, and maintainer dogfood status across current project guidance.
 
 ## 0.1.0-beta.1 - 2026-07-21
 

@@ -4,13 +4,28 @@
 
 This checklist controls a public prerelease without expanding product scope. It is a review procedure, not release authorization or an automated release system.
 
-## Candidate
+## Published historical candidate
 
 - Version: `0.1.0-beta.1`
 - npm distribution tag: `next`
 - License: Apache-2.0
 - Supported Node.js release lines: 22 and 24
 - Intended repository: `https://github.com/lorekkusu/agentdevflow`
+
+This version is immutable and has a known POSIX executable-mode defect. It must
+not be reused.
+
+## Current repair candidate
+
+- Version: `0.1.0-beta.2`
+- npm distribution tag: `next`
+- License: Apache-2.0
+- Supported Node.js release lines: 22 and 24
+- Intended repository: `https://github.com/lorekkusu/agentdevflow`
+
+The candidate is authorized for the protected pull-request and publication
+sequence. Publication must still use the exact reviewed `main` commit and pass
+the Environment approval gate.
 
 Changing any candidate value requires an accepted decision and synchronized manifest, lockfile, documentation, tests, and repository checks.
 
@@ -62,6 +77,8 @@ npm query ':attr(scripts, [postinstall])'
 - Confirm the tarball includes `LICENSE`, `README.md`, `package.json`, and only the allowlisted runtime graph.
 - Confirm tests, fixtures, experiments, frozen transaction code, private evidence, local caches, and credentials are absent.
 - Install the packed candidate into a clean temporary directory from exact local tarballs and exercise all five command names offline.
+- Verify the packed JavaScript bin retains executable POSIX mode and invoke the installed `.bin/agentdevflow` entrypoint directly without prefixing it with `node`.
+- Run the zero-context public-user review defined in `project-health-review.md` against the packed installed entrypoint and public onboarding material.
 - Verify exact-root defaults, JSON schema version 1, exit codes 0/1/2, foreign-byte non-disclosure, and repeated render convergence from the installed bin.
 - Record the final file count, compressed and unpacked sizes, SHA-1, and npm integrity value as release evidence.
 

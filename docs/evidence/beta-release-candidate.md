@@ -4,9 +4,11 @@ Snapshot date: 2026-07-21.
 
 This document records the final pre-publication candidate. The completed external outcome is recorded separately in [initial beta publication evidence](initial-beta-publication.md).
 
+Follow-on correction: the qualification exercised command behavior from the installed module but did not directly execute the shell-visible packed bin. The later [public first-run qualification](public-first-run.md) found that the JavaScript bin had mode `0644`; public `npx` invocation therefore failed. References to installed-bin success below are narrowed by this correction.
+
 ## Verdict
 
-**Pass for local Node.js 24 beta-surface, package-content, dependency-advisory, clean offline installed-bin, and hosted Node.js 22/24 platform qualification at the pre-publication snapshot.** Publication was blocked by external authorization and first-publication setup, not by a missing product feature.
+**Pass for local Node.js 24 beta-surface, package-content, dependency-advisory, clean offline installed command behavior, and hosted Node.js 22/24 platform qualification at the pre-publication snapshot; later failed for direct package-bin execution.** Publication was blocked by external authorization and first-publication setup, while the executable-mode gap remained undetected.
 
 ## Candidate boundary
 
@@ -36,11 +38,11 @@ After the first-publication-readiness closure, `npm pack --dry-run --json` and a
 
 The tarball contains `LICENSE`, `README.md`, `CHANGELOG.md`, `package.json`, and the allowlisted emitted runtime. It excludes repository tests, fixtures, development scripts, public evidence, experiments, the frozen transaction subsystem, execution transport, GitHub mapping, and Rulesync process integration. Between release-preparation commit `96c253c` and first-publication-readiness commit `e75572f`, only `README.md` changed among the packaged source and metadata paths; runtime source, dependencies, manifest, license, and changelog remained unchanged.
 
-## Clean offline installation
+## Clean offline installed command behavior
 
 The candidate and the already installed exact `jsonc-parser` 3.3.1 and Zod 4.4.3 dependencies were packed into local tarballs. A clean npm prefix installed only those tarballs using offline resolution and disabled lifecycle scripts.
 
-The installed npm bin then used only exact-root defaults and JSON schema version 1:
+The installed command implementation then used only exact-root defaults and JSON schema version 1:
 
 | Command | Process exit | Reported outcome | Observation |
 | --- | ---: | --- | --- |
@@ -106,4 +108,4 @@ The final candidate was packed again, installed into a clean temporary prefix fr
 
 ## Conclusion
 
-At this snapshot, the beta implementation passed its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development was at a release-candidate boundary, with separate short-lived credential handling and exact-commit first-publication authorization next rather than feature expansion.
+At this snapshot, the beta implementation was considered to have passed its local package, security-observation, installed-command, disclosure, public-repository hardening, and selected cross-platform gates. The later public entrypoint failure narrows that historical verdict and requires a new packed-bin qualification before another release.

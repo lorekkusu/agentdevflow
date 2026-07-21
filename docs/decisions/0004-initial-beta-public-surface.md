@@ -18,7 +18,7 @@ The initial beta adopts these public boundaries:
 - Supported Node.js release lines are 22 and 24. The package engine range expresses those two majors rather than every later Node.js release.
 - The default project configuration path is `agentdevflow.config.jsonc` at the selected repository root. Commands inspect only that exact root and do not search parent directories. `--repository` and `--config` provide explicit overrides.
 - The default tool-owned lock path is `.agentdevflow/lock.json` below the selected repository root. `--lock` provides an explicit repository-relative override. Lock bytes remain an implementation-owned versioned format rather than a user-authored API.
-- `ProjectConfig` is the intended user-facing configuration concept. The beta exposes only built-in workflow families. A general `WorkflowDefinition` and arbitrary workflow topology remain experimental and non-public.
+- `ProjectConfig` is the intended user-facing configuration concept. The initial beta exposes only the built-in `local-reviewed-change` workflow through its executable init path. Other validated internal workflow families do not become public capabilities until their real adapters and migration behavior are accepted. A general `WorkflowDefinition` and arbitrary workflow topology remain experimental and non-public.
 - The command set is `init`, `render`, `diff`, `check`, and `doctor`. Exit code `0` means success or clean state, `1` means reviewable changes or degraded observations, and `2` means invalid, blocked, unsafe, or unexpected failure.
 - Human-readable output is the default. `--json` uses an explicitly versioned bounded envelope. Beta fields may evolve through documented migration; secret, credential, and unrecognized foreign file bytes are never output.
 - The first release candidate is `0.1.0-beta.1`, published under the npm `next` distribution tag with package provenance. Release preparation omits the manifest `private` field and adds one manually triggered workflow bound to an exact `main` commit, exact version, restricted environment, and narrow permissions. Those repository changes do not authorize repository visibility, credentials, tags, releases, or npm publication.
@@ -50,6 +50,7 @@ Post-publication observation: the workflow published the first version with an e
 - [Private local CLI evidence](../evidence/private-local-cli.md)
 - [V1 platform qualification](../evidence/v1-platform-qualification.md)
 - [Initial beta publication evidence](../evidence/initial-beta-publication.md)
+- [Public first-run qualification](../evidence/public-first-run.md)
 - [Apache guidance for applying Apache License 2.0](https://www.apache.org/legal/apply-license)
 - [Apache License 2.0 canonical text](https://www.apache.org/licenses/LICENSE-2.0.txt)
 - [Node.js release status](https://nodejs.org/en/about/previous-releases)

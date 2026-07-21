@@ -4,7 +4,7 @@ Snapshot date: 2026-07-21.
 
 ## Verdict
 
-**Pass for exact-commit publication, registry artifact identity, provenance, and clean registry installation.** `agentdevflow@0.1.0-beta.1` is publicly available from npm. The published artifact matches the qualified candidate and source commit, and its installed bin completes the bounded five-command path.
+**Pass for exact-commit publication, registry artifact identity, provenance, and installed command behavior; fail for the shell-visible `npx` entrypoint discovered after publication.** `agentdevflow@0.1.0-beta.1` is publicly available from npm and matches the qualified candidate and source commit. Its packed JavaScript bin has mode `0644`, so direct npm executable invocation fails before the command starts. See [public first-run qualification](public-first-run.md).
 
 This evidence does not make a 1.0 compatibility claim, authenticate caller-supplied doctor observations, establish broad provider or workflow support, or authorize a Git tag, GitHub Release, later npm version, or automatic release process.
 
@@ -37,9 +37,9 @@ The public registry and a downloaded exact-version tarball reported:
 
 These values exactly match the final pre-publication candidate. The registry metadata includes a registry signature and an npm attestation endpoint whose provenance predicate type is SLSA provenance version 1. Provenance links the public artifact to the GitHub-hosted publication workflow; it does not prove that the source behavior is safe.
 
-## Registry installation
+## Registry installation and correction
 
-The exact public version was installed into a clean temporary prefix with dependency lifecycle scripts disabled. The installed npm bin completed:
+The exact public version was installed into a clean temporary prefix with dependency lifecycle scripts disabled. A Node-compatible invocation of the installed command implementation completed:
 
 | Command | Outcome |
 | --- | --- |
@@ -51,6 +51,8 @@ The exact public version was installed into a clean temporary prefix with depend
 | explicit-observation `doctor --json` | `healthy` |
 
 The exact plan digest remained `9c88f27c7ccd30ede0861455a555a324599b6397c61b05da9f5e87f7d118baae`.
+
+That exercise did not directly execute the shell-visible package bin. A later public first-run audit showed that both `npx` and `npm exec` return exit `127` because the packed JavaScript target is not executable. Command behavior and artifact identity remain valid observations, but the earlier installation exercise was insufficient evidence for public executable usability.
 
 ## Distribution-tag constraint
 
@@ -65,6 +67,7 @@ The first publication used a separately authorized granular bootstrap token stor
 ## Remaining external actions
 
 - Keep future publication behind the protected Environment, exact version and commit inputs, complete release checks, and explicit authorization.
+- Publish no later beta until the packed installed entrypoint and documented first-use path pass directly.
 - Create a Git tag or GitHub Release only under separate authorization and only for this verified artifact.
 - Collect normal-user beta feedback before expanding provider, workflow, integration, or runtime scope.
 

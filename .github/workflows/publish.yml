@@ -68,6 +68,8 @@ jobs:
           test "$(npm query ':attr(scripts, [postinstall])' --json)" = "[]"
       - name: Inspect publish contents
         run: npm pack --dry-run --json
+      - name: Verify packed npm entrypoint
+        run: npm run check:package-entrypoint
       - name: Verify tracked files remain unchanged
         run: git diff --exit-code
       - name: Publish exact beta to npm

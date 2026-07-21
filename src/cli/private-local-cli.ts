@@ -19,6 +19,7 @@ import {
 } from "../commands/private-render-command-service.js";
 import {
   parsePrivateCliArguments,
+  privateCliCommands,
   type PrivateCliInvocation,
 } from "../interface/private-cli-arguments.js";
 import {
@@ -54,6 +55,34 @@ Init creates only an absent revision-1 configuration after validating provider-f
 Check and diff are read-only. Render requires an exact plan digest from diff.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
 Beta configuration and JSON schema versions may require documented migration before 1.0.`;
+
+const commandUsage: Readonly<Record<(typeof privateCliCommands)[number], string>> = {
+  init: `Usage:
+  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product,surface>... --steward <id> --developer <id> --reviewer <id> [--json]
+
+Provider products: claude-code, codex, cursor.
+Provider surfaces: cli, ide. The id is a user-chosen provider-instance name referenced by each role option.
+Init creates only an absent configuration. It reports provider-file dispositions but does not write provider files or the lock.
+Exact adopt or lossless import makes the complete provider path a managed file; no managed section is created.`,
+  check: `Usage:
+  agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+
+Check is read-only. Exit 0 is clean, exit 1 means reviewable changes are required, and exit 2 is blocked or invalid.`,
+  diff: `Usage:
+  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+
+Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.`,
+  doctor: `Usage:
+  agentdevflow doctor [--repository <path>] [--config <relative-path>] --observations <path> [--json]
+
+Doctor validates a caller-supplied revision-1 observation envelope for the local workflow. It does not run provider commands, inspect credentials, or probe the environment.
+Every source, reference, freshness, version, principal, and capability value is a caller assertion. The probe label is not authenticated; healthy means only structurally valid and internally sufficient input.`,
+  render: `Usage:
+  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
+
+Render mutates only the complete plan whose exact-plan-digest was reviewed through diff. A stale or foreign state fails closed.
+Adopted or imported paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
+};
 
 async function runPrivateInit(
   invocation: Extract<PrivateCliInvocation, { readonly command: "init" }>,
@@ -298,6 +327,17 @@ export async function runPrivateLocalCli(
     writeLine(io.stdout, usage);
     return 0;
   }
+  if (
+    args.length === 2 &&
+    privateCliCommands.includes(args[0] as (typeof privateCliCommands)[number]) &&
+    (args[1] === "--help" || args[1] === "-h")
+  ) {
+    writeLine(
+      io.stdout,
+      commandUsage[args[0] as (typeof privateCliCommands)[number]],
+    );
+    return 0;
+  }
 
   const parsed = parsePrivateCliArguments(args);
   if (!parsed.ok) {
@@ -310,11 +350,12 @@ export async function runPrivateLocalCli(
     return 2;
   }
   const invocation = parsed.invocation;
+  try {
   if (invocation.command === "init") {
-    return runPrivateInit(invocation, io);
+    return await runPrivateInit(invocation, io);
   }
   if (invocation.command === "doctor") {
-    return runPrivateDoctor(invocation, io);
+    return await runPrivateDoctor(invocation, io);
   }
   let workspace: Awaited<
     ReturnType<typeof PrivateFilesystemWorkspace.openReadOnly>
@@ -610,6 +651,23 @@ export async function runPrivateLocalCli(
               : {}),
           },
         ],
+      }, invocation.outputFormat),
+    );
+    return 2;
+  }
+  } catch (error) {
+    const workspaceError =
+      error instanceof PrivateFilesystemWorkspaceError ? error : null;
+    writeLine(
+      io.stdout,
+      blockedBeforePlanning(invocation.command, {
+        code: workspaceError?.code ?? "CLI_UNEXPECTED_FAILURE",
+        level: "error",
+        message: workspaceError?.message ??
+          "The command failed while observing or planning repository state.",
+        ...(workspaceError?.path === undefined
+          ? {}
+          : { path: workspaceError.path }),
       }, invocation.outputFormat),
     );
     return 2;

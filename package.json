@@ -1,6 +1,6 @@
 {
   "name": "agentdevflow",
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "description": "Configure, validate, and compile portable software-development flows for coding agents.",
   "license": "Apache-2.0",
   "repository": {
@@ -13,6 +13,7 @@
   },
   "files": [
     "CHANGELOG.md",
+    "docs/getting-started.md",
     "dist/src/application/",
     "dist/src/cli/",
     "dist/src/commands/",
@@ -47,6 +48,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check:qualification": "npm run check:repository && npm run typecheck && npm run build && node scripts/run-platform-tests.mjs",
+    "check:package-entrypoint": "node scripts/verify-package-entrypoint.mjs",
     "check:repository": "node scripts/check-repository.mjs",
     "check:v1-qualification": "npm run check:repository && npm run typecheck && npm run build && node scripts/run-v1-platform-tests.mjs",
     "experiment:recovery": "npm run build && node dist/src/experiments/recovery-strategy-comparison.js",
@@ -63,6 +65,7 @@
     "phase1:project-document": "npm run build && node dist/test/fixtures/project/document-run.js",
     "phase1:representation": "npm run build && node dist/test/fixtures/interface/run.js",
     "phase1:preset": "npm run build && node dist/test/fixtures/project/preset-run.js",
+    "postbuild": "node scripts/prepare-cli-bin.mjs",
     "test:v1-recovery": "npm run build && node --test dist/test/renderer/private-convergent-apply.test.js dist/test/renderer/private-convergent-subprocess.test.js",
     "prepack": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",

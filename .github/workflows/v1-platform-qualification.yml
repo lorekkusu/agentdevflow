@@ -79,5 +79,7 @@ jobs:
       - name: Run complete strong-contract suite
         if: matrix.run_full_suite
         run: npm run check:qualification
+      - name: Verify packed npm entrypoint
+        run: npm run check:package-entrypoint
       - name: Verify tracked files remain unchanged
         run: git diff --exit-code
