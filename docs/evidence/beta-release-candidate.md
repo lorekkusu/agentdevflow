@@ -63,17 +63,18 @@ A read-only unauthenticated registry request for `agentdevflow` returned HTTP 40
 
 An authenticated read-only repository query confirmed that the GitHub repository remains private. npm automatic provenance through trusted publishing requires a public source repository and public package, so separate disclosure review and visibility-change authorization remain publication prerequisites.
 
-No npm publishing secret, publishing environment, release tag, or external publishing state was configured during qualification. The working tree adds a manual release workflow that binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
+No npm publishing secret, publishing environment, release tag, or external publishing state was configured during qualification. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
 
 ## Public-disclosure audit
 
-A bounded read-only audit covered all 41 commits reachable from `main`, 221 distinct historical paths, current tracked content, commit metadata, and the repository's local Codex tree references. It found:
+At release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e`, a bounded read-only audit covered all 43 commits then reachable from `main`, 223 distinct historical paths, 488 distinct blobs, current tracked content, commit metadata, and the repository's local Codex tree references. It found:
 
 - no historical path named for bootstrap material, session state, startup prompts, raw reviews, conversations, or secrets;
 - no credential-shaped token, private-key marker, local user absolute path, Chinese repository text, or raw prompt marker in the scanned commit and tree blobs;
 - no binary blob or blob larger than 1 MiB;
 - only GitHub-provided no-reply author addresses in reachable commit metadata;
-- intentional references to transcript exclusion only in the public repository policy and contribution guidance.
+- intentional references to transcript exclusion only in the public repository policy and contribution guidance;
+- only `main` on the remote, with no tags, issues, pull requests, releases, repository secrets, environments, or Actions artifacts.
 
 This is a pattern-, path-, and metadata-based publication review. It does not prove that no secret or sensitive inference exists, replace human review, or constitute a dedicated secret scan. No repository visibility or external setting changed during the audit.
 
@@ -85,18 +86,18 @@ Using Node.js 24.18.0:
 - `npm run check:v1-qualification` selected 36 test files and passed 294 tests with zero failures, skips, or todos;
 - focused CLI tests cover exact-root defaults, no parent discovery, repository-relative reads, installed symlink invocation, stable exit classes, JSON schema version 1, output limiting, foreign-byte non-disclosure, stale approval, interruption convergence, and all five commands.
 
-The latest reviewed baseline, commit `50938034daa5b817c11a028b320b9c92f48d07e1`, passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29803899489](https://github.com/lorekkusu/agentdevflow/actions/runs/29803899489). The release-preparation working tree requires a new hosted run after separate commit and push authorization.
+The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed all six selected GitHub Actions cells: Ubuntu, macOS, and Windows on Node.js 22 and 24. The run is recorded as [GitHub Actions run 29807660977](https://github.com/lorekkusu/agentdevflow/actions/runs/29807660977). The repository was clean and matched `origin/main` after the run.
 
 ## Remaining publication gates
 
-- Review and commit this disclosure-safe release-closure change, then require the normal repository and hosted checks on that exact commit.
+- Keep the release source clean and require the normal repository and hosted checks on any later source commit.
 - Repeat package, advisory, lifecycle-script, and clean-install checks if the final release commit changes packaged artifact bytes or dependency state.
 - Repeat the npm package-name lookup immediately before publication; the current 404 observation does not reserve the name.
 - Obtain explicit authorization before changing repository visibility, and confirm public accessibility before relying on automatic npm provenance.
+- After the repository becomes public, configure the intended `main` protection, enable private vulnerability reporting, and verify the documented security route before accepting external contributions or publishing a release.
 - Select and authorize the first-publication credential bootstrap. After the package exists, configure trusted publishing and remove or revoke the bootstrap credential before future releases.
-- Enable GitHub private vulnerability reporting after the repository becomes public, then verify the route documented in `SECURITY.md`.
-- Obtain explicit authorization before committing or pushing the release-preparation change, configuring external publishing state, tagging, creating a release, or publishing to npm.
+- Obtain explicit authorization before configuring external publishing state, tagging, creating a release, or publishing to npm.
 
 ## Conclusion
 
-The beta implementation passes its local package, security-observation, installed-bin, and selected cross-platform gates. Product development is at a release-candidate boundary. The next work is review of this closure and separately authorized publication preparation, not feature expansion.
+The beta implementation passes its local package, security-observation, installed-bin, disclosure, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate is separately authorized repository visibility and public-repository hardening, not feature expansion.

@@ -224,7 +224,8 @@ Required sequence:
 2. **Complete:** repeat complete repository verification and Node.js 22/24 qualification against the accepted beta surface;
 3. **Complete:** inspect the final tarball, installed bin, dependency advisories, lifecycle scripts, signatures, and license inclusion;
 4. **Complete:** define a minimal public release checklist, changelog, vulnerability-reporting policy, and bounded full-history disclosure audit without adding a release framework;
-5. **Complete locally; next gate:** the manual release-preparation workflow and packageable manifest passed local qualification. Stop for explicit authorization before committing or pushing that change, then require hosted qualification on the exact pushed commit. Visibility, first-publication or trusted-publisher state, tags, releases, and npm publication remain separately authorized actions.
+5. **Complete:** the manual release-preparation workflow and packageable manifest passed local qualification, were committed as `96c253c`, and passed all six hosted Node.js 22/24 cells on the exact pushed commit;
+6. **Current gate:** the bounded full-history and external-state disclosure preflight found no publication blocker. Stop for explicit authorization before changing repository visibility. Public-repository protections, vulnerability reporting, first-publication or trusted-publisher state, tags, releases, and npm publication remain separately authorized actions.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone.
 
