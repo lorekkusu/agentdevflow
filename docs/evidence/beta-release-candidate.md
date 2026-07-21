@@ -9,7 +9,7 @@ Snapshot date: 2026-07-21.
 ## Candidate boundary
 
 - Package: `agentdevflow@0.1.0-beta.1`
-- Publication boundary: manually triggered exact-version and exact-commit workflow; no external environment or credential configured
+- Publication boundary: manually triggered exact-version and exact-commit workflow; protected environment configured without a credential
 - License: Apache-2.0 with canonical root `LICENSE`
 - Intended tag: `next`
 - Intended provenance: enabled
@@ -18,7 +18,7 @@ Snapshot date: 2026-07-21.
 - Default lock: `.agentdevflow/lock.json` at the exact selected root
 - Machine output: bounded JSON schema version 1
 
-The repository audit mechanically checks these candidate metadata values, omission of the manifest `private` field, and the narrow manual workflow boundary. External environment, credential, visibility, tag, release, and publication changes remain separately gated.
+The repository audit mechanically checks these candidate metadata values, omission of the manifest `private` field, and the narrow manual workflow boundary. Credential, tag, release, and publication changes remain separately gated.
 
 ## Package observation
 
@@ -63,9 +63,9 @@ A read-only unauthenticated registry request for `agentdevflow` returned HTTP 40
 
 Authenticated API and unauthenticated HTTP checks confirmed that the GitHub repository, README, license, security policy, and latest qualification run are publicly accessible. The repository publishes the accepted description and topics without claiming a separate project website.
 
-GitHub private vulnerability reporting, Dependabot security updates, secret scanning, push protection, and full-SHA Actions pinning are enabled. The active `Protect main` ruleset has no bypass actor; it requires pull requests, resolved review conversations, squash-only linear history, all six exact GitHub Actions checks on the latest base, and prevents deletion and force pushes. The initial secret-scanning alert query returned zero results, which is a point-in-time observation rather than proof that later scanning cannot find an alert.
+GitHub private vulnerability reporting, Dependabot security updates, secret scanning, push protection, and full-SHA Actions pinning are enabled. The active `Protect main` ruleset has no bypass actor; it requires pull requests, resolved review conversations, squash-only linear history, all six exact GitHub Actions checks on the latest base, and prevents deletion and force pushes. The active purpose-based branch-name ruleset rejects remote branches with the configured identity-based prefixes. The initial secret-scanning alert query returned zero results, which is a point-in-time observation rather than proof that later scanning cannot find an alert.
 
-No npm publishing secret, publishing environment, release tag, GitHub release, or npm package was configured or created during public-repository hardening. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
+The public-hardening and purpose-based branch-name changes passed the protected pull-request path and their source branches were removed. The `npm-publish` environment now accepts only `main`, requires approval from `lorekkusu`, and contains no publishing secret. Because self-approval and administrator bypass are possible, this protection records explicit owner intent but does not provide independent approval or an unbypassable control. No release tag, GitHub release, or npm package has been created. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
 
 ## Public-disclosure audit
 
@@ -93,14 +93,13 @@ The release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e` passed
 ## Remaining publication gates
 
 - Keep the release source clean and require the normal repository and hosted checks on any later source commit.
-- Merge this public-hardening closure only through the active `main` ruleset after its required checks pass.
 - Repeat package, advisory, lifecycle-script, and clean-install checks if the final release commit changes packaged artifact bytes or dependency state.
 - Repeat the npm package-name lookup immediately before publication; the current 404 observation does not reserve the name.
-- Separately authorize and configure the protected `npm-publish` environment and one-time first-publication credential without placing the credential in repository content.
+- Create a one-day, least-privilege bootstrap credential outside repository and conversation content, and store it directly as the protected environment's `NPM_TOKEN`.
 - Dispatch only the exact reviewed final `main` commit and version, verify the public `next` artifact and provenance, then immediately remove the GitHub secret and revoke the bootstrap credential.
 - After the package exists, configure trusted publishing before a later release and remove token-based publication from the workflow.
 - Obtain explicit authorization before configuring external publishing state, tagging, creating a release, or publishing to npm.
 
 ## Conclusion
 
-The beta implementation passes its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate after this documentation-only closure is separately authorized first-publication setup, not feature expansion.
+The beta implementation passes its local package, security-observation, installed-bin, disclosure, public-repository hardening, and selected cross-platform gates. Product development is at a release-candidate boundary. The next gate is separate short-lived credential handling and exact-commit first-publication authorization, not feature expansion.

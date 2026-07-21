@@ -6,7 +6,7 @@ Configure, validate, and compile portable software-development flows for coding 
 
 `agentdevflow` has completed Phase 0 technical validation with a Go recommendation. Phase 1 has private prototypes for project-intent parsing, policy compilation, native project-instructions rendering, ownership-aware application, domain workflows, and typed execution evidence.
 
-The first beta CLI boundary is now accepted and executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`. It uses project-local defaults, stable outcome classes, and bounded versioned JSON output. The release-preparation manifest is packageable and a manually triggered publish workflow is under qualification, but no npm package has been published or reserved and no external publishing state is configured. Beta configuration and machine-output details may still change through documented migration before 1.0.
+The first beta CLI boundary is now accepted and executable for `init`, `diff`, exact approved `render`, `check`, and a caller-observation-based `doctor`. It uses project-local defaults, stable outcome classes, and bounded versioned JSON output. The release-preparation manifest and manually triggered publish workflow are qualified, and the protected `npm-publish` environment is configured without a publishing credential. No npm package has been published or reserved. Beta configuration and machine-output details may still change through documented migration before 1.0.
 
 The intended product is a local-first Node.js and TypeScript CLI distributed through npm and invoked with `npx agentdevflow`.
 
