@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The current objective is to repair the public package entrypoint and onboarding path, then run maintainer-operated dogfood without expanding product scope.
+These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The repaired public package and onboarding path are published as `0.1.0-beta.2`; the current objective is maintainer-operated dogfood without expanding product scope.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -214,9 +214,9 @@ Status: **Complete; accepted by [ADR 0004](../decisions/0004-initial-beta-public
 
 The accepted packet covers exact-root configuration and lock discovery, explicit overrides, stable exit classes, bounded versioned JSON, Node.js 22 and 24, Apache-2.0, and the separately authorized `0.1.0-beta.1` release candidate on npm's `next` tag with provenance. See the [beta CLI contract](beta-cli-contract.md).
 
-## Current: public first-run repair and maintainer dogfood
+## Current: maintainer dogfood
 
-Status: **`agentdevflow@0.1.0-beta.1` is published but unusable through `npx`; `0.1.0-beta.2` is the locally qualified repair candidate.**
+Status: **`agentdevflow@0.1.0-beta.2` is published through npm `next` and passes the protected, registry, and first-run qualification gates.**
 
 Required sequence:
 
@@ -228,11 +228,11 @@ Required sequence:
 6. **Complete:** the bounded disclosure preflight found no publication blocker; unauthenticated checks verified the public repository and release-facing documents; private vulnerability reporting, Dependabot security updates, secret scanning, push protection, full-SHA Actions pinning, and the active no-bypass `Protect main` ruleset establish the accepted public security baseline;
 7. **Complete:** public-hardening pull request 1 and purpose-based branch-name pull request 2 passed the protected path, were squash-merged, and had their source branches removed; the active branch-name ruleset rejects identity-based remote branch prefixes;
 8. **Complete:** the `npm-publish` environment accepts only `main`, requires an explicit approval from `lorekkusu`, and currently contains no publishing secret. Self-approval and administrator bypass remain possible, so this is a proof-of-intent gate rather than independent approval;
-9. **Complete with later entrypoint correction:** a separately authorized bootstrap token published exact version `0.1.0-beta.1` from reviewed `main` commit `e4b3014`; the registry artifact, provenance, digest, contents, and installed command behavior match the final candidate, while direct shell execution later failed because the packed bin was `0644`;
+9. **Complete with later entrypoint correction:** a separately authorized bootstrap token published exact version `0.1.0-beta.1` from reviewed `main` commit `e4b3014`; the registry artifact, provenance, digest, contents, and installed command behavior match the final candidate, while a recorded direct-shell audit failed because the packed bin was `0644`; npm 11.16 later normalized that installed mode, so the failure is not claimed for every client;
 10. **Complete:** the bootstrap token and GitHub secret were removed, the package was bound to the exact OIDC trusted publisher, and the token-free workflow closure passed the protected pull-request path;
-11. **Complete locally; hosted and registry verification pending:** repair the non-executable packed CLI entrypoint, add a truthful copy-pastable first-use path and current option reference, verify the packed installed bin rather than invoking it indirectly through Node, and repeat zero-context comprehension review;
-12. **Current external gate:** pass the protected pull-request path, publish exact version `0.1.0-beta.2` from the reviewed `main` commit, and verify exact-version, `next`, and `npm exec` registry entrypoints;
-13. **Next product gate:** use the repaired public package in a private, non-sensitive dogfood repository, beginning with the local workflow and clean agent-role comprehension before adding ready PR, draft PR, CI repair, or tracker scenarios.
+11. **Complete:** repair the non-executable packed CLI entrypoint, add a truthful copy-pastable first-use path and current option reference, verify the packed installed bin rather than invoking it indirectly through Node, and repeat zero-context comprehension review;
+12. **Complete:** pull request 6 passed the six protected platform cells, exact version `0.1.0-beta.2` was published from reviewed `main` commit `13bb07c0aea48df8dfd4bb8fbed7201ef30d4962` through the OIDC workflow, and unqualified, exact-version, `next`, `npm exec`, and README first-run registry paths passed; after separate authorization, `latest` moved from the known-defect first beta to beta.2 and beta.1 was deprecated;
+13. **Current product gate:** use the repaired public package in a private, non-sensitive dogfood repository, beginning with the local workflow and clean agent-role comprehension before adding ready PR, draft PR, CI repair, or tracker scenarios.
 
 No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone. A Git tag, GitHub Release, package-setting change, or version after `0.1.0-beta.2` remains separately authorized.
 

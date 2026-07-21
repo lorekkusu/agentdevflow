@@ -6,7 +6,7 @@ Snapshot date: 2026-07-21.
 
 **Pass for one private local npm-package candidate's installed command behavior on the tested Darwin and Node.js 24.18.0 environment; not evidence for a shell-executable packed bin.** The allowlisted tarball installs from local exact-version tarballs with npm offline resolution, and its command implementation completes the local `init`, `diff`, approved `render`, clean `check`, and explicit-observation `doctor` path through the retained Node-compatible harness.
 
-Follow-on correction: the original snapshot described this as direct installed-bin execution. The retained procedure and later release audit do not prove that the packed JavaScript target had executable mode in a clean build. The exact published beta.1 tarball had mode `0644`, and direct `npx` failed. Shell-visible package-entrypoint qualification begins with the beta.2 repair evidence.
+Follow-on correction: the original snapshot described this as direct installed-bin execution. The retained procedure and later release audit do not prove that the packed JavaScript target had executable mode in a clean build. The exact published beta.1 tarball had mode `0644`, and the recorded direct `npx` audit failed. npm 11.16 later normalized the installed target and succeeded, so universal client failure is not claimed. Installer-independent shell-visible package-entrypoint qualification begins with the beta.2 repair evidence.
 
 This is not publication authorization, a stable CLI contract, an `npx` registry test, a public support promise, a license decision, or release provenance evidence. At this historical qualification snapshot, the package remained `private: true`.
 

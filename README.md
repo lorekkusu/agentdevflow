@@ -6,9 +6,9 @@ Turn one local development policy into reviewable project instructions for Codex
 
 The current beta generates instructions; it does **not** run coding agents or automate trackers, pull requests, CI, reviews, or merges.
 
-> **Version notice:** do not use `0.1.0-beta.1`; its POSIX entrypoint is not
-> executable. The commands below target `0.1.0-beta.2` and become registry-ready
-> when the [exact npm version page](https://www.npmjs.com/package/agentdevflow/v/0.1.0-beta.2) resolves.
+> **Version notice:** use `0.1.0-beta.2`. npm `latest` and `next` both resolve
+> to it. `0.1.0-beta.1` is deprecated because its published tarball does not
+> preserve executable mode.
 
 ## What the beta does today
 
@@ -90,7 +90,7 @@ Removing a configured provider product can plan deletion of its formerly managed
 
 ## Status and limits
 
-The repair target is `agentdevflow@0.1.0-beta.2`; use it only when its exact npm version page resolves. The immutable `0.1.0-beta.1` artifact has a known entrypoint defect. Beta configuration fields, lock bytes, diagnostics, and JSON report fields may change through documented migration before 1.0. Use the exact version for reproducibility; after registry verification, `next` identifies the current prerelease.
+`agentdevflow@0.1.0-beta.2` is the current published prerelease; npm `latest` and `next` resolve to it, so `npx agentdevflow` is usable. The exact version remains recommended for beta reproducibility. The immutable `0.1.0-beta.1` release is deprecated because its tarball has a known executable-mode defect, although npm 11.16 was observed normalizing the mode during installation. Beta configuration fields, lock bytes, diagnostics, and JSON report fields may change through documented migration before 1.0.
 
 Node.js 22 and 24 are the accepted beta release lines. The selected Ubuntu, macOS, and Windows CI matrix is qualification evidence, not a promise covering every operating-system, architecture, shell, filesystem, or agent-product version.
 
@@ -107,4 +107,4 @@ npm run check
 
 `npm run check` audits repository publication hygiene, type-checks, builds, and runs the automated tests. The project currently uses no CLI framework, linter, formatter, or bundler.
 
-`agentdevflow` is licensed under Apache-2.0. The initial beta was published with provenance using a separately authorized bootstrap credential. Future publication is restricted to a protected, manually triggered OIDC workflow.
+`agentdevflow` is licensed under Apache-2.0. The repaired beta was published with provenance through the protected, manually triggered OIDC workflow.

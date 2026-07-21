@@ -2,9 +2,9 @@
 
 This guide covers the complete public behavior of the repaired `agentdevflow` beta. It separates CLI-supported features from longer-term product direction.
 
-> **Version notice:** do not use `0.1.0-beta.1`; its POSIX entrypoint is not
-> executable. The examples below target `0.1.0-beta.2` and become registry-ready
-> when the [exact npm version page](https://www.npmjs.com/package/agentdevflow/v/0.1.0-beta.2) resolves.
+> **Version notice:** use `0.1.0-beta.2`. npm `latest` and `next` both resolve
+> to it. `0.1.0-beta.1` is deprecated because its published tarball does not
+> preserve executable mode.
 
 ## Requirements and invocation
 

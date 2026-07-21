@@ -15,7 +15,7 @@ This checklist controls a public prerelease without expanding product scope. It 
 This version is immutable and has a known POSIX executable-mode defect. It must
 not be reused.
 
-## Current repair candidate
+## Published repair
 
 - Version: `0.1.0-beta.2`
 - npm distribution tag: `next`
@@ -23,9 +23,12 @@ not be reused.
 - Supported Node.js release lines: 22 and 24
 - Intended repository: `https://github.com/lorekkusu/agentdevflow`
 
-The candidate is authorized for the protected pull-request and publication
-sequence. Publication must still use the exact reviewed `main` commit and pass
-the Environment approval gate.
+The repair was published from exact reviewed `main` commit
+`13bb07c0aea48df8dfd4bb8fbed7201ef30d4962` after the protected pull-request
+path and Environment approval gate passed. See
+[public first-run qualification](../evidence/public-first-run.md).
+After separate authorization, npm `latest` was moved from the known-defect
+first beta to this repair and beta.1 was deprecated with upgrade guidance.
 
 Changing any candidate value requires an accepted decision and synchronized manifest, lockfile, documentation, tests, and repository checks.
 
@@ -117,6 +120,7 @@ Immediately after the first successful publication, remove the GitHub secret and
 
 - Verify the registry version, `next` distribution tag, license, repository link, engines, provenance, integrity, and tarball contents.
 - Record the observed `latest` behavior separately from the explicitly requested prerelease tag.
+- If the registry-required `latest` tag points to a known-defect prerelease and no stable release exists, require separate authorization before moving it to a qualified repair or deprecating the defective version. Never overwrite an existing stable `latest` with a prerelease.
 - Install by exact version in a clean project and repeat the bounded offline command smoke test.
 - Enable GitHub private vulnerability reporting after the repository is public and verify that the route documented in `SECURITY.md` works.
 - Publish the changelog entry and GitHub release only for the exact verified artifact.
