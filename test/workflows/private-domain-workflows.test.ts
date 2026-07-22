@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   compilePrivateDomainWorkflow,
+  type PrivateDomainCapabilityObservation,
   type PrivateDomainWorkflowCompilationResult,
   type PrivateDomainWorkflowDefinition,
 } from "../../src/compiler/private-domain-workflow.js";
@@ -370,6 +371,61 @@ test("does not let advisory merge capability satisfy a guarded requirement", () 
         diagnostic.message.includes("pull-request.merge"),
     ),
     true,
+  );
+});
+
+test("rejects malformed capability observations instead of treating them as available", () => {
+  const malformed = [
+    {
+      binding: "developer",
+      capability: "project-instructions",
+      strength: "bogus",
+      mechanism: "",
+    },
+  ] as unknown as readonly PrivateDomainCapabilityObservation[];
+  const result = compilePrivateDomainWorkflow(
+    privateLocalReviewedChangeDefinition,
+    { capabilityObservations: malformed },
+  );
+
+  expectFailure(result);
+  assert.equal(
+    result.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.code === "CAPABILITY_OBSERVATION_INVALID" &&
+        diagnostic.path === "$.capabilities[0]",
+    ),
+    true,
+  );
+  assert.equal(
+    result.diagnostics.some(
+      (diagnostic) => diagnostic.code === "CAPABILITY_UNAVAILABLE",
+    ),
+    true,
+  );
+});
+
+test("rejects an unsupported capability requirement strength", () => {
+  const definition = {
+    ...privateLocalReviewedChangeDefinition,
+    capabilityRequirements:
+      privateLocalReviewedChangeDefinition.capabilityRequirements.map(
+        (requirement, index) =>
+          index === 0
+            ? { ...requirement, requiredStrength: "bogus" }
+            : requirement,
+      ),
+  } as unknown as PrivateDomainWorkflowDefinition;
+  const result = compilePrivateDomainWorkflow(definition, {
+    capabilityObservations:
+      privateLocalReviewedChangeCapabilityObservations,
+  });
+
+  expectFailure(result);
+  assert.equal(result.diagnostics[0]?.code, "INVALID_WORKFLOW_DEFINITION");
+  assert.match(
+    result.diagnostics[0]?.message ?? "",
+    /unsupported required strength/u,
   );
 });
 

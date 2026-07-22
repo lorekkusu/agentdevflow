@@ -100,6 +100,7 @@ export type PrivateDomainWorkflowDiagnostic =
   | {
       readonly stage: "capability";
       readonly code:
+        | "CAPABILITY_OBSERVATION_INVALID"
         | "CAPABILITY_OBSERVATION_DUPLICATED"
         | "CAPABILITY_STRENGTH_INSUFFICIENT"
         | "CAPABILITY_UNAVAILABLE";
@@ -151,6 +152,11 @@ const strengthRank: Readonly<Record<PrivateEnforcementStrength, number>> = {
   guarded: 1,
   enforced: 2,
 };
+const enforcementStrengths = new Set<unknown>([
+  "advisory",
+  "guarded",
+  "enforced",
+]);
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -183,6 +189,46 @@ function digest(value: unknown): string {
 
 function nonEmpty(value: string): boolean {
   return value.trim().length > 0;
+}
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function hasExactKeys(value: unknown, expected: readonly string[]): boolean {
+  return (
+    isRecord(value) &&
+    JSON.stringify(Object.keys(value).sort(compareText)) ===
+      JSON.stringify([...expected].sort(compareText))
+  );
+}
+
+function boundedNonEmptyText(
+  value: unknown,
+  maxLength: number,
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    value.length <= maxLength
+  );
+}
+
+function isCapabilityObservation(
+  value: unknown,
+): value is PrivateDomainCapabilityObservation {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, ["binding", "capability", "mechanism", "strength"])
+  ) {
+    return false;
+  }
+  return (
+    boundedNonEmptyText(value.binding, 128) &&
+    boundedNonEmptyText(value.capability, 128) &&
+    enforcementStrengths.has(value.strength) &&
+    boundedNonEmptyText(value.mechanism, 512)
+  );
 }
 
 function validateDefinition(
@@ -286,6 +332,11 @@ function validateDefinition(
     }
     if (!nonEmpty(requirement.capability)) {
       invalid(`Capability requirement ${requirement.id} has an empty capability.`);
+    }
+    if (!enforcementStrengths.has(requirement.requiredStrength)) {
+      invalid(
+        `Capability requirement ${requirement.id} has an unsupported required strength.`,
+      );
     }
   }
 
@@ -400,7 +451,19 @@ function resolveCapabilities(
     } {
   const observationsByKey = new Map<string, PrivateDomainCapabilityObservation>();
   const diagnostics: PrivateDomainWorkflowDiagnostic[] = [];
-  for (const observation of observations) {
+  for (let index = 0; index < observations.length; index += 1) {
+    const observationValue: unknown = observations[index];
+    if (!isCapabilityObservation(observationValue)) {
+      diagnostics.push({
+        stage: "capability",
+        code: "CAPABILITY_OBSERVATION_INVALID",
+        path: `$.capabilities[${index}]`,
+        message:
+          "Capability observation must contain exact bounded binding, capability, strength, and mechanism values.",
+      });
+      continue;
+    }
+    const observation = observationValue;
     const key = `${observation.binding}\u0000${observation.capability}`;
     if (observationsByKey.has(key)) {
       diagnostics.push({

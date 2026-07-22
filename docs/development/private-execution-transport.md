@@ -4,7 +4,7 @@
 
 This is a private, pure transport experiment for the existing execution manifest package, typed payload package, evidence envelope, and execution trace. It does not define public filenames, discovery, persistence, compatibility, migration, authentication, signing, encryption, provider adapters, or runtime orchestration.
 
-The implementation is in `src/execution/private-execution-transport.ts`. Reproducible results are in [private execution transport evidence](../evidence/private-execution-transport.md).
+The implementation is in `src/execution/private-execution-transport.ts`. Reproducible results are in [private execution transport evidence](../evidence/private-execution-transport.md). The [private compiled-policy consumer](private-compiled-policy-consumer.md) is its one retained application composition.
 
 ## Purpose
 
@@ -89,4 +89,4 @@ The transport layer performs no filesystem, network, process, credential, tracke
 
 ## Change boundary
 
-Keep the codecs private and path-free. Do not accept non-canonical input by silently rewriting it, and do not treat successful parsing as compiler provenance or evidence truth. The next bounded experiment should define trusted evidence acquisition for one narrow provider-neutral observation path before adding broad adapters or runtime monitoring.
+Keep the codecs private and path-free. Do not accept non-canonical input by silently rewriting it, and do not treat successful parsing as compiler provenance or evidence truth. The private compiled-policy consumer does not authorize format generalization, persistence, or trusted acquisition. Any such work requires a separately accepted concrete user outcome before adding adapters or runtime monitoring.
