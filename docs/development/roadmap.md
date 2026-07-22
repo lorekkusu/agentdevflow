@@ -6,7 +6,7 @@ Phase 0 is complete with a Go recommendation. The repository has validated a pro
 
 Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
 
-These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The repaired public package and onboarding path are published as `0.1.0-beta.2`; one bounded maintainer dogfood observation now passes for the local workflow. The next gate is selecting the smallest consumer of compiled transition and artifact policy without adding orchestration or live integrations.
+These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The repaired public package and onboarding path are published as `0.1.0-beta.2`; one bounded maintainer dogfood observation now passes for the local workflow. A private compiled-policy spike demonstrates that exact project bytes, explicit capability observations, canonical trace decoding, and replay compose without orchestration or live integrations. It is not an independently usable product consumer, so the workflow-status, trace-creation, and evidence-ownership gate remains open.
 
 See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
 
@@ -28,7 +28,8 @@ See [project health](project-health.md) for the current sanitized scope and comp
 | Domain workflow validation | Complete as a private prototype for issue-to-reviewed-PR and local reviewed change | [Domain workflow evidence](../evidence/private-domain-workflows.md) |
 | Private project intent, presets, parser, and runtime schema | Complete as private prototypes | [Project resolution](../evidence/private-domain-project-resolution.md), [preset expansion](../evidence/private-preset-expansion.md), [project document contract](private-project-document-contract.md), and [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md) |
 | Typed execution evidence and replay | Complete as a private verification boundary | [Execution contract evidence](../evidence/private-execution-contract.md) |
-| Strict private execution transport | Complete and frozen pending a real transport consumer | [Execution transport evidence](../evidence/private-execution-transport.md) |
+| Strict private execution transport | Complete and frozen; consumed by one private pure composition | [Execution transport evidence](../evidence/private-execution-transport.md) |
+| Private compiled-policy consumer spike | Composability evidence complete and frozen; product gate remains open | [Consumer contract](private-compiled-policy-consumer.md) and [consumer evidence](../evidence/private-compiled-policy-consumer.md) |
 | GitHub Check Runs evidence mapping | Complete and frozen at caller-attested acquisition | [GitHub Check Runs evidence](../evidence/private-github-check-runs-evidence.md) |
 
 Completion in this table means that the stated private question has reproducible evidence. It does not imply a stable public API, production CLI, package, discovery rule, persisted format, authenticated external observation, or runtime orchestration.
@@ -243,28 +244,38 @@ No new provider, workflow family, live probe, wizard, framework, or public arbit
 
 ## Current decision gate: compiled-policy consumption
 
+Status: **Open. The private spike passes technical composition but fails to
+produce an independently useful normal-user outcome.** See the [candidate contract](private-compiled-policy-consumer.md)
+and [reproducible evidence](../evidence/private-compiled-policy-consumer.md).
+
 The dogfood observation supports that the published beta can configure and
 project a shared local workflow into the initial provider set. It also confirms the current enforcement
 boundary: `Plan`, `VerificationEvidence`, `ReviewVerdict`,
 `ReviewerIsolationEvidence`, and `AcceptanceAuthorization` were exchanged as
 advisory messages rather than persisted or authenticated runtime facts.
 
-Recommendation:
+Result and recommendation:
 
-- evaluate one bounded local consumer of compiled transition and artifact policy;
-- accept explicit caller-supplied evidence before considering authenticated acquisition;
+- retain and freeze one bounded local composition spike;
+- accept only explicit caller-supplied evidence before considering authenticated acquisition;
 - preserve deterministic validation and fail closed on missing, stale, or incompatible artifacts;
-- reuse the compiled policy and typed evidence boundaries already demonstrated privately;
+- reuse the compiled policy, strict transport, and typed evidence replay boundaries rather than adding another validator;
 - do not add scheduling, polling, delegation, automatic repair, merge, release, or credentials;
-- do not freeze a public workflow DSL, evidence store, or command extension without a separate accepted decision.
+- do not expose the raw private trace contract or freeze a public workflow DSL, evidence store, or command extension without a separate accepted decision.
 
-Exit criteria for this decision packet:
+Decision-spike results:
 
-- identify the smallest user outcome that is independently valuable beyond generated instructions;
-- compare no new public consumer, a bounded local consumer, and live integration as explicit alternatives;
-- define trust, persistence, ownership, migration, and diagnostic non-claims;
-- demonstrate the candidate against both the local no-pull-request workflow and the existing issue-to-reviewed-pull-request model without making unavailable adapters appear executable;
-- obtain explicit approval before changing the accepted beta command or configuration surface.
+- **Pass:** exact project bytes, explicit capability observations, and canonical trace inputs compose into deterministic workflow-history validation;
+- **Pass:** no consumer, bounded pure consumption, and live integration are compared explicitly;
+- **Pass:** trust, persistence, ownership, migration, and diagnostic non-claims are defined;
+- **Pass:** local no-pull-request and issue-to-reviewed-pull-request traces are demonstrated without making unavailable adapters appear executable;
+- **Fail:** no normal-user path can create the trace without private manifest and evidence contracts, so independent product value is not yet demonstrated;
+- **Still gated:** changing the accepted beta command, configuration, package export, or evidence surface requires explicit approval.
+
+The current product gate must define a concrete workflow-status experience for
+a normal user, how evidence is created and owned, and how an acceptable trace is
+formed without private compiler or manifest inputs before selecting a command,
+path, or stable representation.
 
 ## Frozen research
 
@@ -276,7 +287,7 @@ The transaction store, executor, cleanup lifecycle, receipts, and stronger platf
 
 ### Execution transport
 
-The strict path-free codecs demonstrate deterministic private transport. Do not generalize formats, discovery, persistence, signing, migration, or resource limits until a real storage or external-executor consumer exists.
+The strict path-free codecs demonstrate deterministic private transport and now serve the bounded private compiled-policy consumer. Do not generalize formats, discovery, persistence, signing, migration, or resource limits merely because this composition exists. Reopen those questions only for a separately accepted storage or external-executor outcome.
 
 ### GitHub Check Runs mapper
 

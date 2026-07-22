@@ -27,6 +27,7 @@
     "dist/src/renderer/",
     "dist/src/workflows/",
     "dist/src/workspace/",
+    "!dist/src/application/private-compiled-policy-consumer.*",
     "!dist/src/commands/private-approved-init-render-service.*",
     "!dist/src/commands/private-init-command-service.*",
     "!dist/src/compiler/built-in-definitions.*",

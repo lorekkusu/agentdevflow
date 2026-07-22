@@ -3,6 +3,7 @@ import {
   copyFile,
   mkdir,
   mkdtemp,
+  readFile,
   rm,
   unlink,
   writeFile,
@@ -240,7 +241,44 @@ test("requires the accepted release-candidate package boundary", async () => {
     assert.match(result.stderr, /PACKAGE_BIN_PREPARATION_INVALID/u);
     assert.match(result.stderr, /PACKAGE_ENTRYPOINT_CHECK_INVALID/u);
     assert.match(result.stderr, /PACKAGE_GETTING_STARTED_MISSING/u);
+    assert.match(result.stderr, /PACKAGE_PRIVATE_CONSUMER_EXPOSED/u);
     assert.match(result.stderr, /PACKAGE_ALLOWLIST_TOO_BROAD/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("rejects a positive package entry after the private consumer exclusion", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-package-reinclude-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, ".github", "workflows"), { recursive: true });
+    await copyFile(
+      resolve("scripts/check-repository.mjs"),
+      join(root, "scripts", "check-repository.mjs"),
+    );
+    await copyFile(resolve("LICENSE"), join(root, "LICENSE"));
+    await copyFile(resolve("SECURITY.md"), join(root, "SECURITY.md"));
+    await copyFile(
+      resolve(".github/workflows/publish.yml"),
+      join(root, ".github", "workflows", "publish.yml"),
+    );
+    const manifest = JSON.parse(await readFile(resolve("package.json"), "utf8"));
+    manifest.files.push(
+      "dist/src/application/private-compiled-policy-consumer.js",
+    );
+    await writeFile(
+      join(root, "package.json"),
+      `${JSON.stringify(manifest)}\n`,
+    );
+
+    const result = spawnSync(
+      process.execPath,
+      [join(root, "scripts", "check-repository.mjs")],
+      { cwd: root, encoding: "utf8" },
+    );
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /PACKAGE_PRIVATE_CONSUMER_REINCLUDED/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

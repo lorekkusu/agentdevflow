@@ -462,6 +462,32 @@ async function inspectPackageBoundary() {
       message: "Include the public beta getting-started guide in the package allowlist.",
     });
   }
+  const privateConsumerExclusion =
+    "!dist/src/application/private-compiled-policy-consumer.*";
+  const privateConsumerExclusionIndex = manifest.files.indexOf(
+    privateConsumerExclusion,
+  );
+  if (privateConsumerExclusionIndex < 0) {
+    diagnostics.push({
+      path: "package.json",
+      line: 1,
+      code: "PACKAGE_PRIVATE_CONSUMER_EXPOSED",
+      message:
+        "Exclude the private compiled-policy consumer and its omitted execution dependencies from the runtime package.",
+    });
+  } else {
+    const laterPositiveEntry = manifest.files
+      .slice(privateConsumerExclusionIndex + 1)
+      .find((entry) => typeof entry === "string" && !entry.startsWith("!"));
+    if (laterPositiveEntry !== undefined) {
+      diagnostics.push({
+        path: "package.json",
+        line: 1,
+        code: "PACKAGE_PRIVATE_CONSUMER_REINCLUDED",
+        message: `Move positive package entry ${JSON.stringify(laterPositiveEntry)} before the private compiled-policy consumer exclusion.`,
+      });
+    }
+  }
   if (manifest.scripts?.postbuild !== "node scripts/prepare-cli-bin.mjs") {
     diagnostics.push({
       path: "package.json",
