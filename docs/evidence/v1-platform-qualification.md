@@ -1,212 +1,81 @@
 # V1 platform qualification
 
-Snapshot date: 2026-07-21.
+Snapshot updated: 2026-07-23.
 
-## Verdict
+## Historical hosted result
 
-**All six candidate cells pass after correcting a Windows-only CLI mutation regression in the first beta release-candidate revision.** Hosted run [29801066651](https://github.com/lorekkusu/agentdevflow/actions/runs/29801066651) passed Ubuntu 24.04 x64, macOS 15 arm64, and Windows 2025 x64 on Node.js 22 and 24. Every cell passed the V1 primitive probe, all 292 selected tests with zero skips, and the tracked-file check. The designated Ubuntu and Node.js 24 cell also passed the complete 392-test stronger regression suite.
+GitHub Actions run [29801066651](https://github.com/lorekkusu/agentdevflow/actions/runs/29801066651)
+passed the original V1 matrix on Ubuntu 24.04 x64, macOS 15 arm64, and Windows
+2025 x64 with Node.js 22 and 24. That run qualified the published beta.2
+candidate and is historical evidence, not proof for later working-tree changes.
 
-This qualification is intentionally separate from the stronger experimental write-ahead transaction. It tests the primitives and behavior required by [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md) without requiring directory synchronization or hard links.
+## Current candidate result
 
-## Candidate matrix
+GitHub Actions run
+[29989549407](https://github.com/lorekkusu/agentdevflow/actions/runs/29989549407)
+passed the current committed implementation candidate on all six cells. The
+run used the workflow's explicit `workflow_dispatch` entry point and bound to
+commit `de3c320ede0d7e9e1eb7e282515c81c1a81b8d52`.
 
-| Operating-system image | Architecture | Node.js lines | Current status |
-| --- | --- | --- | --- |
-| `ubuntu-24.04` | x64 | 22, 24 | Requalified by run 29741641490 |
-| `macos-15` | arm64 | 22, 24 | Requalified by run 29741641490 |
-| `windows-2025` | x64 | 22, 24 | Requalified by run 29741641490 |
+Every cell passed the platform probe, zero-skip qualification, installed
+package entrypoint exercise, and tracked-file cleanliness check. Later commits
+remain subject to their own required checks.
 
-The matrix is a release-candidate experiment, not a public support table. Linux arm64, macOS Intel, Windows arm64, older operating-system images, network filesystems, and self-hosted runners remain outside its scope.
+## Current qualification contract
 
-## Implementation and reproduction
+`.github/workflows/v1-platform-qualification.yml` retains the same six cells:
 
-Implementation:
+| Runner | Architecture | Node.js |
+| --- | --- | --- |
+| `ubuntu-24.04` | x64 | 22, 24 |
+| `macos-15` | arm64 | 22, 24 |
+| `windows-2025` | x64 | 22, 24 |
 
-- `.github/workflows/v1-platform-qualification.yml`;
-- `.gitattributes`;
-- `scripts/v1-platform-probe.mjs`;
-- `scripts/run-v1-platform-tests.mjs`;
-- `test/renderer/private-convergent-apply.test.ts`;
-- `test/renderer/private-convergent-subprocess.test.ts`.
+Each cell:
 
-Run the local candidate checks from the repository root:
+1. installs the exact lockfile without lifecycle scripts;
+2. checks the expected platform, architecture, Node major, UTF-8 file I/O,
+   rename replacement, same-directory hard-link publication for exclusive
+   creation, and child-process termination;
+3. runs `npm run check:v1-qualification` with zero skipped tests;
+4. packs and exercises the installed npm entrypoint;
+5. verifies that tracked files remain unchanged.
+
+The test selector discovers the complete compiled test set, requires the two
+forward-convergence recovery suites, and fails if any selected test is skipped.
+There is no separate strong-transaction suite or platform workflow.
+
+## Reproduction
+
+From the repository root:
 
 ```bash
-npm run build
-node scripts/v1-platform-probe.mjs
-node scripts/run-v1-platform-tests.mjs
+npm ci --ignore-scripts --no-audit --no-fund
 npm run check:v1-qualification
+npm run check:package-entrypoint
 ```
 
-Every hosted matrix cell:
+The platform probe is run by CI with explicit expected values:
 
-1. checks out one shallow revision without persisting credentials;
-2. selects the exact Node.js major line without package-manager caching;
-3. installs the lockfile with lifecycle scripts, audit, and funding output disabled;
-4. verifies the expected platform, architecture, and Node.js major;
-5. probes the V1 filesystem and process-termination primitives;
-6. runs the explicitly selected V1 suite with a mechanically enforced zero-skip result;
-7. fails if tracked files change.
-
-One designated Ubuntu 24.04 and Node.js 24 cell also runs the complete stronger `npm run check:qualification` suite. This preserves regression coverage without making the stronger write-ahead filesystem prerequisites part of every V1 platform cell.
-
-The workflow has top-level `contents: read` permission. Checkout and Node setup actions use full commit SHA references. The repository audit rejects non-SHA action references, privileged pull-request triggers, or missing top-level read-only contents permission.
-
-## V1 primitive contract
-
-The direct probe requires:
-
-- synchronized regular-file content;
-- same-directory rename replacement over an existing target;
-- symbolic-link creation and inspection so unsafe traversal can be rejected;
-- forced child-process termination and an observed exit.
-
-POSIX candidates request `SIGKILL`. Windows requests `SIGTERM`, following Node.js child-process behavior on that platform. The portable contract is forced owner-process termination followed by an observed exit, not identical operating-system signal semantics.
-
-The V1 path does not require:
-
-- directory-handle synchronization;
-- hard-link publication;
-- power-loss durability;
-- atomic multi-file publication.
-
-Those are not silent omissions. They belong to the stronger experimental transaction or to future explicitly accepted durability work.
-
-## Selected test contract
-
-The selector discovers compiled test files, excludes only the five complete strong-transaction test files listed below, requires the V1 apply and subprocess files to be present, and fails on any skipped test.
-
-Explicit source-test exclusions:
-
-- `test/transaction/private-transaction-executor.test.ts`;
-- `test/transaction/private-transaction-store-lifecycle.test.ts`;
-- `test/transaction/private-transaction-store.test.ts`;
-- `test/transaction/private-transaction-subprocess.test.ts`;
-- `test/workspace/private-filesystem-workspace.test.ts`.
-
-These exclusions isolate requirements that are not part of the accepted V1 contract, including directory synchronization, hard links, the write-ahead store, and its cleanup lifecycle. They must not be expanded silently. The selector mechanically requires the V1 recovery tests so a missing or renamed recovery suite cannot produce a false pass.
-
-## Local observation
-
-The direct probe passed locally on Darwin arm64 with Node.js 24.14.0:
-
-```text
-file sync: pass
-rename replacement: pass
-symbolic link: pass
-case-sensitive lookup: false
-forced termination: SIGKILL observed
-directory sync required: false
-hard link required: false
+```bash
+node scripts/v1-platform-probe.mjs \
+  --expected-platform <platform> \
+  --expected-architecture <architecture> \
+  --expected-node-major <major>
 ```
 
-The current selected V1 suite discovers 22 compiled test files and passes 154 tests with zero failures and zero skips. The complete local repository suite passes 254 tests with zero failures and zero skips. These observations are developer evidence only; they do not substitute for hosted cells with recorded runner images and Node.js versions.
+## Scope
 
-## First hosted observation
+This evidence covers the supported local beta primitives and current tests on
+the named GitHub-hosted runner images. It does not promise every operating
+system version, architecture, filesystem, container, network filesystem, or
+self-hosted runner.
 
-Run [29643493317](https://github.com/lorekkusu/agentdevflow/actions/runs/29643493317) tested commit `df150c7dd57955fb8b415aaaee14d50436030058` on 2026-07-18 UTC:
+The apply path provides complete planning, exact approval, same-directory
+single-file replacement, process-interruption rerun, before-or-after digest
+convergence, hard-link-based exclusive state creation, and lock-last
+publication. It does not claim cross-file atomicity, automatic rollback,
+directory or power-loss durability, or hostile-writer exclusion.
 
-| Runner image | Image version | Node.js | Probe | Selected tests | Result |
-| --- | --- | --- | --- | --- | --- |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped; complete 202-test regression also passed | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 86 passed, 17 failed, 0 skipped | Fail |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 86 passed, 17 failed, 0 skipped | Fail |
-
-The Windows failures had two observed causes:
-
-- reopening a retained regular temporary file with `O_NOFOLLOW` returned `EINVAL`; the fresh exclusive-create path and the direct primitive probe succeeded;
-- Git checkout converted golden Markdown fixtures to CRLF while the renderer correctly produced deterministic LF output.
-
-The focused repair removes the unsupported reopen operation by unlinking an inspected regular temporary file and recreating it with exclusive creation. A symbolic link or non-file still fails during inspection, and a competing creation still fails closed through `O_EXCL`. Repository text checkout is fixed to LF through `.gitattributes`.
-
-## Replacement hosted observation
-
-Run [29643865692](https://github.com/lorekkusu/agentdevflow/actions/runs/29643865692) tested repair commit `43e89f185d82d6ac08d2931264ba0c359e3c4b4b` on 2026-07-18 UTC:
-
-| Runner image | Image version | Node.js | Probe | Selected tests | Result |
-| --- | --- | --- | --- | --- | --- |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped; complete 202-test regression also passed with zero skips | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 103 passed, 0 failed, 0 skipped | Pass |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 103 passed, 0 failed, 0 skipped | Pass |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 103 passed, 0 failed, 0 skipped | Pass |
-
-The replacement run confirms both focused portability repairs without skipping a V1 recovery test or weakening the primitive contract. The first failed run remains recorded because it explains the evidence-backed implementation change.
-
-## Initialization-path regression and requalification
-
-Run [29741256136](https://github.com/lorekkusu/agentdevflow/actions/runs/29741256136) tested private approved-initialization bridge commit `e2633e9868457dbc06cc8e43958e5c4062f5af5c` on 2026-07-20 UTC. Both Ubuntu cells and both macOS cells passed. Both Windows cells passed the primitive probe but failed the same read-only initialization integration test with 153 of 154 selected tests passing and zero skips. Opening the full filesystem workspace attempted directory synchronization before the service read any file, and Windows returned `EPERM`.
-
-The repair introduced a narrow read-only workspace view. It retains root containment, canonical relative-path, symbolic-link, and regular-file checks, exposes no mutation methods, and does not request directory synchronization. The strict mutating workspace continues to require its existing durability primitives; the repair separates observation requirements from write durability rather than weakening mutation behavior.
-
-Run [29741641490](https://github.com/lorekkusu/agentdevflow/actions/runs/29741641490) tested repair commit `13b0b3ecb29be8663b8ea33264bf777f0c69d657` on 2026-07-20 UTC:
-
-| Runner image | Image version | Node.js | Probe | Selected tests | Result |
-| --- | --- | --- | --- | --- | --- |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `22.23.1` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
-| `ubuntu-24.04` x64 | `20260714.240.1` | `24.18.0` | Passed | 154 passed, 0 failed, 0 skipped; complete 254-test regression also passed with zero skips | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `22.23.1` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
-| `macos-15-arm64` | `20260715.0234.1` | `24.18.0` | Passed | 154 passed, 0 failed, 0 skipped | Pass |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `22.23.1` | Passed, including rename replacement and `SIGTERM` observation | 154 passed, 0 failed, 0 skipped | Pass |
-| `windows-2025-vs2026` x64 | `20260714.173.1` | `24.18.0` | Passed, including rename replacement and `SIGTERM` observation | 154 passed, 0 failed, 0 skipped | Pass |
-
-The requalification covers the complete private initialization observation and approved render bridge without adding a Windows skip or making directory synchronization a V1 read requirement.
-
-## Beta CLI mutation regression
-
-Run [29800201872](https://github.com/lorekkusu/agentdevflow/actions/runs/29800201872) tested beta release-candidate commit `96d1a45f7192fea5c23284a5814152fb5ac25ccd` on 2026-07-21 UTC. Both Ubuntu cells and both macOS cells passed. Both Windows cells passed the V1 primitive probe, then failed the same four CLI integration tests with 288 of 292 tests passing and zero skips:
-
-- offline init through render and clean recheck;
-- exact adoption and lossless import initialization;
-- approved exact render and repeated no-op;
-- interrupted-plan resumption with the original approval.
-
-Source inspection identified one shared cause. The CLI opened `PrivateFilesystemWorkspace.open()` before configuration creation and approved rendering. That stronger frozen transaction workspace probes directory synchronization, which is deliberately outside the accepted V1 contract and is unsupported by the hosted Windows environment. Read-only CLI operations and already-rendered checks did not acquire that workspace and continued to pass.
-
-The focused correction opens both V1 mutation paths through `openForProcessTermination()`. This retains canonical root and path checks, symbolic-link and non-file refusal, synchronized temporary-file content, same-directory replacement, and the tested forward-convergence behavior. It does not weaken the stronger workspace or claim directory durability or power-loss safety.
-
-Local Node.js 24.18.0 verification after the correction passed the repository audit over 218 text files, all 392 repository tests, and all 292 selected V1 tests with zero skips.
-
-Run [29801066651](https://github.com/lorekkusu/agentdevflow/actions/runs/29801066651) tested correction commit `a09cd1c81a44c4848b4c19fbaf3ec17dcfc987f9` on 2026-07-21 UTC:
-
-| Runner image | Node.js | V1 selected tests | Strong regression | Result |
-| --- | --- | --- | --- | --- |
-| `ubuntu-24.04` `20260714.240.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
-| `ubuntu-24.04` `20260714.240.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | 392 passed, 0 failed, 0 skipped | Pass |
-| `macos-15-arm64` `20260715.0234.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
-| `macos-15-arm64` `20260715.0234.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
-| `windows-2025-vs2026` `20260714.173.1` | `22.23.1` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
-| `windows-2025-vs2026` `20260714.173.1` | `24.18.0` | 292 passed, 0 failed, 0 skipped | Not selected | Pass |
-
-The replacement run confirms that the focused workspace selection restores the accepted cross-platform V1 behavior without skips, new dependencies, or changes to the stronger frozen transaction workspace.
-
-## Qualification record requirements
-
-For each cell, record:
-
-- the workflow run URL and tested commit digest;
-- the resolved runner image and architecture;
-- the exact Node.js version;
-- the primitive-probe output;
-- the selected test count, failures, and skips;
-- the tracked-file check result;
-- the complete-suite result for the designated Ubuntu and Node.js 24 cell.
-
-A cell passes only when all required steps succeed in one run. A failure must remain visible evidence and be diagnosed as an implementation, runner, runtime, filesystem, or test-contract issue. Do not use `continue-on-error`, skip recovery tests, or weaken ownership and symlink checks to obtain a green matrix.
-
-## Limitations
-
-- Process termination does not simulate sudden power loss, kernel panic, controller-cache loss, or filesystem corruption.
-- GitHub-hosted images change while their explicit labels remain stable; qualification must capture resolved image metadata.
-- Default runner filesystems do not represent every local or network filesystem.
-- Case sensitivity is observed, but cross-platform case-folding and Unicode-equivalence collision policy remain unresolved.
-- The workflow does not test package publication, installer behavior, a production CLI, or public configuration compatibility.
-- Passing this matrix must not freeze a public Node.js or operating-system support policy.
-
-## Recommendation
-
-Use the six qualified cells as the initial V1 support candidates for command-service development. Keep the public release support policy open until packaging and CLI evidence exists, and requalify after material filesystem, recovery, Node.js-range, or runner changes. Do not reintroduce the stronger directory-durability contract without a separately accepted requirement.
+Changes after the current candidate run require a new protected CI pass before
+a later release can cite exact-commit hosted qualification.

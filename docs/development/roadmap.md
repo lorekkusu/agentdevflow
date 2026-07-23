@@ -1,353 +1,190 @@
 # Development roadmap
 
-## Status
+This roadmap records the current sequence and acceptance criteria. It does not
+preserve private implementation chronology. The
+[engineering boundary](engineering-boundary.md) applies to every step.
 
-Phase 0 is complete with a Go recommendation. The repository has validated a provider-neutral finite-state policy core, a replaceable native renderer for the initial three providers, generated-file ownership, deterministic lock state, and staged forward-convergent apply.
+## Current objective
 
-Phase 1 private prototypes also cover command semantics, bounded initialization, two domain workflow families, project-intent parsing and resolution, Fast and Balanced preset expansion, typed execution evidence, strict private transport, and one GitHub Check Runs observation mapping.
-
-These components now form a published initial beta boundary, not a stable 1.0 product. Revision-1 is the active forward path from non-interactive local initialization through bounded configuration bytes, policy compilation, native materialization, canonical lock observation, exact repository planning, read-only `check` and `diff`, exact approved `render`, and explicit-observation `doctor`; schema-version-0 remains compatibility and regression evidence. The npm package has an allowlisted runtime graph, exact-root defaults, and bounded JSON schema version 1. The repaired public package and onboarding path are published as `0.1.0-beta.2`; one bounded maintainer dogfood observation now passes for the local workflow. A private compiled-policy spike demonstrates that exact project bytes, explicit capability observations, canonical trace decoding, and replay compose without orchestration or live integrations. It is not an independently usable product consumer, so the workflow-status, trace-creation, and evidence-ownership gate remains open.
-
-See [project health](project-health.md) for the current sanitized scope and complexity assessment. This roadmap records accepted sequence and exit criteria, not implementation chronology, staffing, or release dates.
-
-## Completed foundations
-
-| Foundation | Status | Durable evidence or decision |
-| --- | --- | --- |
-| Phase 0 renderer backend gate | Complete | [Renderer backend evidence](../evidence/renderer-backend.md) and [ADR 0001](../decisions/0001-native-project-instructions-renderer.md) |
-| Phase 0 finite-state policy gate | Complete | [Policy safety evidence](../evidence/policy-safety.md) |
-| Candidate configuration and private compiler | Complete as private prototypes | [Candidate configuration](../evidence/candidate-configuration.md) and [private compiler](../evidence/private-compiler.md) |
-| Native project-instructions renderer | Complete for project-wide Codex, Claude Code, and Cursor output | [Renderer integration](../evidence/renderer-integration.md) |
-| Ownership, lock, drift, and conflict behavior | Complete as private boundaries | [Private render lock](../evidence/private-render-lock.md) and [render command](../evidence/private-render-command-service.md) |
-| V1 apply and interruption recovery | Complete for staged forward convergence | [ADR 0002](../decisions/0002-v1-forward-convergent-render-apply.md), [V1 recovery contract](v1-recovery-contract.md), and [convergent apply evidence](../evidence/private-convergent-apply.md) |
-| Private command semantics | Complete for isolated services and executable local `init`, `check`, `diff`, approved `render`, and explicit-observation `doctor` | [Local CLI](../evidence/private-local-cli.md), [check](../evidence/private-check-command-service.md), [diff](../evidence/private-diff-command-service.md), [render](../evidence/private-render-command-service.md), [doctor](../evidence/private-doctor-command-service.md), and [init](../evidence/private-init-command-service.md) evidence |
-| Private package qualification | Complete for one allowlisted local tarball and offline installed-command exercise; later narrowed from shell-bin evidence | [Private package qualification](../evidence/private-package-qualification.md) |
-| Initial beta candidate qualification | Complete locally and on the selected hosted Node.js 22/24 matrix | [Beta release-candidate evidence](../evidence/beta-release-candidate.md) and [ADR 0004](../decisions/0004-initial-beta-public-surface.md) |
-| Existing-file initialization bridge | Complete for create, exact adopt, lossless import, abort, and exact approved render | [Project-instructions import](../evidence/private-project-instructions-import.md) and [approved init render](../evidence/private-approved-init-render.md) |
-| V1 candidate platform qualification | Complete as candidate evidence, not a public support promise | [V1 platform qualification](../evidence/v1-platform-qualification.md) |
-| Domain workflow validation | Complete as a private prototype for issue-to-reviewed-PR and local reviewed change | [Domain workflow evidence](../evidence/private-domain-workflows.md) |
-| Private project intent, presets, parser, and runtime schema | Complete as private prototypes | [Project resolution](../evidence/private-domain-project-resolution.md), [preset expansion](../evidence/private-preset-expansion.md), [project document contract](private-project-document-contract.md), and [ADR 0003](../decisions/0003-private-jsonc-zod-boundary.md) |
-| Typed execution evidence and replay | Complete as a private verification boundary | [Execution contract evidence](../evidence/private-execution-contract.md) |
-| Strict private execution transport | Complete and frozen; consumed by one private pure composition | [Execution transport evidence](../evidence/private-execution-transport.md) |
-| Private compiled-policy consumer spike | Composability evidence complete and frozen; product gate remains open | [Consumer contract](private-compiled-policy-consumer.md) and [consumer evidence](../evidence/private-compiled-policy-consumer.md) |
-| GitHub Check Runs evidence mapping | Complete and frozen at caller-attested acquisition | [GitHub Check Runs evidence](../evidence/private-github-check-runs-evidence.md) |
-
-Completion in this table means that the stated private question has reproducible evidence. It does not imply a stable public API, production CLI, package, discovery rule, persisted format, authenticated external observation, or runtime orchestration.
-
-## Completed closure checkpoint
-
-The 2026-07-21 checkpoint closed the domain-workflow and execution-evidence research direction without extending it.
-
-Scope:
-
-- maintain one disclosure-safe project health review procedure and current assessment;
-- reconcile README, architecture, roadmap, tooling, and repository guidance with actual package and qualification state;
-- record `Invest`, `Keep`, `Freeze`, `Defer`, and later removal-candidate dispositions;
-- retain explicit verdicts and non-claims for project resolution, presets, execution evidence, transport, and GitHub mapping;
-- inspect the cumulative working tree for incomplete imports, accidental coupling, stale hashes, unsupported public claims, and unreviewable commit scope;
-- propose coherent commit groups without staging, committing, or pushing;
-- run the complete repository verification.
-
-Exit criteria:
-
-- no current-facing document treats live GitHub acquisition as the immediate next objective;
-- the strong transaction, strict execution transport, and GitHub mapper are visibly frozen rather than implied product dependencies;
-- the active project-model convergence problem is explicit;
-- repository entry points accurately state that no production CLI exists;
-- the working tree has a reviewed file disposition and commit proposal;
-- repository audit, type checking, build, and all automated tests pass;
-- no change is staged, committed, or pushed without explicit authorization.
-
-## Completed local vertical CLI path
-
-This milestone connected existing private components before any additional horizontal capability.
-
-Target path:
+Turn the research-heavy beta into one usable end-to-end product slice:
 
 ```text
-explicit configuration bytes
--> parse and validate
--> resolve preset, workflow, providers, tracker, and capabilities
--> compile policy
--> materialize provider instructions
--> inspect repository and lock
--> check and diff
--> explicit approved render
--> repeated check reports clean
+explicit project choices
+  + user-owned shared and role guidance
+  -> distinct Codex, Claude Code, and Cursor instructions
+  -> reviewed diff
+  -> exact-approved render
+  -> clean check
+  -> private-repository role-comprehension and workflow dogfood
+  -> final qualification and independent review
 ```
 
-### 1. Converge the active project model
+The implementation currently targets:
 
-Status: **Complete as a private local planning bridge.**
+- `local-reviewed-change`;
+- `issue-to-reviewed-pull-request`;
+- Linear or GitHub Issues for the issue workflow;
+- draft or ready pull requests;
+- auxiliary review disabled;
+- squash merge;
+- Fast and Balanced;
+- Codex, Claude Code, and Cursor;
+- `.agentdevflow/rules/{shared,steward,developer,reviewer}.md`;
+- `init`, `diff`, `render`, and `check`.
 
-Recommendation:
+The issue workflow compiles advisory procedures. It has no live external
+adapter.
 
-- use the revision-1 private domain project intent as the active forward model;
-- select one authoritative compiled representation, or introduce one explicit one-way bridge with semantic-parity tests;
-- separate required project and workflow compilation from optional execution-manifest export;
-- retain schema-version-0 candidate configuration only as an explicit one-way compatibility input or regression fixture;
-- do not add a third project model or conceal intent loss behind another adapter;
-- keep public names, filenames, and compatibility promises open.
+## Step 1: finish the active CLI slice
 
-Progress:
+Status: **Implemented and passed the current local final-tree verification.**
 
-- revision-1 project resolution now returns the authoritative workflow compilation directly;
-- optional execution-manifest export consumes that compilation and is mechanically forbidden as a project-layer dependency;
-- revision-1 configuration bytes now reach deterministic project-instructions materialization and the native Codex, Claude Code, and Cursor staging boundary;
-- schema-version-0 remains only a private compatibility and regression path;
-- `src/application/private-domain-project-plan.ts` now composes revision-1 bytes, native local capability observations, canonical lock bytes, repository observations, materialization, and exact snapshot creation through a read-only workspace;
-- identical configuration, lock, and repository bytes produce an identical plan;
-- the bridge requires only an explicit lock path and does not accept caller-supplied compiler output, materialization, manifest, lock object, render request, plan, or snapshot;
-- issue-to-reviewed-pull-request input fails with unavailable-capability diagnostics because live tracker, pull-request, CI, review-service, and merge adapters do not exist yet.
+### Required outcome
 
-Exit criteria:
+An installed candidate must:
 
-- one configuration document reaches one authoritative policy compilation and renderer materialization without caller-supplied compiler output;
-- any temporary bridge rejects unsupported intent and proves parity for every represented policy and renderer input;
-- renderer planning does not require an execution manifest, and optional manifest export consumes the authoritative compiled result rather than defining it;
-- workflow family, pull-request initial state, auxiliary review, tracker, providers, and capability targets retain exact intent;
-- identical input and repository state produce an identical exact plan;
-- incompatible legacy input fails or requires explicit missing choices without inference.
+1. initialize either built-in workflow from documented flags;
+2. read the four optional canonical rule files;
+3. generate materially responsibility-specific provider outputs;
+4. show every provider and lock change before mutation;
+5. reject stale approval and direct generated-file drift;
+6. converge through approved render to clean check and clean repeated diff.
 
-### 2. Add executable read-only `check` and `diff`
+### Required failures
 
-Status: **Complete as a private experimental entry point.**
+- incompatible tracker and workflow;
+- missing issue-workflow host, CI, or initial state;
+- two ids for one provider product;
+- unreadable or oversized guidance;
+- unsupported existing provider content;
+- changed source or target after approval.
 
-Use Node.js `util.parseArgs` unless real help, completion, nesting, or output requirements justify a framework. Accept explicit configuration and lock paths before deciding public discovery precedence.
+### Non-goals
 
-Progress:
+- rule CRUD;
+- automatic provider-file replacement;
+- a second writer, transaction, approval store, or Git manager;
+- provider process execution;
+- tracker, pull-request, CI, review, or merge network clients;
+- a public arbitrary workflow language.
 
-- `npm run phase1:local-cli -- check ...` and `diff ...` compose explicit repository, configuration, and lock paths into the revision-1 planner and existing semantic services;
-- the repository is opened through `PrivateFilesystemWorkspace.openReadOnly` and the command boundary contains no mutation operation;
-- output includes deterministic human-readable diagnostics, plan and snapshot identity, and exact JSON-quoted recognized diff content;
-- blocked diff output contains no change entries or foreign bytes;
-- temporary-repository subprocess tests cover clean, changes-required, invalid input, unowned conflicts, retained-ownership drift, and unavailable capabilities;
-- options, formatting, exit codes, discovery, filenames, npm `bin`, and machine output remain private and unaccepted.
+## Step 2: qualify the installed package
 
-Exit criteria:
+Status: **Passed locally and for the exact committed implementation in the
+six-cell hosted matrix. Every subsequent pull-request commit remains gated by
+the same qualification.**
 
-- the package has one experimental executable entry point;
-- `check` and `diff` accept user-level repository and configuration inputs rather than private materialization or snapshot values;
-- both commands are read-only and cover clean, changes-required, blocked, foreign-drift, ownership-conflict, and unsupported-capability outcomes;
-- human-readable diagnostics and private candidate exit behavior are exercised end to end in temporary repositories.
+Run:
 
-### 3. Add explicit approved `render`
-
-Status: **Complete as a private experimental entry point.**
-
-Use only the accepted staged forward-convergent apply path. Do not make the write-ahead transaction experiment a runtime dependency.
-
-Progress:
-
-- `diff` exposes complete exact target bytes and the full snapshot digest separately from the narrower renderer plan digest;
-- `render` requires the exact snapshot digest, rereads configuration, opens mutable authority only after the first approval match, replans, and requires a second match;
-- stale configuration or repository state fails closed before the existing render service receives authority;
-- exact current-plan repetition is a no-op;
-- interrupted before-or-after output state reconstructs the originally approved all-before plan only from exact target bytes and an authoritative base lock or absence;
-- the original approval and normal convergent preflight remain mandatory, so reconstruction is not silent adoption or foreign-drift repair;
-- no journal, snapshot file, Git reset, CLI framework, discovery rule, or second writer was added.
-
-Exit criteria:
-
-- `diff` exposes the complete exact target and plan identity before mutation;
-- `render` requires explicit approval bound to the current exact plan;
-- stale approval and post-plan drift fail closed;
-- repeated render is a no-op;
-- process termination at the accepted V1 boundaries converges safely when the exact plan is repeated.
-
-### 4. Add minimal non-interactive `init`
-
-Status: **Complete as a private experimental entry point.**
-
-The private entry generates only the currently executable revision-1 local workflow intent from explicit flags. It requires Fast or Balanced, an explicit local or no-tracker mode, explicit provider instances, and explicit responsibility bindings. It creates the caller-selected relative configuration path only when absent, adopts only byte-exact repeated configuration, and never overwrites different configuration bytes.
-
-When no render lock exists, the active planner stages the native provider targets and classifies every selected provider path as create, exact adopt, lossless import, or abort. Exact adopt and import authorization are carried into the same exact plan displayed by `diff`; `render` rereads, reanalyzes, replans, and requires approval of the complete matching snapshot. This is the revision-1 evidence-backed successor to the schema-version-0 proposal envelope. It adds no approval file, discovery path, merge algorithm, second writer, or Git operation.
-
-Progress:
-
-- initialization opens a read-only repository first and validates configuration, lock, provider, role, workflow, and path boundaries before mutation authority exists;
-- the only init mutation is exclusive creation of an absent exact configuration file through the hardened workspace;
-- provider outputs and the lock remain unchanged until a later exact approved `render`;
-- existing target bytes are adopted only through an explicit exact plan, and differing bytes are importable only when the narrow analyzer proves exact logical preservation;
-- unsupported or foreign bytes abort without disclosure, and a present lock routes the user to normal check/diff/render behavior;
-- two independent temporary repositories reproduce identical offline init, diff, render, clean-check, and empty-diff results;
-- fresh-create interruption retains original-approval recovery; an interrupted initialization import that has consumed its original before-bytes requires a newly reviewed exact diff rather than inventing the lost observation.
-
-Exit criteria:
-
-```text
-fresh repository
--> init
--> diff
--> explicit render
--> check clean
--> diff empty
+```bash
+npm run check
+npm run check:v1-qualification
+npm run check:package-entrypoint
+npm pack --dry-run --json
 ```
 
-The path must reproduce in a second temporary repository without network access.
+Package-entrypoint qualification must exercise both workflows and the canonical
+guidance path through the installed bin. Tests and source-only imports are not
+sufficient.
 
-## Completed private package and local doctor qualification
+The package review must confirm that the guidance runtime is included and
+tests, fixtures, experiments, and external-provider clients are excluded.
 
-Status: **Complete as private candidate evidence; public-surface decisions remain gated.**
+The current local snapshot passed all 205 discovered tests, installed-package
+entrypoint qualification, package-content review, and the dependency advisory
+check.
 
-Keep `doctor` local and honest. Report unknown external capability truth rather than adding a provider runtime merely to fill a diagnostic.
+## Step 3: dogfood in a private repository
 
-Observed closure:
+Status: **Passed for the representative ready-pull-request flow.**
 
-- the normal workspace runtime graph no longer imports the frozen transaction subsystem;
-- the installed command entry detects npm-style symbolic-link invocation, without proving packed executable mode;
-- the tarball uses an explicit runtime allowlist and excludes tests, experiments, frozen transaction code, Rulesync process integration, and private evidence;
-- an isolated installation using only local tarballs completes `init`, `diff`, approved `render`, clean `check`, and `doctor` with network-disabled npm resolution;
-- doctor consumes a bounded revisioned observation file and performs no live provider, credential, process, or network probe;
-- at this historical qualification snapshot the package remained `private: true`, and no package was published or reserved.
+Create or reuse a synthetic private repository with no production secrets or
+private customer data.
 
-Exit criteria:
+### Observed rendering and comprehension
 
-- `npm pack` contains only intended runtime and documentation files;
-- a clean installation executes the five candidate command names;
-- core initialization, rendering, checking, and diffing work offline;
-- Node.js and platform claims match qualified evidence;
-- publication remains separately authorized.
+- the pre-closure candidate tarball completed
+  `init -> diff -> render -> check`;
+- shared and role guidance produced materially different Codex, Claude Code,
+  and Cursor outputs;
+- fresh headless contexts identified their responsibility, handoff, stop
+  conditions, and prohibited actions.
 
-## Completed public-surface decision packet
+### Observed tracker-backed flow
 
-Status: **Complete; accepted by [ADR 0004](../decisions/0004-initial-beta-public-surface.md).**
+- the representative configuration used Codex Steward and fresh Reviewer,
+  Cursor Developer, Linear, a ready pull request, GitHub Actions, auxiliary
+  review disabled, and squash merge;
+- the bounded sequence completed issue creation, implementation, a controlled
+  CI failure, exact-failure repair, fresh review, one review-requested repair,
+  second fresh approval, squash merge, issue closure, and branch cleanup;
+- a separate tracker-native Cursor delegation used the existing repository
+  label-group convention, produced a scoped ready pull request with green CI,
+  and still required Steward-owned review, merge, cleanup, and issue closure;
+- only sanitized outcomes and reproducible boundaries are retained in the
+  [maintainer observation](maintainer-dogfood.md).
 
-The accepted packet covers exact-root configuration and lock discovery, explicit overrides, stable exit classes, bounded versioned JSON, Node.js 22 and 24, Apache-2.0, and the separately authorized `0.1.0-beta.1` release candidate on npm's `next` tag with provenance. See the [beta CLI contract](beta-cli-contract.md).
+The draft-state idempotent ensure-ready branch remains deterministic workflow
+and automated test coverage. It marks the pull request ready only when it is
+still a draft, so review-repair cycles may safely traverse it again. Repeating
+the complete remote lifecycle solely to change the initial pull-request state
+is not required unless qualification or user evidence exposes a distinct
+failure.
 
-## Completed maintainer dogfood
+`agentdevflow` did not invoke Linear, GitHub, or any provider. Existing
+authorized tools performed those actions under advisory compiled procedures.
 
-Status: **`agentdevflow@0.1.0-beta.2` passes the protected, registry, and first-run qualification gates; one bounded maintainer-dogfood observation also passes.**
+## Step 4: product-value decision
 
-Completed outcomes:
+Status: **Current evidence supports Continue. Local final qualification and
+focused independent closure review passed. The exact committed implementation
+also passed the six-cell hosted matrix; final PR delivery remains.**
 
-- the accepted package metadata, exact-root behavior, bounded output, Node.js
-  matrix, tarball, installed entrypoint, dependencies, provenance, license, and
-  release authority passed the documented protected path; see the
-  [release candidate evidence](../evidence/beta-release-candidate.md) and
-  [release checklist](release-checklist.md);
-- `0.1.0-beta.2` repaired the first package's entrypoint ambiguity, passed the
-  selected hosted matrix, and was published from reviewed `main` through the
-  OIDC workflow; unqualified, exact-version, `next`, and `npm exec` first-use
-  paths pass, `latest` selects beta.2, and beta.1 is deprecated; see
-  [public first-run qualification](../evidence/public-first-run.md);
-- the public security and branch-governance baseline is active without a stored
-  GitHub npm publishing secret; its authority and bypass limitations remain
-  documented rather than represented as independent approval;
-- one private, non-sensitive repository observed single-provider Fast and
-  three-provider Balanced configuration, exact approved rendering, clean
-  checks, role comprehension, and one advisory three-role handoff; this is a
-  bounded [maintainer observation](maintainer-dogfood.md), not compatibility
-  qualification.
+Continue only if dogfood proves all of the following:
 
-No new provider, workflow family, live probe, wizard, framework, or public arbitrary-workflow language belongs in this milestone. A Git tag, GitHub Release, package-setting change, or version after `0.1.0-beta.2` remains separately authorized.
+- the generated files are materially different by role;
+- users can maintain policy in canonical source rather than three provider
+  files;
+- local and tracker-backed procedures are understandable without reading
+  internal design documents;
+- the compiler catches or explains at least one meaningful handoff or stale
+  evidence problem that a shared template would not;
+- ordinary rule edits do not require infrastructure beyond source, generated
+  outputs, the existing diff/render/check path, and the ownership lock.
 
-## Current decision gate: compiled-policy consumption
+If the intermediary compiler adds no independent user value, recommend Pivot
+or No-Go. Do not add more infrastructure to defend the existing design.
 
-Status: **Open. The private spike passes technical composition but fails to
-produce an independently useful normal-user outcome.** See the [candidate contract](private-compiled-policy-consumer.md)
-and [reproducible evidence](../evidence/private-compiled-policy-consumer.md).
+The bounded dogfood result supports the current recommendation because role
+outputs were materially different, canonical guidance remained user-owned, and
+the procedure required exact CI repair and fresh review after revision. The
+current compiler also projects Fast and Balanced policy differences into the
+agent-facing procedures. This is evidence for one usable slice, not permission
+to expand the product surface.
 
-The dogfood observation supports that the published beta can configure and
-project a shared local workflow into the initial provider set. It also confirms the current enforcement
-boundary: `Plan`, `VerificationEvidence`, `ReviewVerdict`,
-`ReviewerIsolationEvidence`, and `AcceptanceAuthorization` were exchanged as
-advisory messages rather than persisted or authenticated runtime facts.
+## Step 5: decide the next release
 
-Result and recommendation:
+Only after Steps 1 through 4 pass:
 
-- retain and freeze one bounded local composition spike;
-- accept only explicit caller-supplied evidence before considering authenticated acquisition;
-- preserve deterministic validation and fail closed on missing, stale, or incompatible artifacts;
-- reuse the compiled policy, strict transport, and typed evidence replay boundaries rather than adding another validator;
-- do not add scheduling, polling, delegation, automatic repair, merge, release, or credentials;
-- do not expose the raw private trace contract or freeze a public workflow DSL, evidence store, or command extension without a separate accepted decision.
+- select the next beta version;
+- write migration and release notes for removal of the retired command and
+  expansion from local-only to two workflows;
+- rerun supported-platform and dependency checks;
+- authorize publication separately through the protected workflow;
+- verify the public installed artifact.
 
-Decision-spike results:
+No roadmap item authorizes staging, committing, pushing, publishing, package
+settings, credentials, tags, or releases.
 
-- **Pass:** exact project bytes, explicit capability observations, and canonical trace inputs compose into deterministic workflow-history validation;
-- **Pass:** no consumer, bounded pure consumption, and live integration are compared explicitly;
-- **Pass:** trust, persistence, ownership, migration, and diagnostic non-claims are defined;
-- **Pass:** local no-pull-request and issue-to-reviewed-pull-request traces are demonstrated without making unavailable adapters appear executable;
-- **Fail:** no normal-user path can create the trace without private manifest and evidence contracts, so independent product value is not yet demonstrated;
-- **Still gated:** changing the accepted beta command, configuration, package export, or evidence surface requires explicit approval.
+## Deferred work
 
-The current product gate must define a concrete workflow-status experience for
-a normal user, how evidence is created and owned, and how an acceptable trace is
-formed without private compiler or manifest inputs before selecting a command,
-path, or stable representation.
+Reopen only with concrete user evidence:
 
-## Frozen research
-
-Frozen work remains reviewable evidence but receives no feature expansion unless a material accepted requirement reopens it.
-
-### Strong write-ahead transaction
-
-The transaction store, executor, cleanup lifecycle, receipts, and stronger platform workflow are not the V1 default. Do not extend them, expose them, or include them in the runtime package. The shared temporary-intent primitive now lives under `src/workspace/`, and the normal workspace graph has no `src/transaction/` import. Revisit the frozen subsystem only under the triggers in ADR 0002.
-
-### Execution transport
-
-The strict path-free codecs demonstrate deterministic private transport and now serve the bounded private compiled-policy consumer. Do not generalize formats, discovery, persistence, signing, migration, or resource limits merely because this composition exists. Reopen those questions only for a separately accepted storage or external-executor outcome.
-
-### GitHub Check Runs mapper
-
-The pure mapper demonstrates exact-SHA, pinned-App conversion into provider-neutral `CiResult`. Do not add a live probe, credentials, branch-protection discovery, merge-queue selection, polling, retry, or mutation before the local vertical CLI milestone requires an authenticated external consumer.
-
-### Provider-neutral doctor semantics
-
-The pure observation validator remains available. Do not add provider command execution, network access, credentials, or environment mutation without a narrow accepted probe contract tied to a real command outcome.
-
-## Later
-
-After the private local vertical path and package qualification:
-
-- reevaluate one read-only authenticated provider observation only if a real consumer requires it;
-- stabilize `ProjectConfig`, configuration discovery, lock storage, and migration behavior with synthetic migration evidence;
-- decide supported Node.js lines and platform guarantees before a public support promise;
-- add broader import or managed-region behavior only from real adoption failures;
-- reconsider Strict only when its stronger evidence and completion gates are executable;
-- reconsider Custom only after multiple built-in workflows demonstrate a stable composition model;
-- reconsider additional providers, trackers, workflow families, or runtime exports from concrete user evidence.
-
-Interactive configuration, a complete `migrate` command, agent-assisted repository analysis, broad provider support, marketplaces, GUI, SaaS, scheduling, automatic repair, merge, and release remain deferred as defined by [product direction](../product-direction.md).
-
-## Candidate decisions
-
-These recommendations remain private or prerelease candidates rather than public compatibility promises:
-
-| Decision | Current recommendation | Acceptance gate |
-| --- | --- | --- |
-| Active internal project model | Revision-1 private domain project intent | Lossless connection through renderer planning and command services, including explicit legacy disposition |
-| Runtime schema | Exact Zod 4.4.3 behind the private jitless boundary | Existing schema and security evidence plus real vertical-path diagnostics |
-| Configuration parser | Exact `jsonc-parser` 3.3.1 behind one private boundary | Existing ambiguity and edit tests plus real CLI input handling |
-| CLI parser | Node.js `util.parseArgs` | End-to-end help, error, output, and option qualification |
-| Configuration input | Explicit caller path before discovery precedence | Vertical-path fixtures and a later migration decision before stabilization |
-| Lock input | Explicit caller path before discovery precedence | V1 ownership, plan, package, and migration fixtures |
-| First release | Prerelease on a non-default npm tag | Tarball review, clean installation, provenance, platform qualification, and separate publication authorization |
-
-Accepting a public filename, schema, lock format, exit-code contract, major dependency, or publication flow requires explicit approval and the relevant evidence.
-
-## Stop and pivot conditions
-
-During beta release hardening:
-
-- do not add a live GitHub probe;
-- do not extend the strong transaction subsystem;
-- do not add a provider, tracker, workflow family, preset, or evidence schema;
-- do not generalize execution transport;
-- do not require users to construct private compiler, materialization, manifest, evidence, lock, or snapshot values;
-- do not use additional tests, fixtures, or evidence documents as a substitute for a user-operable outcome;
-- do not extend public discovery, filenames, schema compatibility, output, exit classes, or support claims without package evidence and explicit approval.
-
-Reconsider or pivot when:
-
-- provider-specific fields dominate user intent;
-- adapter maintenance approaches backend reimplementation;
-- provenance or ownership cannot support safe review;
-- realistic workflows exceed explicit policy state budgets;
-- Strict can only be represented as advisory prompt text;
-- the vertical path cannot demonstrate independent policy-compiler value beyond deterministic file generation.
-
-## Maintenance
-
-Update this file only when a milestone, dependency, disposition, exit criterion, or stop condition changes. Put current health findings in [project health](project-health.md), reversible tooling in [tooling](tooling.md), accepted material decisions in `docs/decisions/`, and reproducible observations in `docs/evidence/`. Do not append implementation-slice chronology or private review history.
+- interactive wizard;
+- Strict or Custom;
+- rule-management commands;
+- a fourth provider;
+- live external adapters;
+- workflow-status evidence transport;
+- stronger durability than forward convergence;
+- scheduler, runtime, GUI, marketplace, or SaaS.

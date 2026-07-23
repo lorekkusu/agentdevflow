@@ -16,11 +16,12 @@ Run:
 
 ```bash
 npm install
-npm test
-npm run gate:policy
+npm run build
+node --test dist/test/policy/validator.test.js
 ```
 
-`gate:policy` prints deterministic JSON for the five required fixtures.
+The focused suite covers the five required fixtures. `npm run check` provides
+the complete current repository result.
 
 ## Formal boundary
 

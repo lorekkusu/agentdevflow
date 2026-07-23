@@ -2,6 +2,57 @@
 
 All notable public changes will be recorded in this file. During beta, incompatible configuration or JSON-output changes must include migration notes.
 
+## Unreleased
+
+### Added
+
+- Add `issue-to-reviewed-pull-request` to the non-interactive init surface with
+  explicit Linear or GitHub Issues selection, draft or ready pull-request
+  state, pull-request-host id, and CI id.
+- Compile distinct Steward, Developer, and Reviewer procedures into the native
+  Codex, Claude Code, and Cursor outputs.
+- Read optional user-owned Markdown guidance from
+  `.agentdevflow/rules/shared.md`, `steward.md`, `developer.md`, and
+  `reviewer.md`.
+- Add an idempotent draft-to-ready procedure after required CI succeeds. It
+  marks the pull request ready only when it is still a draft.
+
+### Changed
+
+- Treat every issue-workflow external capability as an advisory compiled
+  procedure. The CLI does not connect to trackers, pull-request hosts, CI, or
+  coding-agent processes.
+- Fix auxiliary review to disabled and merge method to squash in the current
+  issue-workflow CLI surface.
+- Reject multiple configured ids for one provider product because its single
+  project-wide instruction target cannot isolate them.
+
+### Removed
+
+- Remove the low-value caller-supplied observation command from the current
+  CLI and runtime. The current command set is `init`, `diff`, `render`, and
+  `check`.
+- Remove obsolete research systems and detailed evidence whose conclusions are
+  already represented by current architecture decisions or Git history.
+
+### Migration
+
+- Projects using the retired fifth beta command must stop invoking it; there
+  is no replacement command in this candidate.
+- Remove the retired `surface` property from every provider in existing
+  configuration documents. Update scripted init calls from
+  `--provider <id,product,surface>` to `--provider <id,product>`; the legacy
+  property and three-component CLI form now fail validation.
+- Consolidate multiple provider ids for the same provider product into one
+  provider entry. Update `roles.steward`, `roles.developer`, and
+  `roles.reviewer` to the retained id. Keep capability bindings targeted to
+  responsibilities or integration ids rather than provider ids.
+- Existing generated files remain subject to the complete diff, exact approval,
+  whole-file ownership, and drift rules.
+
+The release sections below are historical snapshots. Their command and workflow
+lists do not describe the unreleased candidate above.
+
 ## 0.1.0-beta.2 - 2026-07-21
 
 ### Fixed

@@ -1,80 +1,125 @@
-# Private package qualification
+# Working-tree package qualification
 
-Snapshot date: 2026-07-21.
+Snapshot date: 2026-07-23.
 
 ## Verdict
 
-**Pass for one private local npm-package candidate's installed command behavior on the tested Darwin and Node.js 24.18.0 environment; not evidence for a shell-executable packed bin.** The allowlisted tarball installs from local exact-version tarballs with npm offline resolution, and its command implementation completes the local `init`, `diff`, approved `render`, clean `check`, and explicit-observation `doctor` path through the retained Node-compatible harness.
+**Pass for the current working-tree package candidate on the tested local
+environment.** The packed and installed CLI exercises the bounded product
+surface, including responsibility-specific guidance and both accepted workflow
+families.
 
-Follow-on correction: the original snapshot described this as direct installed-bin execution. The retained procedure and later release audit do not prove that the packed JavaScript target had executable mode in a clean build. The exact published beta.1 tarball had mode `0644`, and the recorded direct `npx` audit failed. npm 11.16 later normalized the installed target and succeeded, so universal client failure is not claimed. Installer-independent shell-visible package-entrypoint qualification begins with the beta.2 repair evidence.
+This is not publication authorization, registry-installation evidence, a new
+release, or a claim about the already published package. The manifest still
+contains version `0.1.0-beta.2`, but the working tree has different behavior
+and bytes from that release. It must not be published under the same version.
+A separate version and release decision is required.
 
-This is not publication authorization, a stable CLI contract, an `npx` registry test, a public support promise, a license decision, or release provenance evidence. At this historical qualification snapshot, the package remained `private: true`.
+## Environment
 
-Follow-on decision: ADR 0004 accepts Apache-2.0, Node.js 22 and 24, exact-root project defaults, stable exit classes, bounded JSON schema version 1, and the `0.1.0-beta.1` release candidate. Those decisions do not alter this snapshot's tarball measurements or authorize publication; beta release hardening must produce a new final package observation.
+| Component | Observed version |
+| --- | --- |
+| Operating system | Darwin |
+| Node.js | `24.18.0` |
+| npm | `11.16.0` |
 
-## Package boundary
+This local observation does not establish a platform support matrix.
 
-The package manifest includes:
+## Repository qualification
 
-- one experimental `agentdevflow` bin at `dist/src/cli/private-local-cli.js`;
-- emitted runtime directories selected through the `files` allowlist;
-- the root README and package manifest;
-- exact runtime dependencies on `jsonc-parser` 3.3.1 and Zod 4.4.3.
+The converged working tree completed:
 
-The final inspected tarball contains 116 entries, is 102,403 compressed bytes and 569,311 unpacked bytes, and has:
+```text
+npm run check
+npm run check:v1-qualification
+```
 
-- SHA-1: `bf75e47491f6776bb60fe8287f6148ac970d78a6`;
-- npm integrity: `sha512-ig3KJt9XDIKM/p1WqlbwCdUzp2FPhWzoB+O03D2rQLKOBvxA8/GGDep2khT6qT2iXzVv80b/qyUq8/lfFKuAkw==`.
+Both commands passed. The complete automated test set contained 205 tests with
+205 passes, zero failures, zero skips, and zero todos. The V1 qualification
+selector discovered the full current test set, required the retained recovery
+tests, and produced the same result.
 
-The allowlist excludes repository tests, fixtures, development scripts, documentation evidence, experiments, the frozen transaction subsystem, execution transport, GitHub mapping, and Rulesync process integration. Static import traversal from the installed entry reaches no `src/transaction/`, `src/experiments/`, or provider-network adapter module.
+## Installed entrypoint qualification
 
-A current `npm audit --omit=dev --json` request to the npm registry reported zero production vulnerabilities at every severity. This is point-in-time advisory matching, not proof that the dependencies or package are vulnerability-free.
+`npm run check:package-entrypoint` built and packed the working tree, installed
+the tarball into isolated temporary projects, and invoked the installed
+`agentdevflow` bin. The exercise covered:
+
+- `init -> changing diff -> exact-approved render -> clean check`;
+- the local reviewed-change workflow;
+- a Linear-backed ready-pull-request workflow;
+- a GitHub Issues-backed draft-pull-request workflow;
+- idempotent draft-to-ready procedure generation;
+- optional canonical guidance under `.agentdevflow/rules/`;
+- materially different Codex, Claude Code, and Cursor outputs;
+- generated-file drift, deletion diagnostics, and ownership-only cleanup when
+  an obsolete output is already absent;
+- symbolic-link refusal; and
+- an empty diff after successful convergence.
+
+The qualification uses synthetic local fixtures. It does not connect to
+trackers, GitHub, provider services, credentials, or a network.
+
+## Tarball boundary
+
+`npm pack --dry-run --json` passed and reported:
+
+| Property | Observation |
+| --- | --- |
+| Compressed size | 108,180 bytes |
+| Unpacked size | 551,090 bytes |
+| Entry count | 116 |
+| SHA-1 | `b905a1ca6420cf8ad10db5a9da988e6e74ddf885` |
+| npm integrity | `sha512-yy9pI+QUh1y7XXX0kSJhX2cYJe80TA+rpGHWSNpCg90h5HlN94sahilHbDOPQeDFQbq7mAoaZ0fIVm0QiupK8w==` |
+| CLI target mode | `0755` |
+
+The package uses a manifest allowlist. It contains the runtime guidance,
+compiler, renderer, command, workflow, and workspace modules required by the
+CLI. It excludes tests, fixtures, research evidence, development scripts,
+provider clients, experiments, transaction machinery, execution transport, and
+external-system adapters.
+
+The digest binds only this exact working-tree specimen. Reproducible builds
+across machines are not claimed.
+
+## Dependency advisory observation
+
+`npm audit --json` reported zero known vulnerabilities at every severity for
+the installed dependency graph at the snapshot time. This is point-in-time
+registry advisory matching, not proof that the package or its dependencies are
+vulnerability-free.
 
 ## Reproduction
 
-Build and inspect the candidate without publishing:
+Run from the repository root with the supported toolchain installed:
 
 ```bash
+npm install
+npm run check
+npm run check:v1-qualification
+npm run check:package-entrypoint
 npm pack --dry-run --json
-npm pack --pack-destination <temporary-directory> --json
+npm audit --json
 ```
 
-For a network-independent installation exercise, package the already installed exact dependencies locally, then install all three tarballs into a new prefix:
+The package-entrypoint command creates and removes its own temporary
+directories. It does not publish or mutate external project state.
 
-```bash
-npm pack ./node_modules/jsonc-parser --ignore-scripts --pack-destination <temporary-directory>
-npm pack ./node_modules/zod --ignore-scripts --pack-destination <temporary-directory>
-npm install --prefix <clean-install-directory> --offline --ignore-scripts \
-  <agentdevflow-tarball> <jsonc-parser-tarball> <zod-tarball>
-```
+## Limits and remaining gates
 
-The qualification then exercises the installed command implementation through these outcomes:
-
-| Command | Expected private candidate exit | Observed result |
-| --- | ---: | --- |
-| `init` | 0 | Created the absent revision-1 configuration only |
-| `diff` | 1 | Returned the complete exact target and approval digest |
-| `render` | 0 | Applied the approved target and published the lock |
-| `check` | 0 | Reported the rendered repository clean |
-| `doctor` | 0 | Reported explicit current local observations healthy |
-
-The exact plan digest passed from diff to render was `503e9bde22b1cb5edabc43081c2cdb4c7ab849e18bbbaff8f2e1fd40aa6f3407`.
-
-## Defect found and retained coverage
-
-The first clean installation exposed a real entry-point defect in the Node-compatible harness: npm's bin path was a symbolic link, while the direct-invocation guard compared the unresolved `process.argv[1]` URL with the resolved module URL. Every attempted installed command therefore exited successfully without running.
-
-The entry now compares filesystem real paths and falls back to URL equality only if resolution fails. `test/cli/private-local-cli.test.ts` retains an npm-style symbolic-link regression test. This fixed command entry detection but did not prove the separate packed executable-mode property.
-
-## Limitations and release blockers
-
-- The clean tarball installation was exercised on Darwin with Node.js 24.18.0. Separate selected source-level qualification covers Node.js 22 and 24 on Ubuntu, macOS, and Windows; no public platform promise follows automatically.
-- Doctor observations are caller assertions. The command performs no live provider, credential, process, filesystem-capability, or network probe and does not authenticate evidence.
-- The package has no accepted public configuration filename, discovery precedence, lock location, migration contract, output schema, exit-code contract, or support policy.
-- The repository has no accepted open-source license file. Publication must remain blocked until the owner selects a license and its compatibility and notice obligations are reviewed.
-- Registry installation, npm provenance, signatures, release automation, default-tag behavior, name availability, package reservation, and rollback were not tested.
-- The recorded tarball digest binds this exact working-tree specimen. Reproducible builds across machines and release environments are not claimed.
+- The installed package was exercised locally on Darwin and Node.js 24.18.0.
+- Tracker, pull-request, CI, review, and merge behavior is emitted as advisory
+  procedure text; this qualification does not execute those systems.
+- Provider comprehension is recorded separately as maintainer dogfood
+  evidence and is not a deterministic package property.
+- Arbitrary legacy instruction merging is not supported.
+- Initial independent closure review findings were addressed and the focused
+  closure review passed without a remaining actionable finding.
+- No npm publication, tag, release, registry round trip, provenance statement,
+  or rollback exercise occurred.
 
 ## Recommendation
 
-Treat this private package qualification as complete historical evidence. ADR 0004 resolves its public-surface recommendations. Repeat the package and security checks against the final beta candidate, then stop for separate publication authorization.
+Use this snapshot as the package evidence for the current milestone. The exact
+committed implementation passed the hosted matrix; complete final PR checks
+before making a release or version decision.

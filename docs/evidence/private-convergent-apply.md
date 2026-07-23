@@ -1,12 +1,23 @@
 # Private forward-convergent apply evidence
 
-Snapshot date: 2026-07-18.
+Snapshot date: 2026-07-23.
 
 ## Verdict
 
-**Pass locally and across the V1 candidate matrix.** The accepted V1 executor applies exact staged render plans through before-or-after digest convergence, deterministic same-directory temporary files, synchronized file content, and rename replacement. It converges after cooperative faults and real forced process termination at every instrumented write boundary, handles deletes before and after unlink, and fails closed on foreign managed-path content.
+**Pass on the tested local Darwin environment.** The accepted V1 executor
+applies exact staged render plans through before-or-after digest convergence,
+deterministic same-directory temporary files, synchronized file content, and
+rename replacement. It converges after cooperative faults and real forced
+process termination at every instrumented write boundary, handles deletes
+before and after unlink, and fails closed on foreign managed-path content. A
+final pre-mutation digest binding also preserves an intervening third state
+introduced at the last cooperative write, delete, or lock-publication
+boundary.
 
-The dedicated V1 matrix qualified Ubuntu, macOS, and Windows candidates on Node.js 22 and 24. This evidence does not claim directory durability or power-loss behavior.
+The historical V1 matrix for the published beta.2 candidate is a platform
+baseline only. The current working tree requires exact-commit CI before it can
+claim qualification on Ubuntu, macOS, and Windows with Node.js 22 and 24. This
+evidence does not claim directory durability or power-loss behavior.
 
 ## Reproduction
 
@@ -29,7 +40,7 @@ npm install
 npm run check
 ```
 
-The complete local suite contains 202 tests at this snapshot.
+The complete local suite contains 205 tests at this snapshot.
 
 ## Observed boundaries
 
@@ -50,6 +61,12 @@ Before mutation, every managed path must equal either its plan-bound before dige
 
 Each path is read again before its mutation. A cooperative concurrent change can therefore stop later work, but earlier completed paths remain visible and require the same exact plan for a future rerun.
 
+Deterministic fixtures replace a target with a third state after temporary-file
+synchronization, immediately before deletion, and immediately before lock
+publication. Each operation reports drift and preserves the intervening
+content. This check covers ordinary cooperative intervention; it is not an
+operating-system compare-and-swap primitive or hostile-writer exclusion.
+
 ## Temporary ownership
 
 The temporary path is a deterministic function of private revision, plan digest, target path, and target digest. A regular partial file at that exact reserved path is removed and recreated exclusively from the plan. A symbolic link at the same path is rejected without following it, and a competing creation fails closed.
@@ -58,10 +75,19 @@ This is cooperative namespace ownership. It cannot distinguish a hostile regular
 
 ## Filesystem boundary
 
-The process-termination workspace retains root canonicalization, safe relative paths, existing symbolic-link refusal, regular-file leaves, exclusive initial temporary creation, content synchronization, and same-directory rename. It omits directory synchronization and therefore avoids silently inheriting the stronger prototype's unsupported Windows prerequisite.
+The process-termination workspace retains root canonicalization, safe relative
+paths, existing symbolic-link refusal, regular-file leaves, exclusive initial
+temporary creation, content synchronization, and same-directory rename. It
+omits directory synchronization and does not claim the stronger removed
+prototype's durability properties.
 
 The evidence establishes recovery after observed process termination on the local filesystem. It does not establish persistence across power loss or support on another platform.
 
 ## Recommendation
 
-Use this executor for the future V1 render service. Keep the exact plan private and caller-supplied until plan discovery, lock publication, and storage placement are designed together. Treat the qualified matrix as candidate evidence rather than a frozen public release policy. Retain the write-ahead implementation as non-default evidence until command-service integration proves that no stronger requirement is missing.
+This executor is now the single apply path behind the beta render command. The
+application planner derives the exact private plan, render revalidates it, and
+the ownership lock is published last. The stronger write-ahead implementation
+was removed from the executable tree after no current product requirement
+justified its maintenance cost. Reopen stronger durability only from a
+reproduced failure that the accepted V1 contract cannot handle.

@@ -76,7 +76,7 @@ npm audit --json
 npm audit signatures
 npm run build
 node --test dist/test/interface/private-domain-project-document.test.js
-npm run phase1:project-document
+node dist/test/fixtures/project/document-run.js
 npm run check
 ```
 
@@ -88,7 +88,13 @@ Relevant implementation and fixtures:
 - `test/fixtures/project/private-domain-project-intent.schema.json`;
 - `test/fixtures/project/document-run.ts`.
 
-The focused parser, schema, edit, and resolution suite passed 17 tests, including explicit Strict semantic rejection after structural schema acceptance. At this evidence snapshot, the complete repository check passed 355 tests with zero failures or skips and audited 198 text files. The private Draft 2020-12 schema digest is `eb65a6676d695a341296a3abb4185b274fd5150898c41d6e5129dac1ecc830ef`.
+The focused parser, schema, and resolution suite covers bounded JSONC parsing,
+closed-schema rejection including the removed provider surface field, explicit
+auxiliary-review rejection, and Strict semantic rejection after structural
+schema acceptance. The current private Draft 2020-12 schema digest is
+`6d4af95d209c34a3e4626f0e1aae2234b51d161b68cc1c48fa75335b6a203ca6`.
+Complete working-tree qualification is recorded separately in
+[private package qualification](private-package-qualification.md).
 
 ## Limitations
 

@@ -20,13 +20,12 @@ Implementation:
 Automated coverage:
 
 - `test/import/private-project-instructions-analyzer.test.ts`;
-- `test/commands/private-init-command-service.test.ts`.
 
 Run:
 
 ```bash
 npm run build
-node --test dist/test/import/private-project-instructions-analyzer.test.js dist/test/commands/private-init-command-service.test.js
+node --test dist/test/import/private-project-instructions-analyzer.test.js
 npm run check
 ```
 
@@ -58,4 +57,6 @@ No test claims that a provider interprets two natural-language documents identic
 
 Use this analyzer to replace asserted lossless assessments for the currently supported project-instructions form. Keep content differences and unknown scope blocked until a separately designed merge representation can show complete retained and discarded intent.
 
-The follow-on [approved init-to-render bridge](private-approved-init-render.md) now binds the proposal's observed, configuration, and target digests to the normal exact render plan without adding a general overwrite escape hatch. The current [roadmap](../development/roadmap.md) places its next work in the unified local vertical CLI path.
+The active revision-1 application planner binds an exact lossless-import
+assessment into the normal complete render plan. It does not add a general
+overwrite escape hatch. See the current [roadmap](../development/roadmap.md).

@@ -4,7 +4,6 @@ import test from "node:test";
 
 import {
   compilePrivateDomainProjectDocument,
-  editPrivateDomainProjectDocument,
   parsePrivateDomainProjectDocument,
   privateDomainProjectIntentJsonSchemaCanonicalJson,
   privateDomainProjectIntentJsonSchemaDigest,
@@ -20,9 +19,9 @@ function readyLinearIntent(): PrivateDomainProjectIntent {
     revision: 1,
     preset: "balanced",
     providers: [
-      { id: "codex-steward", product: "codex", surface: "cli" },
-      { id: "cursor-developer", product: "cursor", surface: "ide" },
-      { id: "codex-reviewer", product: "codex", surface: "cli" },
+      { id: "codex-steward", product: "codex" },
+      { id: "cursor-developer", product: "cursor" },
+      { id: "codex-reviewer", product: "codex" },
     ],
     roles: {
       steward: "codex-steward",
@@ -104,7 +103,7 @@ test("parses comments and a trailing comma into the bounded typed intent", () =>
   assert.match(result.document.contentDigest, /^[a-f0-9]{64}$/u);
   assert.equal(
     result.document.schemaDigest,
-    "eb65a6676d695a341296a3abb4185b274fd5150898c41d6e5129dac1ecc830ef",
+    "6d4af95d209c34a3e4626f0e1aae2234b51d161b68cc1c48fa75335b6a203ca6",
   );
   assert.equal(Object.getPrototypeOf(result.document.intent), Object.prototype);
 });
@@ -121,7 +120,7 @@ test("compiles parsed intent into the previously captured exact project resoluti
   );
   assert.equal(
     result.project.resolutionDigest,
-    "d813821ead25477482bb14d9c3d0a3f83a788ae152be1081cf0e67cff982d517",
+    "86a3a8d82a7df1e5eacffe08c70a45ef9d8a9ad52c5406f6cea57015f04f68a3",
   );
 });
 
@@ -211,6 +210,42 @@ test("keeps schema validation closed and deterministic", () => {
   );
 });
 
+test("rejects the removed provider surface field", () => {
+  const intent = readyLinearIntent();
+  const result = parsePrivateDomainProjectDocument(
+    JSON.stringify({
+      ...intent,
+      providers: intent.providers.map((provider, index) =>
+        index === 0 ? { ...provider, surface: "cli" } : provider,
+      ),
+    }),
+  );
+
+  expectParseFailure(result);
+  assert.equal(result.diagnostics[0]?.stage, "schema");
+  assert.equal(
+    result.diagnostics.some(({ message }) => message.includes("surface")),
+    true,
+  );
+});
+
+test("rejects auxiliary review outside the bounded beta surface", () => {
+  const intent = readyLinearIntent();
+  const result = parsePrivateDomainProjectDocument(
+    JSON.stringify({
+      ...intent,
+      workflow: {
+        ...intent.workflow,
+        auxiliaryReview: "enabled",
+      },
+    }),
+  );
+
+  expectParseFailure(result);
+  assert.equal(result.diagnostics[0]?.stage, "schema");
+  assert.equal(result.diagnostics[0]?.path, "$.workflow.auxiliaryReview");
+});
+
 test("bounds diagnostic output without silently accepting duplicate input", () => {
   const duplicates = Array.from(
     { length: 6 },
@@ -265,72 +300,6 @@ test("keeps Zod code generation disabled before schema construction", () => {
   assert.equal(privateZod.config().jitless, true);
 });
 
-test("preserves comments while applying a deterministic scalar edit", () => {
-  const content = jsoncDocument();
-  const first = editPrivateDomainProjectDocument(content, {
-    kind: "set",
-    path: ["workflow", "initialState"],
-    value: "draft",
-  });
-  const second = editPrivateDomainProjectDocument(content, {
-    kind: "set",
-    path: ["workflow", "initialState"],
-    value: "draft",
-  });
-
-  assert.equal(first.ok, true);
-  assert.equal(second.ok, true);
-  if (!first.ok || !second.ok) return;
-  assert.equal(second.content, first.content);
-  assert.equal(second.afterContentDigest, first.afterContentDigest);
-  assert.match(first.content, /Private fixture; no public filename/u);
-  assert.equal(first.document.intent.workflow.family, "issue-to-reviewed-pull-request");
-  if (first.document.intent.workflow.family !== "issue-to-reviewed-pull-request") {
-    return;
-  }
-  assert.equal(first.document.intent.workflow.initialState, "draft");
-});
-
-test("applies an array insertion and revalidates the complete document", () => {
-  const result = editPrivateDomainProjectDocument(jsoncDocument(), {
-    kind: "insert",
-    path: ["providers", 1],
-    value: { id: "claude-observer", product: "claude-code", surface: "cli" },
-  });
-
-  assert.equal(result.ok, true);
-  if (!result.ok) return;
-  assert.deepEqual(
-    result.document.intent.providers.map(({ id }) => id),
-    [
-      "codex-steward",
-      "claude-observer",
-      "cursor-developer",
-      "codex-reviewer",
-    ],
-  );
-  assert.notEqual(result.afterContentDigest, result.beforeContentDigest);
-});
-
-test("rejects unsafe edit paths and edits that violate the closed schema", () => {
-  const unsafe = editPrivateDomainProjectDocument(jsoncDocument(), {
-    kind: "set",
-    path: ["__proto__", "polluted"],
-    value: true,
-  });
-  const invalid = editPrivateDomainProjectDocument(jsoncDocument(), {
-    kind: "set",
-    path: ["tracker", "mode"],
-    value: "remote",
-  });
-
-  assert.equal(unsafe.ok, false);
-  assert.equal(invalid.ok, false);
-  if (unsafe.ok || invalid.ok) return;
-  assert.equal(unsafe.diagnostics[0]?.code, "EDIT_REQUEST_INVALID");
-  assert.equal(invalid.diagnostics[0]?.code, "SCHEMA_INVALID");
-});
-
 test("matches the committed deterministic Draft 2020-12 schema snapshot", async () => {
   const snapshot = await readFile(
     "test/fixtures/project/private-domain-project-intent.schema.json",
@@ -343,7 +312,7 @@ test("matches the committed deterministic Draft 2020-12 schema snapshot", async 
   );
   assert.equal(
     privateDomainProjectIntentJsonSchemaDigest,
-    "eb65a6676d695a341296a3abb4185b274fd5150898c41d6e5129dac1ecc830ef",
+    "6d4af95d209c34a3e4626f0e1aae2234b51d161b68cc1c48fa75335b6a203ca6",
   );
 });
 

@@ -1,131 +1,207 @@
 # Product direction
 
-## Definition
+## Product definition
 
-`agentdevflow` is a local-first Node.js and TypeScript CLI that configures, validates, and compiles portable software-development flows for coding agents. The intended npm package and executable name are both `agentdevflow`, with `npx agentdevflow` as the primary invocation.
+`agentdevflow` is a local-first Node.js and TypeScript CLI for configuring and
+compiling repeatable software-development flows for coding agents. It is
+distributed through npm and intended to be invoked with `npx agentdevflow`.
 
-The product is a development-flow configurator and policy compiler. It must retain independent value beyond generating instruction files.
+Its core value is not generic prompt synchronization. A project expresses who
+plans, implements, and reviews; which workflow and policy apply; and which
+handoffs and stop conditions matter. `agentdevflow` turns that intent and
+project-owned rules into deterministic native instructions that different
+coding-agent products can follow.
+
+The product configures and explains the flow. It does not need to become the
+runtime that executes every step.
 
 ## Target users
 
-The primary users are individual developers and small teams that use at least two coding-agent products and maintain project-level instructions, skills, or workflow conventions. A secondary audience is teams that permit different coding-agent products but need shared policy, approved capabilities, reproducible setup, safe upgrades, and audit evidence.
+The primary users are individual developers and small teams that use more than
+one coding-agent product or assign different responsibilities to different
+agent contexts. They need:
 
-The initial product is not intended for users who only want a one-time instruction template, general no-code automation, a fully autonomous multi-agent platform, or a hosted enterprise control plane.
+- one project-owned policy source;
+- clear Steward, Developer, and Reviewer responsibilities;
+- repeatable local or tracker-backed procedures;
+- provider-native instructions;
+- reviewable changes and ownership drift detection.
 
-## Desired experience
+The product is not aimed at users seeking a one-time prompt template, a
+general automation platform, or a hosted autonomous-agent control plane.
 
-The long-term CLI should provide both an interactive wizard and reproducible non-interactive operation. Every wizard selection must have a file or flag representation.
+## Current product slice
 
-A representative flow is:
+The current unreleased candidate supports:
+
+- non-interactive `init`, `diff`, `render`, and `check`;
+- built-in `local-reviewed-change` and
+  `issue-to-reviewed-pull-request` workflows;
+- Linear, GitHub Issues, local, and no-tracker intent where compatible with
+  the selected workflow;
+- draft or ready pull-request creation;
+- auxiliary review fixed to disabled and squash as the current issue-workflow
+  merge method;
+- Fast and Balanced policy presets;
+- provider-neutral Steward, Developer, and Reviewer assignments;
+- Codex, Claude Code, and Cursor native outputs;
+- four optional canonical Markdown rule files under
+  `.agentdevflow/rules/`;
+- complete deterministic planning, exact digest approval, whole-file
+  ownership, safe existing-file adoption, and drift checking.
+
+The issue workflow produces advisory procedures. It does not call Linear,
+GitHub, CI, agent processes, or merge APIs. Agents use the tools available in
+their own environments and must stop when a configured capability is missing.
+
+## Responsibilities
+
+- **Steward** plans, establishes accepted scope, coordinates handoffs, routes
+  failures, and decides when current evidence is ready for the next gate.
+- **Developer** implements accepted work, verifies it, repairs findings, and
+  never approves or merges its own change.
+- **Reviewer** reviews the current revision from an independent context,
+  reports actionable findings or approval, and treats earlier verdicts as
+  stale after rework.
+
+These are provider-neutral responsibilities. Codex, Claude Code, and Cursor
+are renderer targets and execution bindings, not role names.
+
+A different provider brand does not prove reviewer independence. Session,
+execution context, principal, inherited state, and revision identity remain
+relevant facts.
+
+## Built-in workflows
+
+### Local reviewed change
+
+This workflow provides planning, implementation, verification, independent
+review, and rework without requiring issue, pull-request, CI, or merge
+concepts.
+
+### Issue to reviewed pull request
+
+This workflow:
+
+1. plans and creates a Linear or GitHub Issues work item;
+2. delegates accepted scope to the Developer;
+3. creates a draft or ready pull request;
+4. observes current-revision CI and routes failures to repair;
+5. for a draft-configured flow, ensures the pull request is ready after CI
+   passes and marks it ready only when it is still a draft;
+6. starts an independent review, with clean-context evidence required by the
+   Balanced preset but not the Fast preset;
+7. invalidates stale evidence after repair;
+8. permits external squash merge only after current evidence satisfies policy.
+
+The flow is not tied to Issue-to-PR as the only topology. The local workflow is
+a first-class contrast, and arbitrary workflow definitions remain private
+until multiple real product cases require a stable extension boundary.
+
+## Canonical project guidance
+
+Projects may add:
 
 ```text
-choose preset, roles, providers, tracker, and review policy
--> create a versioned ProjectConfig
--> resolve workflows and capabilities
--> validate policy and compatibility
--> resolve immutable lock state
--> show a complete plan and diff
--> apply only after approval
--> render provider artifacts deterministically
--> check drift, ownership, provenance, and environment health
+.agentdevflow/rules/shared.md
+.agentdevflow/rules/steward.md
+.agentdevflow/rules/developer.md
+.agentdevflow/rules/reviewer.md
 ```
 
-A representative development workflow family begins with planning and optional tracker-backed work-item creation, delegates implementation, observes an exact pull-request revision, requires CI and independent-review evidence, allows repair cycles, and authorizes an external merge only when current evidence satisfies policy. A project may create either a draft pull request or a pull request that is ready for review immediately. Pull-request readiness is not merge authorization. Optional auxiliary automated review is a bounded stage rather than a provider-specific workflow.
+These Markdown files are user-owned inputs. Provider files are
+responsibility-specific generated projections. Direct edits to generated files
+are drift; they are not a second rule store.
 
-The [issue-to-reviewed-pull-request candidate](development/issue-to-reviewed-pull-request.md) defines the current domain-validation direction. It remains an experimental workflow definition, not a frozen public configuration surface.
+The current design deliberately has no rule index, CRUD commands, semantic
+merge, source transaction, provider-instance rules, or agent-assisted
+classification. Those features require demonstrated user need rather than
+being assumed infrastructure.
 
-The private project-resolution experiment also retains a local no-pull-request workflow as a mandatory contrast. Project intent selects a workflow family, while provider, tracker, and external integration choices remain bindings outside generic workflow topology. This prevents the product from treating issue-to-pull-request as its only valid development flow.
+## Presets
 
-## Roles and initial adapters
+- **Fast**: basic review with low ceremony.
+- **Balanced**: explicit planning, implementation, reviewer isolation,
+  findings reconciliation, and selected-workflow gates.
+- **Strict**: deferred until additional high-risk evidence and stronger gates
+  are executable.
+- **Custom**: future composition of validated building blocks.
 
-Roles describe workflow responsibilities rather than product brands:
+A preset is a policy profile, not a workflow selector. It must not silently
+choose tracker mode, draft or ready state, provider assignments, auxiliary
+review, or merge method.
 
-- **Steward** manages planning, work-state governance, risk, findings reconciliation, and merge readiness.
-- **Developer** implements an approved plan and supplies verification evidence.
-- **Reviewer** performs independent review and produces findings and verdicts.
+## Compiler and API boundaries
 
-Reviewer independence may depend on session, execution context, principal, credentials, and shared state; a different vendor name alone is not proof of independence.
+- `ProjectConfig` is the beta user-facing concept and candidate stable 1.0
+  API.
+- `WorkflowDefinition` remains experimental.
+- Compiler intermediate representation remains private.
+- Policies remain separate from topology so a new transition cannot silently
+  bypass a gate.
+- Typed artifacts represent production and invalidation, but their shape and
+  digest do not prove semantic truth or producer identity.
+- Provider, tracker, and external-system bindings remain outside generic
+  workflow topology.
+- Generated instructions describe advisory behavior honestly and never claim
+  mechanical enforcement.
 
-Codex, Claude Code, and Cursor form the initial adapter validation set. The architecture must not permanently bind any role to one provider.
+The initial configuration is versioned JSONC at
+`agentdevflow.config.jsonc`. Tool-owned state is
+`.agentdevflow/lock.json`. Beta fields and lock bytes retain migration
+authority before 1.0.
 
-## Trackers, presets, and procedures
+## Ownership
 
-Initial tracker choices are GitHub Issues, Linear, and local or no-tracker operation.
+Every generated path has one owner. Existing files require an explicit result:
 
-The intended presets are:
+- create an absent file;
+- exactly adopt matching generated bytes;
+- perform a supported lossless import;
+- abort when ownership cannot be established without information loss.
 
-- **Fast**: one implementer, basic review, and low ceremony.
-- **Balanced**: planning, implementation, independent review, and findings reconciliation.
-- **Strict**: additional evidence for high-risk changes and stronger merge gates.
-- **Custom**: future composition of validated workflow building blocks.
+Writes are deterministic, tied to current input and target bytes, and
+published one file at a time with the lock last. The product does not claim
+cross-file atomicity, use Git cleanliness as authorization, or manage Git
+state.
 
-Presets should expand into versioned workflow definitions rather than become special cases throughout the compiler.
+## Longer-term direction
 
-A preset is a policy profile, not a workflow-family selector. It must not silently choose Issue-to-PR, local operation, Draft or Ready PR creation, auxiliary review, a tracker, or a provider. A selected workflow may retain safety invariants stronger than the preset minimum. Strict must remain unavailable until its high-risk evidence and stronger gates are mechanically represented; Custom remains future composition.
+An interactive wizard may later complement the non-interactive CLI; every
+selection must still have a reproducible configuration or flag
+representation.
 
-Candidate first-party procedures are `plan-task`, `implement-task`, `review-change`, and `record-progress`. Later procedures may include `reconcile-change`, `audit-alignment`, `close-milestone`, and `release-version`. Critical transitions should invoke procedures explicitly; heuristic skill discovery is useful but not a reliable enforcement boundary.
+Reusable procedures and skills may later expose `plan-task`,
+`implement-task`, `review-change`, and `record-progress`. They should remain
+explicit and portable rather than rely on heuristic discovery.
 
-## Candidate V1 commands
-
-- `init`: create project configuration and deterministically detect existing agent files.
-- `render`: produce provider artifacts from configuration and lock state.
-- `diff`: show intended file, capability, ownership, and provenance changes.
-- `check`: validate schema, policy, compatibility, drift, ownership, and locked provenance.
-- `doctor`: diagnose provider versions, capability availability, environment access, and enforcement strength.
-
-A complete `migrate` command is deferred until a real schema transition exists. A migration contract and synthetic migration fixture are prerequisites for stabilizing `ProjectConfig v1`.
-
-## Compiler model
-
-- `ProjectConfig` is the beta user-facing API and candidate stable 1.0 API.
-- `WorkflowDefinition` remains experimental until multiple distinct workflows and runtime exports validate it.
-- `WorkflowIR` remains private so compiler internals can change without breaking users.
-- Policies remain separate from workflow topology so adding a transition cannot silently bypass a gate represented only as a node.
-- Typed artifacts connect states and carry evidence, but schema validity does not prove semantic truth or producer identity.
-- Capabilities need versioned contracts that describe side effects, authorization, dry-run behavior, failure semantics, and provenance.
-- Provider bindings need product, surface, version, execution context, principal, and supported capabilities rather than a single provider string.
-- External execution should consume deterministic procedures or manifests and return typed, revision-bound evidence. Long-running monitoring, credentials, retries, scheduling, and external mutation remain outside the compiler core.
-- Narrow source adapters may translate authenticated provider observations into provider-neutral evidence, but acquisition trust, credentials, and provider API behavior remain explicit integration boundaries.
-- Lock state should capture immutable workflow, skill, adapter, and generated-artifact resolution.
-
-The initial beta uses versioned JSONC at `agentdevflow.config.jsonc` and tool-owned lock state at `.agentdevflow/lock.json` in the exact selected repository root. Beta configuration fields and lock bytes retain documented migration authority; arbitrary workflow topology and 1.0 compatibility remain open.
-
-## Ownership and enforcement
-
-Every generated path must have exactly one owner. Existing files require an explicit outcome:
-
-- **Adopt** a safely delimited managed region while retaining a merge base.
-- **Import** supported intent into source configuration while disclosing information loss.
-- **Abort** when safe ownership cannot be established.
-
-Writes must be planned, deterministic, tied to input hashes, conflict-aware, and published with atomic single-file replacement. Cross-file atomic visibility is not a V1 claim. Silent overwrite, silent capability downgrade, and digest mismatch are failures.
-
-Prompt instructions are advisory. Policy data should record the actual mechanism, scope, bypass authority, availability, and required strength. Display labels such as advisory, guarded, and enforced are derived views. A weaker fallback must produce a diagnostic and never satisfy a stronger requirement.
+Live adapters, if justified, begin one bounded capability at a time. They do
+not automatically imply a scheduler, credential vault, long-running monitor,
+or general orchestration platform.
 
 ## Deferred work
 
-The following work is deliberately deferred:
-
 - a stable arbitrary-workflow DSL;
 - an orchestration runtime or scheduler;
+- live tracker, pull-request, CI, review, or merge clients;
 - broad provider support;
+- rule CRUD and agent-assisted repository analysis;
+- a complete migration command before a real schema transition;
 - skills or MCP marketplaces;
-- tracker runtimes;
-- arbitrary third-party plugin ABIs;
-- a complete migration command before a real transition exists;
 - a GUI or SaaS control plane;
 - automatic merge or release;
-- automatic installation of unverified community code;
-- agent-assisted repository analysis.
+- automatic installation of unverified community code.
 
-Agent-assisted analysis may be reconsidered only after a containment gate proves read-only, path-limited, secret-aware proposal generation with deterministic validation, a complete diff, and explicit approval.
+## Product proof
 
-## Product outcomes
+The product is worth continuing only if real repository use shows that:
 
-The project must eventually demonstrate that:
+1. different agents understand and follow their assigned responsibilities;
+2. a user can express a useful local or tracker-backed flow without manually
+   maintaining three divergent instruction files;
+3. edits to project policy produce understandable, reviewable provider changes;
+4. the policy-compiler layer clarifies handoffs and stale evidence beyond what
+   a shared prompt template provides.
 
-1. A second coding agent can reproduce a development flow with materially less manual work.
-2. Provider, skill, and workflow upgrades produce safe, reviewable diffs and migrations.
-3. Users can see what an agent may do, what evidence exists, and why a transition is or is not authorized.
-
-Repeated use of `check`, `doctor`, and `diff` matters more than one-time initialization.
+Files, tests, and internal abstractions are supporting evidence, not substitutes
+for these outcomes.

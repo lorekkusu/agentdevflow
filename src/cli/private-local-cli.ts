@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { realpath } from "node:fs/promises";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import {
   preparePrivateDomainProjectPlan,
   reconstructPrivateDomainProjectConvergentPlan,
+  type PrivateDomainProjectPlanPreparation,
 } from "../application/private-domain-project-plan.js";
 import {
   executePrivateCheckCommand,
@@ -22,11 +24,19 @@ import {
   privateCliCommands,
   type PrivateCliInvocation,
 } from "../interface/private-cli-arguments.js";
+import { privateDomainProjectDocumentDefaultMaxBytes } from "../interface/private-domain-project-document.js";
+import { privateProjectGuidancePaths } from "../guidance/private-project-guidance.js";
+import {
+  derivePrivateRenderLockIntent,
+  privateRenderLockDefaultMaxBytes,
+  serializePrivateRenderLock,
+} from "../lock/private-render-lock.js";
+import { nativeProjectInstructionPaths } from "../renderer/native/common.js";
+import { createPrivateConvergentMutationIntent } from "../workspace/private-convergent-intent.js";
 import {
   PrivateFilesystemWorkspace,
   PrivateFilesystemWorkspaceError,
 } from "../workspace/private-filesystem-workspace.js";
-import { runPrivateDoctor } from "./private-doctor-command.js";
 import {
   blockedBeforePlanning,
   blockedWithoutPlan,
@@ -41,27 +51,32 @@ import {
   planningDiagnostics,
   writeBoundedOutput,
   writeLine,
+  type DisplayDiagnostic,
   type PrivateLocalCliIo,
 } from "./private-local-cli-output.js";
 
 const usage = `Usage:
-  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product,surface>... --steward <id> --developer <id> --reviewer <id> [--json]
+  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
+  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
-  agentdevflow doctor [--repository <path>] [--config <relative-path>] --observations <path> [--json]
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
 
 Init creates only an absent revision-1 configuration after validating provider-file dispositions.
 Check and diff are read-only. Render requires an exact plan digest from diff.
+Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
 Beta configuration and JSON schema versions may require documented migration before 1.0.`;
 
 const commandUsage: Readonly<Record<(typeof privateCliCommands)[number], string>> = {
   init: `Usage:
-  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product,surface>... --steward <id> --developer <id> --reviewer <id> [--json]
+  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
+  agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
 
 Provider products: claude-code, codex, cursor.
-Provider surfaces: cli, ide. The id is a user-chosen provider-instance name referenced by each role option.
+The id is a user-chosen provider-instance name referenced by each role option.
+Issue workflows compile instructions for the selected tracker, pull-request host, and CI binding. They do not verify or invoke those services.
+Auxiliary review is disabled and squash is the merge method in the current issue-workflow CLI surface.
 Init creates only an absent configuration. It reports provider-file dispositions but does not write provider files or the lock.
 Exact adopt or lossless import makes the complete provider path a managed file; no managed section is created.`,
   check: `Usage:
@@ -72,17 +87,125 @@ Check is read-only. Exit 0 is clean, exit 1 means reviewable changes are require
   agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
 
 Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.`,
-  doctor: `Usage:
-  agentdevflow doctor [--repository <path>] [--config <relative-path>] --observations <path> [--json]
-
-Doctor validates a caller-supplied revision-1 observation envelope for the local workflow. It does not run provider commands, inspect credentials, or probe the environment.
-Every source, reference, freshness, version, principal, and capability value is a caller assertion. The probe label is not authenticated; healthy means only structurally valid and internally sufficient input.`,
   render: `Usage:
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
 
 Render mutates only the complete plan whose exact-plan-digest was reviewed through diff. A stale or foreign state fails closed.
 Adopted or imported paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
 };
+
+function pathsOverlap(left: string, right: string): boolean {
+  return (
+    left === right ||
+    left.startsWith(`${right}/`) ||
+    right.startsWith(`${left}/`)
+  );
+}
+
+function pathLayoutDiagnostic(
+  invocation: PrivateCliInvocation,
+): DisplayDiagnostic | null {
+  const configuration = {
+    label: "configuration",
+    path: invocation.projectConfigPath,
+  };
+  const lock = { label: "ownership lock", path: invocation.lockPath };
+  const reserved = [
+    ...Object.entries(privateProjectGuidancePaths).map(([scope, path]) => ({
+      label: `${scope} guidance`,
+      path,
+    })),
+    ...Object.entries(nativeProjectInstructionPaths).map(([product, path]) => ({
+      label: `${product} generated output`,
+      path,
+    })),
+  ];
+  const pairs = [
+    [configuration, lock],
+    ...reserved.flatMap((entry) => [
+      [configuration, entry],
+      [lock, entry],
+    ]),
+  ] as const;
+  for (const [left, right] of pairs) {
+    if (pathsOverlap(left.path, right.path)) {
+      return {
+        code: "CLI_PATH_COLLISION",
+        level: "error",
+        message: `The ${left.label} path overlaps the ${right.label} path (${right.path}).`,
+        path: left.path,
+      };
+    }
+  }
+  return null;
+}
+
+function plannedPathLayoutDiagnostic(
+  invocation: PrivateCliInvocation,
+  prepared: PrivateDomainProjectPlanPreparation,
+): DisplayDiagnostic | null {
+  const plan = prepared.snapshot.plan;
+  if (!plan.safeToApply) {
+    return null;
+  }
+  const targetLock = derivePrivateRenderLockIntent({
+    materialization: prepared.materialization,
+    plan,
+  });
+  const targetLockContent = serializePrivateRenderLock(targetLock);
+  const lockTemporaryPath = createPrivateConvergentMutationIntent({
+    planDigest: prepared.snapshot.digest,
+    targetPath: invocation.lockPath,
+    targetDigest: createHash("sha256").update(targetLockContent).digest("hex"),
+  }).temporaryPath;
+  const protectedInputs = [
+    {
+      label: "configuration",
+      path: invocation.projectConfigPath,
+    },
+    ...Object.entries(privateProjectGuidancePaths).map(([scope, path]) => ({
+      label: `${scope} guidance`,
+      path,
+    })),
+  ];
+  const mutationPaths = [
+    { label: "ownership lock", path: invocation.lockPath },
+    { label: "ownership lock temporary file", path: lockTemporaryPath },
+    ...plan.files.flatMap((file) => {
+      const target = {
+        label: `generated output ${file.path}`,
+        path: file.path,
+      };
+      if (file.expectedDigest === null) {
+        return [target];
+      }
+      return [
+        target,
+        {
+          label: `generated output temporary file ${file.path}`,
+          path: createPrivateConvergentMutationIntent({
+            planDigest: plan.planDigest,
+            targetPath: file.path,
+            targetDigest: file.expectedDigest,
+          }).temporaryPath,
+        },
+      ];
+    }),
+  ];
+  for (const input of protectedInputs) {
+    for (const mutation of mutationPaths) {
+      if (pathsOverlap(input.path, mutation.path)) {
+        return {
+          code: "CLI_PATH_COLLISION",
+          level: "error",
+          message: `The ${input.label} path overlaps the ${mutation.label} path (${mutation.path}).`,
+          path: input.path,
+        };
+      }
+    }
+  }
+  return null;
+}
 
 async function runPrivateInit(
   invocation: Extract<PrivateCliInvocation, { readonly command: "init" }>,
@@ -116,8 +239,14 @@ async function runPrivateInit(
   let existingLock: string | null;
   try {
     [existingConfiguration, existingLock] = await Promise.all([
-      workspace.read(invocation.projectConfigPath),
-      workspace.read(invocation.lockPath),
+      workspace.readBounded(
+        invocation.projectConfigPath,
+        privateDomainProjectDocumentDefaultMaxBytes,
+      ),
+      workspace.readBounded(
+        invocation.lockPath,
+        privateRenderLockDefaultMaxBytes,
+      ),
     ]);
   } catch (error) {
     writeLine(
@@ -129,18 +258,6 @@ async function runPrivateInit(
           error instanceof Error
             ? error.message
             : "Initialization paths could not be inspected.",
-      }, invocation.outputFormat),
-    );
-    return 2;
-  }
-  if (invocation.projectConfigPath === invocation.lockPath) {
-    writeLine(
-      io.stdout,
-      blockedBeforePlanning("init", {
-        code: "CLI_INIT_PATH_COLLISION",
-        level: "error",
-        message: "The configuration and render lock paths must be different.",
-        path: invocation.projectConfigPath,
       }, invocation.outputFormat),
     );
     return 2;
@@ -191,26 +308,22 @@ async function runPrivateInit(
     );
     return 2;
   }
-  if (
-    prepared.plan.files.some(
-      (file) => file.path === invocation.projectConfigPath,
-    )
-  ) {
+  const plannedLayoutDiagnostic = plannedPathLayoutDiagnostic(
+    invocation,
+    prepared,
+  );
+  if (plannedLayoutDiagnostic !== null) {
     writeLine(
       io.stdout,
-      blockedWithPlan("init", {
-        planDigest: prepared.plan.planDigest,
-        snapshotDigest: prepared.snapshot.digest,
-        diagnostics: [
-          {
-            code: "CLI_INIT_PATH_COLLISION",
-            level: "error",
-            message:
-              "The configuration path collides with a generated provider path.",
-            path: invocation.projectConfigPath,
-          },
-        ],
-      }, invocation.outputFormat),
+      blockedWithPlan(
+        "init",
+        {
+          planDigest: prepared.plan.planDigest,
+          snapshotDigest: prepared.snapshot.digest,
+          diagnostics: [plannedLayoutDiagnostic],
+        },
+        invocation.outputFormat,
+      ),
     );
     return 2;
   }
@@ -237,16 +350,22 @@ async function runPrivateInit(
     existingConfiguration === null ? "create" : "adopt";
   if (configurationDisposition === "create") {
     let mutableWorkspace: Awaited<
-      ReturnType<typeof PrivateFilesystemWorkspace.openForProcessTermination>
+      ReturnType<typeof PrivateFilesystemWorkspace.open>
     >;
     try {
       mutableWorkspace =
-        await PrivateFilesystemWorkspace.openForProcessTermination(
+        await PrivateFilesystemWorkspace.open(
           invocation.repositoryPath,
         );
       const [freshConfiguration, freshLock] = await Promise.all([
-        mutableWorkspace.read(invocation.projectConfigPath),
-        mutableWorkspace.read(invocation.lockPath),
+        mutableWorkspace.readBounded(
+          invocation.projectConfigPath,
+          privateDomainProjectDocumentDefaultMaxBytes,
+        ),
+        mutableWorkspace.readBounded(
+          invocation.lockPath,
+          privateRenderLockDefaultMaxBytes,
+        ),
       ]);
       if (freshConfiguration !== null || freshLock !== null) {
         throw new Error(
@@ -350,13 +469,22 @@ export async function runPrivateLocalCli(
     return 2;
   }
   const invocation = parsed.invocation;
+  const layoutDiagnostic = pathLayoutDiagnostic(invocation);
+  if (layoutDiagnostic !== null) {
+    writeLine(
+      io.stdout,
+      blockedBeforePlanning(
+        invocation.command,
+        layoutDiagnostic,
+        invocation.outputFormat,
+      ),
+    );
+    return 2;
+  }
   try {
-  if (invocation.command === "init") {
-    return await runPrivateInit(invocation, io);
-  }
-  if (invocation.command === "doctor") {
-    return await runPrivateDoctor(invocation, io);
-  }
+    if (invocation.command === "init") {
+      return await runPrivateInit(invocation, io);
+    }
   let workspace: Awaited<
     ReturnType<typeof PrivateFilesystemWorkspace.openReadOnly>
   >;
@@ -387,7 +515,10 @@ export async function runPrivateLocalCli(
 
   let content: string | null;
   try {
-    content = await workspace.read(invocation.projectConfigPath);
+    content = await workspace.readBounded(
+      invocation.projectConfigPath,
+      privateDomainProjectDocumentDefaultMaxBytes,
+    );
   } catch {
     content = null;
   }
@@ -433,6 +564,25 @@ export async function runPrivateLocalCli(
       reconstructedPrepared.snapshot.digest
       ? reconstructedPrepared
       : prepared;
+  const plannedLayoutFailure = plannedPathLayoutDiagnostic(
+    invocation,
+    effectivePrepared,
+  );
+  if (plannedLayoutFailure !== null) {
+    writeLine(
+      io.stdout,
+      blockedWithPlan(
+        invocation.command,
+        {
+          planDigest: effectivePrepared.plan.planDigest,
+          snapshotDigest: effectivePrepared.snapshot.digest,
+          diagnostics: [plannedLayoutFailure],
+        },
+        invocation.outputFormat,
+      ),
+    );
+    return 2;
+  }
   const options = {
     materialization: effectivePrepared.materialization,
     snapshot: effectivePrepared.snapshot,
@@ -511,11 +661,11 @@ export async function runPrivateLocalCli(
   }
 
   let mutableWorkspace: Awaited<
-    ReturnType<typeof PrivateFilesystemWorkspace.openForProcessTermination>
+    ReturnType<typeof PrivateFilesystemWorkspace.open>
   >;
   try {
     mutableWorkspace =
-      await PrivateFilesystemWorkspace.openForProcessTermination(
+      await PrivateFilesystemWorkspace.open(
         invocation.repositoryPath,
       );
   } catch (error) {
@@ -546,7 +696,10 @@ export async function runPrivateLocalCli(
 
   let freshContent: string;
   try {
-    const observed = await mutableWorkspace.read(invocation.projectConfigPath);
+    const observed = await mutableWorkspace.readBounded(
+      invocation.projectConfigPath,
+      privateDomainProjectDocumentDefaultMaxBytes,
+    );
     if (observed === null) throw new Error("Configuration is absent.");
     freshContent = observed;
   } catch {
@@ -586,6 +739,22 @@ export async function runPrivateLocalCli(
     invocation.approvedPlanSnapshotDigest === reconstructedFresh.snapshot.digest
       ? reconstructedFresh
       : freshResult;
+  const freshLayoutFailure = plannedPathLayoutDiagnostic(invocation, fresh);
+  if (freshLayoutFailure !== null) {
+    writeLine(
+      io.stdout,
+      blockedWithPlan(
+        "render",
+        {
+          planDigest: fresh.plan.planDigest,
+          snapshotDigest: fresh.snapshot.digest,
+          diagnostics: [freshLayoutFailure],
+        },
+        invocation.outputFormat,
+      ),
+    );
+    return 2;
+  }
   if (fresh.snapshot.digest !== invocation.approvedPlanSnapshotDigest) {
     const freshCheck = await executePrivateCheckCommand({
       materialization: fresh.materialization,

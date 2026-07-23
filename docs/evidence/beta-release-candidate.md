@@ -1,5 +1,9 @@
 # Initial beta release-candidate evidence
 
+> **Historical snapshot:** this document records the candidate for the first
+> public beta line. Its command and workflow surface does not describe the
+> current working tree, and it does not qualify or authorize a later release.
+
 Snapshot date: 2026-07-21.
 
 This document records the final pre-publication candidate. The completed external outcome is recorded separately in [initial beta publication evidence](initial-beta-publication.md).
@@ -69,13 +73,13 @@ Authenticated API and unauthenticated HTTP checks confirmed that the GitHub repo
 
 GitHub private vulnerability reporting, Dependabot security updates, secret scanning, push protection, and full-SHA Actions pinning are enabled. The active `Protect main` ruleset has no bypass actor; it requires pull requests, resolved review conversations, squash-only linear history, all six exact GitHub Actions checks on the latest base, and prevents deletion and force pushes. The active purpose-based branch-name ruleset rejects remote branches with the configured identity-based prefixes. The initial secret-scanning alert query returned zero results, which is a point-in-time observation rather than proof that later scanning cannot find an alert.
 
-The public-hardening and purpose-based branch-name changes passed the protected pull-request path and their source branches were removed. The `npm-publish` environment now accepts only `main`, requires approval from `lorekkusu`, and contains no publishing secret. Because self-approval and administrator bypass are possible, this protection records explicit owner intent but does not provide independent approval or an unbypassable control. No release tag, GitHub release, or npm package has been created. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. The npm package must already exist before its trusted publisher can be configured, so the accepted first-publication plan uses a separately authorized short-lived bootstrap credential and requires its immediate revocation.
+The public-hardening and purpose-based branch-name changes passed the protected pull-request path and their source branches were removed. The `npm-publish` environment now accepts only `main`, requires approval from `lorekkusu`, and contains no publishing secret. Because self-approval and administrator bypass are possible, this protection records explicit owner intent but does not provide independent approval or an unbypassable control. No release tag, GitHub release, or npm package has been created. The committed manual release workflow binds `main`, a complete commit digest, an exact version, the `npm-publish` environment, the `next` tag, and provenance. At this historical pre-publication point, the accepted plan used one separately authorized short-lived credential and required immediate revocation.
 
 ## Public-disclosure audit
 
 At release-preparation commit `96c253ca24b2eda636705ae4e94e100ba8ddf18e`, a bounded read-only audit covered all 43 commits then reachable from `main`, 223 distinct historical paths, 488 distinct blobs, current tracked content, commit metadata, and the repository's local Codex tree references. It found:
 
-- no historical path named for bootstrap material, session state, startup prompts, raw reviews, conversations, or secrets;
+- no historical path named for handoff material, session state, startup prompts, raw reviews, conversations, or secrets;
 - no credential-shaped token, private-key marker, local user absolute path, Chinese repository text, or raw prompt marker in the scanned commit and tree blobs;
 - no binary blob or blob larger than 1 MiB;
 - only GitHub-provided no-reply author addresses in reachable commit metadata;
@@ -101,8 +105,12 @@ The final candidate was packed again, installed into a clean temporary prefix fr
 - Keep the release source clean and require the normal repository and hosted checks on any later source commit.
 - Repeat package, advisory, lifecycle-script, and clean-install checks if the final release commit changes packaged artifact bytes or dependency state.
 - Repeat the npm package-name lookup immediately before publication; the current 404 observation does not reserve the name.
-- Create a one-day, least-privilege bootstrap credential outside repository and conversation content, and store it directly as the protected environment's `NPM_TOKEN`.
-- Dispatch only the exact reviewed final `main` commit and version, verify the public `next` artifact and provenance, then immediately remove the GitHub secret and revoke the bootstrap credential.
+- Create a one-day, least-privilege publication credential outside repository
+  and conversation content, and store it directly as the protected
+  environment's `NPM_TOKEN`.
+- Dispatch only the exact reviewed final `main` commit and version, verify the
+  public `next` artifact and provenance, then immediately remove the GitHub
+  secret and revoke the one-time credential.
 - After the package exists, configure trusted publishing before a later release and remove token-based publication from the workflow.
 - Obtain explicit authorization before configuring external publishing state, tagging, creating a release, or publishing to npm.
 

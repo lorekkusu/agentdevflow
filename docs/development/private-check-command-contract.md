@@ -2,7 +2,10 @@
 
 ## Status
 
-This contract defines the first internal read-only command service. It is a candidate for later public command behavior, not a stable CLI, API, discovery rule, exit-code contract, configuration filename, or lock filename.
+This contract defines the internal read-only service behind the current beta
+`check` command. Its TypeScript API and intermediate inputs remain private;
+public paths, exit classes, and output behavior belong in the
+[beta CLI contract](beta-cli-contract.md).
 
 ## Required inputs
 
@@ -16,21 +19,31 @@ The caller supplies:
 
 The service does not discover, parse, compile, plan, repair, or persist these inputs. Keeping those responsibilities outside the service prevents early command work from freezing configuration and storage decisions.
 
-The separate private application planner now prepares these inputs from local revision-1 configuration, canonical lock, and repository bytes. When the lock is absent, the planner also classifies exact adoption and proven lossless import before producing the retained plan. This command service remains independently testable and does not acquire the planner's parsing, staging, or import-analysis responsibilities.
+The application planner prepares these inputs from revision-1 configuration,
+canonical guidance, lock, and repository bytes for either built-in workflow.
+When the lock is absent, the planner also classifies exact adoption and proven
+lossless import before producing the retained plan. This command service
+remains independently testable and does not acquire the planner's parsing,
+staging, or import-analysis responsibilities.
 
-The private local CLI composes that planner with this service from explicit repository, configuration, and lock paths. It opens the repository through the read-only filesystem boundary and returns the service's private candidate exit behavior. This composition does not establish path discovery, a public configuration filename, a public lock filename, or an npm executable contract.
+The CLI composes that planner with this service from explicit repository,
+configuration, and lock paths. It opens the repository through the read-only
+filesystem boundary. The beta CLI contract, not this service interface,
+defines its public path and exit behavior.
 
 ## Outcomes
 
 The private result has three mutually exclusive outcomes:
 
-| Outcome | Candidate exit code | Meaning |
+| Outcome | Beta exit code | Meaning |
 | --- | ---: | --- |
 | `clean` | `0` | Managed outputs and the target lock already match the retained plan. |
 | `changes-required` | `1` | Every observed managed state is recognized, but one or more planned output or lock changes remain. |
 | `blocked` | `2` | At least one error prevents the retained plan from describing a safe convergence path. |
 
-Warnings do not change an otherwise clean outcome. Errors take precedence over changes when both are present. These codes are private candidates until CLI behavior is tested end to end and explicitly accepted.
+Warnings do not change an otherwise clean outcome. Errors take precedence over
+changes when both are present. The beta CLI contract defines these public exit
+classes; this service result remains private.
 
 ## Diagnostic model
 
@@ -69,12 +82,15 @@ The private service does not define:
 - configuration or lock discovery;
 - parsing or schema diagnostics;
 - compilation or render planning;
-- a public JSON result schema;
-- stable public diagnostic or exit-code compatibility;
+- the public JSON result schema or compatibility policy, which belongs to the
+  beta CLI contract;
+- stable diagnostic wording or codes;
 - a CLI parser or output formatter;
 - Git status policy;
 - automatic repair, render, reset, clean, stash, commit, or branch behavior;
 - protection against concurrent repository mutation;
 - semantic truth of workflow evidence.
 
-The private local CLI now exercises this service and the exact-byte diff service through one experimental development entry point. The same entry exposes exact approved render, but all provider mutation remains routed through the separate private render command service.
+The current beta CLI composes this service with the exact-byte diff service and
+the application planner. All provider mutation remains routed through the
+separate private render command service.

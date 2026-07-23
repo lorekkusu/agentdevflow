@@ -1,10 +1,14 @@
-import { generatedMarkdown, type ProviderEmission } from "./common.js";
+import {
+  generatedMarkdown,
+  nativeProjectInstructionPaths,
+  type ProviderEmission,
+} from "./common.js";
 
 export function emitClaudeCodeProjectInstructions(
   body: string,
 ): ProviderEmission {
   return {
-    path: "CLAUDE.md",
+    path: nativeProjectInstructionPaths["claude-code"],
     content: generatedMarkdown(body),
   };
 }

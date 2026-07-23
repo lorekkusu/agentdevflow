@@ -16,7 +16,10 @@ import test, { type TestContext } from "node:test";
 
 import { preparePrivateDomainProjectPlan } from "../../src/application/private-domain-project-plan.js";
 import { executePrivateRenderCommand } from "../../src/commands/private-render-command-service.js";
+import { privateDomainProjectDocumentDefaultMaxBytes } from "../../src/interface/private-domain-project-document.js";
+import { privateRenderLockDefaultMaxBytes } from "../../src/lock/private-render-lock.js";
 import type { PrivateDomainProjectIntent } from "../../src/project/private-domain-project-resolution.js";
+import { createPrivateConvergentMutationIntent } from "../../src/workspace/private-convergent-intent.js";
 import { PrivateFilesystemWorkspace } from "../../src/workspace/private-filesystem-workspace.js";
 
 const entryPoint = fileURLToPath(
@@ -46,9 +49,9 @@ function localIntent(): PrivateDomainProjectIntent {
     revision: 1,
     preset: "balanced",
     providers: [
-      { id: "codex-steward", product: "codex", surface: "cli" },
-      { id: "cursor-developer", product: "cursor", surface: "ide" },
-      { id: "claude-reviewer", product: "claude-code", surface: "cli" },
+      { id: "codex-steward", product: "codex" },
+      { id: "cursor-developer", product: "cursor" },
+      { id: "claude-reviewer", product: "claude-code" },
     ],
     roles: {
       steward: "codex-steward",
@@ -143,16 +146,21 @@ function invoke(
   };
 }
 
-function invokeInit(project: TestProject, json = false): CommandResult {
+function invokeInit(
+  project: TestProject,
+  json = false,
+  selectedConfigurationPath = "project.jsonc",
+  selectedLockPath = lockPath,
+): CommandResult {
   const args = [
     entryPoint,
     "init",
     "--repository",
     project.repository,
     "--config",
-    "project.jsonc",
+    selectedConfigurationPath,
     "--lock",
-    lockPath,
+    selectedLockPath,
     "--workflow",
     "local-reviewed-change",
     "--preset",
@@ -160,11 +168,11 @@ function invokeInit(project: TestProject, json = false): CommandResult {
     "--tracker",
     "none",
     "--provider",
-    "codex-steward,codex,cli",
+    "codex-steward,codex",
     "--provider",
-    "cursor-developer,cursor,ide",
+    "cursor-developer,cursor",
     "--provider",
-    "claude-reviewer,claude-code,cli",
+    "claude-reviewer,claude-code",
     "--steward",
     "codex-steward",
     "--developer",
@@ -186,21 +194,43 @@ function invokeInit(project: TestProject, json = false): CommandResult {
   };
 }
 
-function invokeDoctor(
+function invokeIssueInit(
   project: TestProject,
-  observationsPath: string,
+  initialState: "draft" | "ready" = "ready",
 ): CommandResult {
   const result = spawnSync(
     process.execPath,
     [
       entryPoint,
-      "doctor",
+      "init",
       "--repository",
       project.repository,
       "--config",
       "project.jsonc",
-      "--observations",
-      observationsPath,
+      "--lock",
+      lockPath,
+      "--workflow",
+      "issue-to-reviewed-pull-request",
+      "--preset",
+      "balanced",
+      "--tracker",
+      "linear",
+      "--pull-request-state",
+      initialState,
+      "--pull-request-host",
+      "github",
+      "--ci",
+      "github-actions",
+      "--provider",
+      "codex-control,codex",
+      "--provider",
+      "cursor-developer,cursor",
+      "--steward",
+      "codex-control",
+      "--developer",
+      "cursor-developer",
+      "--reviewer",
+      "codex-control",
     ],
     { encoding: "utf8" },
   );
@@ -209,43 +239,6 @@ function invokeDoctor(
     status: result.status,
     stdout: result.stdout,
     stderr: result.stderr,
-  };
-}
-
-function localDoctorObservations(): unknown {
-  return {
-    revision: 1,
-    providerObservations: localIntent().providers.map((provider) => ({
-      providerId: provider.id,
-      product: provider.product,
-      surface: provider.surface,
-      version: "fixture-1",
-      executionContext: "local-project",
-      principal: "fixture-user",
-      capabilities: [
-        {
-          capability: "project-instructions",
-          strength: "advisory",
-          mechanism: "instruction-file",
-        },
-      ],
-      evidence: {
-        source: "probe",
-        reference: `fixture:${provider.id}`,
-        freshness: "current",
-      },
-    })),
-    environmentObservations: ["filesystem-read", "filesystem-write"].map(
-      (capability) => ({
-        capability,
-        availability: "available",
-        evidence: {
-          source: "probe",
-          reference: `fixture:${capability}`,
-          freshness: "current",
-        },
-      }),
-    ),
   };
 }
 
@@ -366,7 +359,9 @@ test("reports exact adopt, lossless import, and abort initialization outcomes", 
   });
   assert.equal(importPrepared.ok, true);
   if (!importPrepared.ok) return;
-  const sourceBody = importPrepared.materialization.files[0]?.content;
+  const sourceBody = importPrepared.materialization.files.find(
+    (file) => file.provider === "codex",
+  )?.content;
   assert.notEqual(sourceBody, undefined);
   await writeFile(join(importProject.repository, "AGENTS.md"), sourceBody ?? "", "utf8");
   const imported = invokeInit(importProject);
@@ -377,7 +372,7 @@ test("reports exact adopt, lossless import, and abort initialization outcomes", 
   assert.equal(importDiff.status, 1);
   const importContent = await readFile(importProject.configuration, "utf8");
   const mutableImportWorkspace =
-    await PrivateFilesystemWorkspace.openForProcessTermination(
+    await PrivateFilesystemWorkspace.open(
       importProject.repository,
     );
   const approvedImport = await preparePrivateDomainProjectPlan({
@@ -461,16 +456,17 @@ test("executes initial check and exact diff without mutating the repository", as
     assert.match(diff.stdout, new RegExp(`path: ${path.replaceAll(".", "\\.")}`, "u"));
   }
   assert.equal(
-    diff.stdout.match(/after-content-json: "/gu)?.length,
+    diff.stdout.match(/  after-content:\n/gu)?.length,
     4,
   );
+  assert.equal(diff.stdout.includes("content-json"), false);
   assert.deepEqual(await snapshotDirectory(project.repository), before);
 });
 
 test("reports clean check and empty diff from an already rendered exact state", async (t) => {
   const project = await testProject(t);
   const content = await writeConfiguration(project, localIntent());
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     project.repository,
   );
   const prepared = await preparePrivateDomainProjectPlan({
@@ -538,7 +534,7 @@ test("resumes an interrupted before-or-after plan with its original approval", a
   const content = await writeConfiguration(project, localIntent());
   const initialDiff = invoke("diff", project);
   const approvedDigest = exactPlanDigest(initialDiff);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     project.repository,
   );
   const prepared = await preparePrivateDomainProjectPlan({
@@ -636,7 +632,7 @@ test("blocks a foreign ownership conflict without disclosing its bytes", async (
 test("blocks drift from retained ownership without disclosing changed bytes", async (t) => {
   const project = await testProject(t);
   const content = await writeConfiguration(project, localIntent());
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     project.repository,
   );
   const prepared = await preparePrivateDomainProjectPlan({
@@ -667,19 +663,66 @@ test("blocks drift from retained ownership without disclosing changed bytes", as
   assert.deepEqual(await snapshotDirectory(project.repository), before);
 });
 
-test("fails unsupported external capabilities closed with actionable diagnostics", async (t) => {
+test("runs the bounded Linear workflow through init, render, and clean check", async (t) => {
   const project = await testProject(t);
-  await writeConfiguration(project, issueIntent());
-  const before = await snapshotDirectory(project.repository);
+  const initialized = invokeIssueInit(project);
+  assert.equal(initialized.status, 0);
+  assert.equal(initialized.stderr, "");
+  assert.match(initialized.stdout, /^agentdevflow init: ready\n/u);
 
-  const result = invoke("check", project);
+  const configuration = JSON.parse(
+    await readFile(project.configuration, "utf8"),
+  ) as PrivateDomainProjectIntent;
+  assert.deepEqual(configuration, {
+    ...issueIntent(),
+    providers: [
+      { id: "codex-control", product: "codex" },
+      { id: "cursor-developer", product: "cursor" },
+    ],
+    roles: {
+      developer: "cursor-developer",
+      reviewer: "codex-control",
+      steward: "codex-control",
+    },
+    capabilityBindings: [
+      {
+        binding: "ci",
+        target: { kind: "external", id: "github-actions" },
+      },
+      {
+        binding: "developer",
+        target: { kind: "responsibility", responsibility: "developer" },
+      },
+      {
+        binding: "pull-request-host",
+        target: { kind: "external", id: "github" },
+      },
+      {
+        binding: "reviewer",
+        target: { kind: "responsibility", responsibility: "reviewer" },
+      },
+      { binding: "tracker", target: { kind: "tracker" } },
+    ],
+  });
 
-  assert.equal(result.status, 2);
-  assert.equal(result.stderr, "");
-  assert.match(result.stdout, /^agentdevflow check: blocked\n/u);
-  assert.match(result.stdout, /CAPABILITY_UNAVAILABLE/u);
-  assert.match(result.stdout, /WORKFLOW_COMPILATION_FAILED/u);
-  assert.deepEqual(await snapshotDirectory(project.repository), before);
+  const diff = invoke("diff", project);
+  assert.equal(diff.status, 1);
+  const rendered = invoke("render", project, lockPath, exactPlanDigest(diff));
+  assert.equal(rendered.status, 0);
+  assert.equal(invoke("check", project).status, 0);
+
+  const agents = await readFile(join(project.repository, "AGENTS.md"), "utf8");
+  const cursor = await readFile(
+    join(project.repository, ".cursor/rules/agentdevflow.mdc"),
+    "utf8",
+  );
+  assert.match(agents, /Steward/u);
+  assert.match(agents, /Reviewer/u);
+  assert.doesNotMatch(agents, /^### Developer$/mu);
+  assert.match(cursor, /Developer/u);
+  assert.doesNotMatch(cursor, /^### Steward$/mu);
+  assert.doesNotMatch(cursor, /^### Reviewer$/mu);
+  assert.notEqual(agents, cursor);
 });
 
 test("blocks invalid configuration and unsafe lock paths before mutation", async (t) => {
@@ -707,6 +750,117 @@ test("blocks invalid configuration and unsafe lock paths before mutation", async
   );
 });
 
+test("rejects overlapping configuration, lock, guidance, and generated namespaces before mutation", async (t) => {
+  const outputAncestor = await testProject(t);
+  const outputAncestorResult = invokeInit(
+    outputAncestor,
+    false,
+    "AGENTS.md/project.jsonc",
+  );
+  assert.equal(outputAncestorResult.status, 2);
+  assert.match(outputAncestorResult.stdout, /CLI_PATH_COLLISION/u);
+  assert.deepEqual(await snapshotDirectory(outputAncestor.repository), {});
+
+  const lockAncestor = await testProject(t);
+  const lockAncestorResult = invokeInit(
+    lockAncestor,
+    false,
+    "state/project.jsonc",
+    "state",
+  );
+  assert.equal(lockAncestorResult.status, 2);
+  assert.match(lockAncestorResult.stdout, /CLI_PATH_COLLISION/u);
+  assert.deepEqual(await snapshotDirectory(lockAncestor.repository), {});
+
+  const guidanceLock = await testProject(t);
+  const guidanceLockResult = invokeInit(
+    guidanceLock,
+    false,
+    "project.jsonc",
+    ".agentdevflow/rules/shared.md",
+  );
+  assert.equal(guidanceLockResult.status, 2);
+  assert.match(guidanceLockResult.stdout, /CLI_PATH_COLLISION/u);
+  assert.deepEqual(await snapshotDirectory(guidanceLock.repository), {});
+
+  const seed = await testProject(t);
+  assert.equal(invokeInit(seed).status, 0);
+  const configurationContent = await readFile(seed.configuration, "utf8");
+  const temporaryCollision = await testProject(t);
+  const temporaryWorkspace = await PrivateFilesystemWorkspace.openReadOnly(
+    temporaryCollision.repository,
+  );
+  const prepared = await preparePrivateDomainProjectPlan({
+    content: configurationContent,
+    lockPath,
+    workspace: temporaryWorkspace,
+  });
+  assert.equal(prepared.ok, true);
+  if (!prepared.ok) return;
+  const agents = prepared.plan.files.find((file) => file.path === "AGENTS.md");
+  assert.notEqual(agents?.expectedDigest, null);
+  assert.notEqual(agents?.expectedDigest, undefined);
+  const temporaryPath = createPrivateConvergentMutationIntent({
+    planDigest: prepared.plan.planDigest,
+    targetPath: "AGENTS.md",
+    targetDigest: agents?.expectedDigest ?? "",
+  }).temporaryPath;
+  const temporaryResult = invokeInit(
+    temporaryCollision,
+    false,
+    temporaryPath,
+  );
+  assert.equal(temporaryResult.status, 2);
+  assert.match(temporaryResult.stdout, /CLI_PATH_COLLISION/u);
+  assert.deepEqual(await snapshotDirectory(temporaryCollision.repository), {});
+});
+
+test("rejects oversized and invalid UTF-8 configuration and lock files", async (t) => {
+  const oversizedConfiguration = await testProject(t);
+  await writeFile(
+    oversizedConfiguration.configuration,
+    Buffer.alloc(privateDomainProjectDocumentDefaultMaxBytes + 1, 0x20),
+  );
+  const oversizedConfigurationResult = invoke("check", oversizedConfiguration);
+  assert.equal(oversizedConfigurationResult.status, 2);
+  assert.match(
+    oversizedConfigurationResult.stdout,
+    /CLI_CONFIGURATION_READ_FAILED/u,
+  );
+  await assert.rejects(
+    () => readFile(join(oversizedConfiguration.repository, "AGENTS.md")),
+  );
+
+  const invalidConfiguration = await testProject(t);
+  await writeFile(invalidConfiguration.configuration, Buffer.from([0xff]));
+  const invalidConfigurationResult = invoke("check", invalidConfiguration);
+  assert.equal(invalidConfigurationResult.status, 2);
+  assert.match(
+    invalidConfigurationResult.stdout,
+    /CLI_CONFIGURATION_READ_FAILED/u,
+  );
+
+  for (const [name, content] of [
+    [
+      "oversized",
+      Buffer.alloc(privateRenderLockDefaultMaxBytes + 1, 0x20),
+    ],
+    ["invalid-utf8", Buffer.from([0xff])],
+  ] as const) {
+    const project = await testProject(t);
+    await writeConfiguration(project, localIntent());
+    await mkdir(join(project.repository, ".agentdevflow"), { recursive: true });
+    await writeFile(join(project.repository, lockPath), content);
+    const result = invoke("check", project);
+    assert.equal(result.status, 2, name);
+    assert.match(result.stdout, /LOCK_READ_FAILED/u, name);
+    await assert.rejects(
+      () => readFile(join(project.repository, "AGENTS.md")),
+      name,
+    );
+  }
+});
+
 test("prints bounded private help without requiring a CLI framework", () => {
   const result = spawnSync(process.execPath, [entryPoint, "--help"], {
     encoding: "utf8",
@@ -719,7 +873,7 @@ test("prints bounded private help without requiring a CLI framework", () => {
 });
 
 test("prints focused help for every beta command", () => {
-  for (const command of ["init", "check", "diff", "doctor", "render"]) {
+  for (const command of ["init", "check", "diff", "render"]) {
     const result = spawnSync(process.execPath, [entryPoint, command, "--help"], {
       encoding: "utf8",
     });
@@ -732,8 +886,13 @@ test("prints focused help for every beta command", () => {
     encoding: "utf8",
   });
   assert.match(init.stdout, /local-reviewed-change/u);
+  assert.match(init.stdout, /issue-to-reviewed-pull-request/u);
+  assert.match(init.stdout, /linear\|github-issues/u);
   assert.match(init.stdout, /fast\|balanced/u);
+  assert.match(init.stdout, /--provider <id,product>/u);
+  assert.doesNotMatch(init.stdout, /id,product,surface|Provider surfaces/u);
   assert.match(init.stdout, /claude-code, codex, cursor/u);
+  assert.match(init.stdout, /do not verify or invoke those services/u);
   assert.match(init.stdout, /complete provider path a managed file/u);
 
   const diff = spawnSync(process.execPath, [entryPoint, "diff", "--help"], {
@@ -741,13 +900,6 @@ test("prints focused help for every beta command", () => {
   });
   assert.match(diff.stdout, /exact-plan-digest/u);
   assert.match(diff.stdout, /Exit 1/u);
-
-  const doctor = spawnSync(process.execPath, [entryPoint, "doctor", "--help"], {
-    encoding: "utf8",
-  });
-  assert.match(doctor.stdout, /caller-supplied/u);
-  assert.match(doctor.stdout, /does not run provider commands/u);
-  assert.match(doctor.stdout, /probe label is not authenticated/u);
 
   const render = spawnSync(process.execPath, [entryPoint, "render", "--help"], {
     encoding: "utf8",
@@ -818,48 +970,6 @@ test("does not discover configuration from a parent directory", async (t) => {
     readonly diagnostics: readonly { readonly code: string }[];
   };
   assert.equal(report.diagnostics[0]?.code, "CLI_CONFIGURATION_READ_FAILED");
-});
-
-test("evaluates explicit local doctor observations without live probes", async (t) => {
-  const project = await testProject(t);
-  await writeConfiguration(project, localIntent());
-  const observationsPath = join(project.container, "observations.json");
-  await writeFile(
-    observationsPath,
-    `${JSON.stringify(localDoctorObservations())}\n`,
-    "utf8",
-  );
-  const before = await snapshotDirectory(project.repository);
-
-  const healthy = invokeDoctor(project, observationsPath);
-
-  assert.equal(healthy.status, 0);
-  assert.equal(healthy.stderr, "");
-  assert.match(healthy.stdout, /^agentdevflow doctor: healthy\n/u);
-  assert.match(healthy.stdout, /observation provenance is not authenticated/u);
-  assert.match(healthy.stdout, /providers-observed: 3/u);
-  assert.match(healthy.stdout, /environment-capabilities-observed: 2/u);
-  assert.deepEqual(await snapshotDirectory(project.repository), before);
-
-  await writeConfiguration(project, issueIntent());
-  const unsupported = invokeDoctor(project, observationsPath);
-  assert.equal(unsupported.status, 2);
-  assert.match(unsupported.stdout, /CLI_DOCTOR_WORKFLOW_UNSUPPORTED/u);
-});
-
-test("rejects an oversized doctor envelope before reading it into memory", async (t) => {
-  const project = await testProject(t);
-  await writeConfiguration(project, localIntent());
-  const observationsPath = join(project.container, "oversized-observations.json");
-  await writeFile(observationsPath, "x".repeat(262_145), "utf8");
-  const before = await snapshotDirectory(project.repository);
-
-  const result = invokeDoctor(project, observationsPath);
-
-  assert.equal(result.status, 2);
-  assert.equal(result.stderr, "");
-  assert.match(result.stdout, /CLI_DOCTOR_OBSERVATIONS_TOO_LARGE/u);
-  assert.deepEqual(await snapshotDirectory(project.repository), before);
 });
 
 test("keeps JSON output versioned when a managed target is a symbolic link", async (t) => {

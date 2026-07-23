@@ -1,5 +1,10 @@
 # Initial beta publication evidence
 
+> **Historical snapshot:** this document records publication of the initial
+> beta line. It does not describe or qualify the current working-tree command,
+> workflow, or canonical-guidance surface, and it does not authorize another
+> publication.
+
 Snapshot date: 2026-07-21.
 
 ## Verdict
@@ -62,7 +67,14 @@ The canonical npm registry package format requires `dist-tags` to contain at lea
 
 ## Publication credentials
 
-The first publication used a separately authorized granular bootstrap token stored only as the protected `npm-publish` Environment secret. The GitHub secret was deleted immediately after the successful publish. The named npm bootstrap token was then revoked through npm proof-of-presence, and a subsequent token-list query returned no tokens. The package is now bound to the GitHub Actions trusted publisher for repository `lorekkusu/agentdevflow`, workflow `publish.yml`, environment `npm-publish`, and `npm publish` permission. The repository workflow no longer supplies `NODE_AUTH_TOKEN` and retains `id-token: write` solely for OIDC publication.
+The first publication used a separately authorized one-time granular token
+stored only as the protected `npm-publish` Environment secret. The GitHub
+secret was deleted immediately after successful publication, the named npm
+token was revoked, and a subsequent token-list query returned no tokens. The
+package is now bound to the GitHub Actions trusted publisher for repository
+`lorekkusu/agentdevflow`, workflow `publish.yml`, environment `npm-publish`,
+and `npm publish` permission. The repository workflow no longer supplies
+`NODE_AUTH_TOKEN` and retains `id-token: write` solely for OIDC publication.
 
 ## Follow-on controls
 

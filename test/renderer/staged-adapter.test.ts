@@ -4,17 +4,19 @@ import test from "node:test";
 
 import type {
   OwnershipClaim,
+  RenderReadWorkspace,
   RenderRequest,
-  RenderWorkspace,
   StagedRender,
   StagingRenderer,
 } from "../../src/renderer/contract.js";
-import { RulesyncProcessRenderer } from "../../src/renderer/rulesync-process.js";
-import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
+import {
+  StagedRendererAdapter,
+  verifyRenderPlan,
+} from "../../src/renderer/staged-adapter.js";
 
-const ownershipKey = "agentdevflow.renderer.rulesync";
+const ownershipKey = "agentdevflow.renderer.native";
 
-class MemoryWorkspace implements RenderWorkspace {
+class MemoryWorkspace implements RenderReadWorkspace {
   readonly files = new Map<string, string>();
 
   constructor(initial: Readonly<Record<string, string>> = {}) {
@@ -27,19 +29,12 @@ class MemoryWorkspace implements RenderWorkspace {
     return this.files.get(path) ?? null;
   }
 
-  async writeAtomically(path: string, content: string): Promise<void> {
-    this.files.set(path, content);
-  }
-
-  async removeAtomically(path: string): Promise<void> {
-    this.files.delete(path);
-  }
 }
 
 function backend(result: StagedRender): StagingRenderer {
   return {
-    name: "rulesync",
-    version: "9.6.3",
+    name: "native-fixture",
+    version: "1",
     ownershipKey,
     async stage() {
       return result;
@@ -68,7 +63,7 @@ function digest(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
-test("plans deterministic creates and renders owned files", async () => {
+test("plans deterministic creates for owned files", async () => {
   const workspace = new MemoryWorkspace();
   const adapter = new StagedRendererAdapter(
     backend({
@@ -98,10 +93,12 @@ test("plans deterministic creates and renders owned files", async () => {
     ],
   );
 
-  const result = await adapter.render(plan, workspace);
-  assert.deepEqual(result.written, ["AGENTS.md", "CLAUDE.md"]);
-  assert.equal((await adapter.verify(plan, workspace)).ok, true);
-  assert.equal(result.ownership["AGENTS.md"]?.owner, ownershipKey);
+  for (const file of plan.files) {
+    if (file.expectedContent !== null) {
+      workspace.files.set(file.path, file.expectedContent);
+    }
+  }
+  assert.equal((await verifyRenderPlan(plan, workspace)).ok, true);
 });
 
 test("rejects a hand-written provider file unless adoption is explicit and exact", async () => {
@@ -183,10 +180,6 @@ test("rejects drift when an owned generated file was modified", async () => {
 
   assert.equal(plan.safeToApply, false);
   assert.equal(plan.files[0]?.action, "conflict");
-  await assert.rejects(
-    adapter.render(plan, workspace),
-    /Refusing to apply an unsafe render plan/,
-  );
 });
 
 test("fails visibly when the staging backend reports an unsupported capability", async () => {
@@ -214,25 +207,6 @@ test("fails visibly when the staging backend reports an unsupported capability",
   assert.equal(plan.diagnostics[0]?.code, "UNSUPPORTED_CAPABILITY");
 });
 
-test("the Rulesync process boundary rejects unsupported capabilities before spawning", async () => {
-  const renderer = new RulesyncProcessRenderer({
-    command: "this-command-must-not-run",
-    prefixArgs: [],
-    inputRoot: ".",
-    configPath: "rulesync.jsonc",
-    version: "9.6.3",
-  });
-  const staged = await renderer.stage({
-    ...request(),
-    providers: ["codex"],
-    capabilities: ["commands"],
-  });
-
-  assert.deepEqual(staged.files, []);
-  assert.equal(staged.diagnostics[0]?.code, "UNSUPPORTED_CAPABILITY");
-  assert.equal(staged.diagnostics[0]?.severity, "error");
-});
-
 test("reports deterministic path-specific verify diagnostics", async () => {
   const workspace = new MemoryWorkspace();
   const adapter = new StagedRendererAdapter(
@@ -253,7 +227,7 @@ test("reports deterministic path-specific verify diagnostics", async () => {
     }),
   );
   const plan = await adapter.plan(request(), workspace);
-  const verify = await adapter.verify(plan, workspace);
+  const verify = await verifyRenderPlan(plan, workspace);
 
   assert.equal(verify.ok, false);
   assert.deepEqual(
@@ -283,7 +257,5 @@ test("clears an ownership claim when the obsolete generated file is already abse
     plan.files.map(({ action, path }) => ({ action, path })),
     [{ action: "delete", path: "obsolete.md" }],
   );
-  const result = await adapter.render(plan, workspace);
-  assert.deepEqual(result.ownership, {});
-  assert.equal((await adapter.verify(plan, workspace)).ok, true);
+  assert.equal((await verifyRenderPlan(plan, workspace)).ok, true);
 });

@@ -1,208 +1,391 @@
-# Getting started with the beta
+# Getting started
 
-This guide covers the complete public behavior of the repaired `agentdevflow` beta. It separates CLI-supported features from longer-term product direction.
-
-> **Version notice:** use `0.1.0-beta.2`. npm `latest` and `next` both resolve
-> to it. `0.1.0-beta.1` is deprecated because its published tarball does not
-> preserve executable mode.
+This guide describes the current unreleased repository candidate. The
+published `0.1.0-beta.2` package is an earlier local-only snapshot and must not
+be used to evaluate the issue workflow or canonical custom guidance described
+here.
 
 ## Requirements and invocation
 
-Use Node.js 22 or 24 and an npm release compatible with those Node.js versions. During beta, invoke the exact prerelease version:
+Use Node.js 22 or 24 with a compatible npm release. `agentdevflow` is intended
+to be installed from the qualified package and invoked with
+`npx agentdevflow`.
+
+The published package does not yet contain this guide's candidate behavior. To
+evaluate a clean repository clone instead:
 
 ```bash
-npx --yes agentdevflow@0.1.0-beta.2 --help
+npm install
+npm run build
+node dist/src/cli/private-local-cli.js --help
 ```
 
-Commands use the current directory as the exact repository root unless `--repository <path>` is supplied. They do not search parent directories.
+Use `node dist/src/cli/private-local-cli.js` in place of the
+`npx agentdevflow` prefix in the examples below. This runs the exact checked-out
+source and does not install or publish another package version.
 
-Default paths are:
+Commands use the current directory as the exact repository root unless
+`--repository <path>` is supplied. They do not search parent directories.
 
 | Purpose | Default | Override |
 | --- | --- | --- |
 | Project configuration | `agentdevflow.config.jsonc` | `--config <repository-relative-path>` |
 | Ownership lock | `.agentdevflow/lock.json` | `--lock <repository-relative-path>` |
 
-Absolute, escaping, symbolic-link, and non-regular-file paths fail closed.
+Absolute, escaping, symbolic-link, and non-regular-file configuration and lock
+paths fail closed.
 
-## Current configuration choices
+## Choose a workflow
 
-The current CLI-supported workflow model is `local-reviewed-change`. It has no issue, pull-request, CI, or merge operation.
+The current CLI provides two built-in workflow families. They are closed
+product choices, not a public arbitrary-workflow language.
 
-### Providers and responsibilities
+### Local reviewed change
 
-Declare each provider as `id,product,surface`:
-
-- `id` is a project-local name chosen by the user;
-- `product` is `codex`, `claude-code`, or `cursor`;
-- `surface` is `cli` or `ide`.
-
-The `--steward`, `--developer`, and `--reviewer` options must reference declared provider ids. One provider may hold multiple responsibilities, or each responsibility may use a different provider.
-
-| Responsibility | Purpose |
-| --- | --- |
-| Steward | Plans the change and coordinates movement between implementation and rework. |
-| Developer | Implements and verifies the change. |
-| Reviewer | Reviews the current change and either accepts it or returns blocking findings. |
-
-Role bindings describe responsibility. They do not authenticate a person, provider account, fresh context, or independent principal.
-
-### Presets
-
-| Preset | Current local policy |
-| --- | --- |
-| `fast` | Generated advisory policy instructs the workflow to obtain a review verdict before acceptance. It does not model separate reviewer-isolation evidence. |
-| `balanced` | Generated advisory policy models a review verdict, reviewer-isolation evidence, and no active blocking finding at acceptance. |
-
-The public CLI does not receive, track, or validate actual review verdicts, blocking findings, or reviewer-isolation evidence. These presets select the policy model and generated instructions; they do not create a runtime gate.
-
-### Tracker mode
-
-`--tracker local` and `--tracker none` are accepted for the local workflow. Neither value starts or integrates a tracker. The choice is retained as project intent and appears in generated instructions.
-
-## Multi-provider example
-
-This example assigns Codex as Steward, Cursor as Developer, and Claude Code as Reviewer:
+`local-reviewed-change` has no issue, pull-request, CI, or merge procedure. It
+accepts `--tracker local` or `--tracker none`.
 
 ```bash
-npx --yes agentdevflow@0.1.0-beta.2 init \
+npx agentdevflow init \
   --workflow local-reviewed-change \
   --preset balanced \
-  --tracker local \
-  --provider codex-steward,codex,cli \
-  --provider cursor-developer,cursor,cli \
-  --provider claude-reviewer,claude-code,cli \
+  --tracker none \
+  --provider codex-main,codex \
+  --provider cursor-main,cursor \
+  --provider claude-main,claude-code \
+  --steward codex-main \
+  --developer cursor-main \
+  --reviewer claude-main
+```
+
+The generated responsibilities are:
+
+- Steward prepares and hands off an explicit plan.
+- Developer implements the accepted plan, verifies it, and never approves its
+  own work.
+- Reviewer evaluates the current implementation and verification evidence,
+  returns actionable findings, or records acceptance.
+
+### Issue to reviewed pull request
+
+`issue-to-reviewed-pull-request` accepts `--tracker linear` or
+`--tracker github-issues`. It also requires:
+
+- `--pull-request-state draft|ready`;
+- `--pull-request-host <id>`;
+- `--ci <id>`.
+
+The host and CI values are project-local opaque integration identifiers. They
+do not configure a network client or credentials.
+
+This example assigns both Steward and Reviewer to one Codex provider id and
+Developer to Cursor:
+
+```bash
+npx agentdevflow init \
+  --workflow issue-to-reviewed-pull-request \
+  --preset balanced \
+  --tracker linear \
+  --pull-request-state ready \
+  --pull-request-host github \
+  --ci github-actions \
+  --provider codex-main,codex \
+  --provider cursor-main,cursor \
+  --steward codex-main \
+  --developer cursor-main \
+  --reviewer codex-main
+```
+
+For a draft pull request tracked through GitHub Issues:
+
+```bash
+npx agentdevflow init \
+  --workflow issue-to-reviewed-pull-request \
+  --preset balanced \
+  --tracker github-issues \
+  --pull-request-state draft \
+  --pull-request-host github \
+  --ci github-actions \
+  --provider codex-steward,codex \
+  --provider cursor-developer,cursor \
+  --provider claude-reviewer,claude-code \
   --steward codex-steward \
   --developer cursor-developer \
   --reviewer claude-reviewer
 ```
 
-For this absent-target example, successful initialization creates only the configuration and exits with status `0`. A supported lossless-import proposal is also successful but exits with status `1` because the imported target still requires review. Continue with:
+The current issue-workflow CLI fixes auxiliary review to `disabled` and merge
+method to `squash`.
+
+The compiled Steward procedure plans, creates a tracker work item, delegates
+implementation, observes the pull request and current CI result, and routes
+failed CI back to the Developer. For a draft-configured flow, it then ensures
+the pull request is ready after CI succeeds and marks it ready only when it is
+still a draft. It starts an independent review and allows squash merge only
+after current evidence satisfies the policy. Balanced requires clean-context
+reviewer-isolation evidence; Fast does not. A ready-configured flow skips only
+the ensure-ready step.
+
+These are advisory instructions. `agentdevflow` does not call Linear, GitHub,
+CI, or a coding-agent process. Each active agent uses tools already available
+in its execution environment. If a required tool, integration, permission, or
+configured capability is unavailable, the generated instruction requires the
+agent to stop at that step and report the exact missing capability. It must not
+silently switch trackers, skip a gate, or claim success.
+
+## Configure providers and responsibilities
+
+Declare each provider as `id,product`:
+
+- `id` is a project-local identifier;
+- `product` is `codex`, `claude-code`, or `cursor`.
+
+`--steward`, `--developer`, and `--reviewer` must reference declared ids.
+Roles describe workflow responsibility; they do not authenticate a user,
+provider account, or clean execution context.
+
+One provider id may hold several responsibilities. Its generated file contains
+separate sections for each assigned role and instructs the agent to select the
+active responsibility for the current task.
+
+Each provider product has one project-wide native target. The current
+candidate therefore rejects two configured ids for the same product because it
+cannot isolate them in one file. For example, use one `codex-main` id for both
+Steward and Reviewer instead of separate `codex-steward` and
+`codex-reviewer` ids.
+
+## Choose a preset
+
+| Preset | Current behavior |
+| --- | --- |
+| `fast` | Requires the workflow's current review verdict before completion without a clean-context evidence gate. |
+| `balanced` | Adds explicit clean-context reviewer-isolation evidence and forbids completion while a blocking finding remains. |
+
+The issue workflow retains its current-revision CI, Reviewer handoff, and
+merge-authorization requirements under either preset. A preset does not choose
+the workflow, tracker, draft or ready state, provider, auxiliary review, or
+merge method.
+
+`strict` and `custom` are not available.
+
+## Add canonical project guidance
+
+Create any of these optional user-owned Markdown files:
+
+| Source | Scope |
+| --- | --- |
+| `.agentdevflow/rules/shared.md` | Every configured provider output |
+| `.agentdevflow/rules/steward.md` | Outputs assigned the Steward responsibility |
+| `.agentdevflow/rules/developer.md` | Outputs assigned the Developer responsibility |
+| `.agentdevflow/rules/reviewer.md` | Outputs assigned the Reviewer responsibility |
+
+Each file is read as bounded UTF-8 text with a current maximum of 65,536 bytes.
+There is no index, rule identifier format, provider-instance rule file, nested
+discovery, rule CRUD command, or semantic merge.
+
+Example:
 
 ```bash
-npx --yes agentdevflow@0.1.0-beta.2 diff
-npx --yes agentdevflow@0.1.0-beta.2 render --approve-plan <exact-plan-digest>
-npx --yes agentdevflow@0.1.0-beta.2 check
+mkdir -p .agentdevflow/rules
+
+cat > .agentdevflow/rules/shared.md <<'EOF'
+Run the repository's documented verification before every handoff.
+Never place credentials in source, generated instructions, or diagnostics.
+EOF
+
+cat > .agentdevflow/rules/steward.md <<'EOF'
+Keep the tracker work item synchronized with accepted scope changes.
+EOF
+
+cat > .agentdevflow/rules/developer.md <<'EOF'
+Report the exact commands and results used to verify the implementation.
+EOF
+
+cat > .agentdevflow/rules/reviewer.md <<'EOF'
+Review the current revision from a clean context and report only reproducible findings.
+EOF
 ```
 
-Reviewable changes produce exit status `1`. Do not treat that status as an execution failure. Blocked or invalid state produces exit status `2`.
+Canonical guidance is normal project content owned by the user. Edit it
+directly or explicitly ask a coding agent to edit it. Then run `diff`, review
+the resulting provider changes, and render them. `render` never writes these
+source files.
 
-## Generated targets and ownership
+Provider files are generated views, not a second rule store. Direct edits to
+`AGENTS.md`, `CLAUDE.md`, or `.cursor/rules/agentdevflow.mdc` are drift and are
+not reverse-synchronized.
 
-The configured provider products select these project-wide targets:
+## Complete the init, diff, render, check cycle
 
-| Product | Managed target |
-| --- | --- |
-| Codex | `AGENTS.md` |
-| Claude Code | `CLAUDE.md` |
-| Cursor | `.cursor/rules/agentdevflow.mdc` |
+Successful `init` creates only `agentdevflow.config.jsonc`. It does not write
+provider outputs or `.agentdevflow/lock.json`.
 
-The plan classifies each target before mutation:
+Review the plan:
 
-- **Create**: the target is absent.
-- **Exact adopt**: existing bytes already equal the target.
-- **Lossless import**: supported existing bytes have the same complete logical instructions and can be normalized without losing meaning.
-- **Abort**: different existing instructions cannot be preserved exactly.
+```bash
+npx agentdevflow diff
+```
 
-The beta does not merge arbitrary existing instructions or manage a delimited section inside a foreign file. Move or reconcile conflicting content manually, then rerun `diff`; never authorize replacement merely because Git reports a clean repository.
+`diff` exits with status `1` when reviewable changes are required. Human output
+shows the complete before and after content as numbered lines and reports
+whether each file has a final newline. Read the complete recognized target and
+copy its `exact-plan-digest`:
 
-Exact adopt and lossless import transfer ownership of the whole target path; this is not managed-section adoption. Lossless import replaces the whole file with canonical generated bytes after the exact diff is approved.
+```bash
+npx agentdevflow render --approve-plan <exact-plan-digest>
+npx agentdevflow check
+```
 
-After render, `.agentdevflow/lock.json` records ownership. Modifying a managed target outside a new approved plan produces blocked drift instead of silent repair. Removing a provider product can plan deletion of its formerly managed file, but only when the file still matches the exact lock digest and the user approves that deletion in the complete diff.
+After a successful render, `check` should report clean and exit with status
+`0`. A repeated `diff` should also be clean. Editing a canonical rule later
+produces a new plan and digest.
 
-## Exact approval flow
+## Reconfigure an initialized project
 
-`diff` prints both human-readable changes and an `exact-plan-digest`. The digest binds the complete current plan snapshot, including existing-file observations. It is not an identity or authentication mechanism.
+`init` is deliberately creation-only. It never overwrites an existing
+configuration and refuses to initialize over an ownership lock. To change a
+preset, provider assignment, tracker, or workflow, edit
+`agentdevflow.config.jsonc` as user-owned project configuration, then use the
+normal review path:
 
-`render --approve-plan <digest>` rereads the configuration and repository, replans through a mutation-capable workspace, and requires the digest to match again. A stale digest or foreign state fails before provider-file mutation.
+```bash
+npx agentdevflow diff
+npx agentdevflow render --approve-plan <new-exact-plan-digest>
+npx agentdevflow check
+```
 
-## Machine output and exit statuses
+Provider entries and `roles` use the same ids accepted by `init`. When changing
+workflow family, update the tracker, workflow object, and capability bindings
+together.
 
-Add `--json` to emit one bounded UTF-8 JSON object with `schemaVersion: 1`, the command, outcome, exit code, sorted diagnostics, and command-specific fields.
+The local workflow uses:
 
-| Exit status | Meaning |
-| --- | --- |
-| `0` | Success and clean or acceptable state. |
-| `1` | Reviewable changes are required, or supplied observations are degraded. |
-| `2` | Input or state is blocked, invalid, unsafe, unsupported, or failed unexpectedly. |
-
-When scripting `diff` or `doctor`, handle exit status `1` as a documented result rather than losing the report under shell fail-fast behavior.
-
-## Caller-supplied doctor observations
-
-`doctor` does not discover provider installations, execute commands, inspect credentials, or access the network. It validates a revision-1 JSON envelope supplied by the caller. Every source, reference, freshness, version, principal, and capability value is a caller assertion. The `probe` label is not authenticated or independently verified. A `healthy` result means only that the envelope is structurally valid and internally sufficient if those assertions are true; it is not proof that the environment is healthy. Manual assertions produce a degraded result.
-
-For the single-provider quick start, save this as `agentdevflow-doctor-observations.json`:
-
-```json
+```jsonc
 {
-  "revision": 1,
-  "providerObservations": [
+  "tracker": { "mode": "none" },
+  "workflow": { "family": "local-reviewed-change" },
+  "capabilityBindings": [
     {
-      "providerId": "codex-main",
-      "product": "codex",
-      "surface": "cli",
-      "version": null,
-      "executionContext": "local-project",
-      "principal": null,
-      "capabilities": [
-        {
-          "capability": "project-instructions",
-          "strength": "advisory",
-          "mechanism": "instruction-file"
-        }
-      ],
-      "evidence": {
-        "source": "manual",
-        "reference": "manual:getting-started",
-        "freshness": "current"
-      }
-    }
-  ],
-  "environmentObservations": [
-    {
-      "capability": "filesystem-read",
-      "availability": "available",
-      "evidence": {
-        "source": "manual",
-        "reference": "manual:getting-started-read",
-        "freshness": "current"
+      "binding": "developer",
+      "target": {
+        "kind": "responsibility",
+        "responsibility": "developer"
       }
     },
     {
-      "capability": "filesystem-write",
-      "availability": "available",
-      "evidence": {
-        "source": "manual",
-        "reference": "manual:getting-started-write",
-        "freshness": "current"
+      "binding": "reviewer",
+      "target": {
+        "kind": "responsibility",
+        "responsibility": "reviewer"
       }
     }
   ]
 }
 ```
 
-Run:
+An issue workflow using Linear, a ready GitHub pull request, and GitHub Actions
+uses:
 
-```bash
-npx --yes agentdevflow@0.1.0-beta.2 doctor \
-  --observations agentdevflow-doctor-observations.json \
-  --json
+```jsonc
+{
+  "tracker": { "mode": "linear" },
+  "workflow": {
+    "family": "issue-to-reviewed-pull-request",
+    "initialState": "ready",
+    "auxiliaryReview": "disabled",
+    "mergeMethod": "squash"
+  },
+  "capabilityBindings": [
+    {
+      "binding": "tracker",
+      "target": { "kind": "tracker" }
+    },
+    {
+      "binding": "developer",
+      "target": {
+        "kind": "responsibility",
+        "responsibility": "developer"
+      }
+    },
+    {
+      "binding": "pull-request-host",
+      "target": { "kind": "external", "id": "github" }
+    },
+    {
+      "binding": "ci",
+      "target": { "kind": "external", "id": "github-actions" }
+    },
+    {
+      "binding": "reviewer",
+      "target": {
+        "kind": "responsibility",
+        "responsibility": "reviewer"
+      }
+    }
+  ]
+}
 ```
 
-The expected outcome for these manual assertions is degraded with exit status `1`. Do not change `source` to `probe` unless a real bounded probe produced the observation.
+`diff` validates the complete edited document before showing any mutation.
+Changing configured products may create or remove generated targets; deletion
+is allowed only when current bytes still match the ownership lock.
+
+## Generated targets and existing files
+
+| Product | Generated target |
+| --- | --- |
+| Codex | `AGENTS.md` |
+| Claude Code | `CLAUDE.md` |
+| Cursor | `.cursor/rules/agentdevflow.mdc` |
+
+Before mutation, the planner chooses one disposition:
+
+- **Create** an absent target.
+- **Exact adopt** when existing bytes already equal generated bytes.
+- **Lossless import** only when the supported analyzer can preserve the
+  complete logical instructions.
+- **Abort** when different content cannot be preserved exactly.
+
+Adoption and import make the complete path agentdevflow-owned. The tool does
+not manage a section inside a foreign file. Resolve unsupported content
+manually, then rerun `diff`; a clean Git repository is not replacement
+authorization.
+
+The lock records exact managed bytes. A later direct edit blocks mutation.
+Removing a configured provider can plan deletion only when current bytes still
+match the lock and the complete deletion plan is explicitly approved.
+
+## Exact approval and output
+
+`render --approve-plan <digest>` rereads the configuration, canonical guidance,
+lock, and generated targets. It replans and requires the approved digest to
+still match. A stale source, stale target, or foreign before-state fails before
+mutation.
+
+Add `--json` to emit one bounded UTF-8 JSON object with `schemaVersion: 1`,
+command, outcome, exit code, sorted diagnostics, and command-specific fields.
+
+| Exit status | Meaning |
+| --- | --- |
+| `0` | Success and clean or acceptable state. |
+| `1` | Reviewable changes are required. |
+| `2` | Input or state is blocked, invalid, unsafe, unsupported, or failed unexpectedly. |
+
+When scripting `diff`, handle status `1` as a documented result rather than
+losing the report under shell fail-fast behavior.
 
 ## Current non-features
 
-The beta does not:
+The candidate does not:
 
-- launch, delegate to, monitor, or retry coding agents;
-- create or update GitHub Issues or Linear work items;
-- create, observe, mark ready, review, or merge pull requests;
-- query CI, branch protection, provider versions, credentials, or environment access;
+- launch, delegate to, monitor, or retry coding-agent processes;
+- connect to or mutate Linear, GitHub Issues, pull requests, CI, reviews, or
+  merges;
+- verify credentials, provider installations, tool availability, or external
+  evidence;
+- configure auxiliary automated review or a non-squash merge method;
 - expose a public arbitrary-workflow language;
 - provide Strict or Custom preset behavior;
-- merge unrelated existing project-instruction content;
+- provide rule list, add, update, or remove commands;
+- merge arbitrary existing provider instructions;
 - claim that advisory instructions mechanically enforce agent behavior.
-
-The provider-neutral issue-to-reviewed-pull-request model and external evidence contracts remain validated internal directions. They become user-facing only after real adapter and migration evidence supports an explicit product decision.

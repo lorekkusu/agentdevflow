@@ -2,12 +2,6 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 
-import { normalizeCandidateProjectConfig } from "../../src/config/normalize-candidate.js";
-import {
-  executePrivateInitCommand,
-  privateInitProviderPaths,
-  type PrivateInitReadWorkspace,
-} from "../../src/commands/private-init-command-service.js";
 import {
   analyzePrivateProjectInstructionsImport,
   PrivateProjectInstructionsImportError,
@@ -19,30 +13,16 @@ import {
   cursorProjectInstructionsFrontmatter,
   emitCursorProjectInstructions,
 } from "../../src/renderer/native/cursor.js";
-import { fastCandidateConfig } from "../fixtures/config/specimens.js";
 
 function digest(content: string): string {
   return createHash("sha256").update(content).digest("hex");
 }
 
 function configurationDigest(): string {
-  const normalized = normalizeCandidateProjectConfig(fastCandidateConfig);
-  assert.equal(normalized.ok, true);
-  if (!normalized.ok) {
-    throw new Error("Fixture configuration is invalid.");
-  }
-  return normalized.digest;
+  return "a".repeat(64);
 }
 
-class MemoryWorkspace implements PrivateInitReadWorkspace {
-  constructor(private readonly files: ReadonlyMap<string, string>) {}
-
-  async read(path: string): Promise<string | null> {
-    return this.files.get(path) ?? null;
-  }
-}
-
-test("creates a lossless Codex assessment consumed by private init", async () => {
+test("creates a lossless Codex assessment", () => {
   const body = "Preserve these project instructions.\n";
   const target = emitCodexProjectInstructions(body).content;
   const assessment = analyzePrivateProjectInstructionsImport({
@@ -61,22 +41,6 @@ test("creates a lossless Codex assessment consumed by private init", async () =>
     informationLoss: [],
   });
 
-  const init = await executePrivateInitCommand({
-    proposedConfiguration: fastCandidateConfig,
-    targets: [
-      {
-        provider: "codex",
-        content: target,
-        sourceRefs: ["private/project-instructions.md"],
-      },
-    ],
-    importAssessments: [assessment],
-    workspace: new MemoryWorkspace(
-      new Map([[privateInitProviderPaths.codex, body]]),
-    ),
-  });
-  assert.equal(init.outcome, "review-required");
-  assert.equal(init.entries[0]?.disposition, "import");
 });
 
 test("treats line-ending normalization as lossless instruction intent", () => {

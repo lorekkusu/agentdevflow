@@ -4,54 +4,31 @@ Snapshot date: 2026-07-16.
 
 ## Verdict
 
-**Pass with a minimal native renderer behind the validated staging boundary.** `agentdevflow` owns project-instructions transformation for Codex, Claude Code, and Cursor together with planning, capability validation, provenance, ownership, application, and verification. Rulesync remains a pinned external experimental oracle and has no production or test runtime role.
+**Pass with a minimal native renderer behind the validated staging boundary.**
+`agentdevflow` owns project-instructions transformation for Codex, Claude Code,
+and Cursor together with planning, capability validation, provenance,
+ownership, application, and verification. Rulesync has no production, test, or
+build-time role.
 
 The initial 2026-07-13 experiment conditionally recommended pinned Rulesync staging. Follow-up dependency, source, cross-version, and native-prototype evidence showed that the required renderer surface remains deliberately smaller than Rulesync's current product surface. [ADR 0001](../decisions/0001-native-project-instructions-renderer.md) accepts the native strategy. Direct Rulesync writing and a Rulesync fork remain rejected.
 
-## Reproduction
+## Evidence boundary
 
-The repository contains:
+The Rulesync comparison was completed before ADR 0001 and is retained here as
+a dated technical conclusion. Its process harness and fixtures were removed
+after the decision because they had no product caller and imposed continuing
+dependency and test cost. Git history preserves the exact executable
+experiment.
 
-- a neutral rule and Cursor-specific extension under `test/fixtures/renderer/minimal/`;
-- hand-written and modified provider-file fixtures under `test/fixtures/renderer/`;
-- a backend-neutral contract in `src/renderer/contract.ts`;
-- a staged ownership adapter in `src/renderer/staged-adapter.ts`;
-- a pinned Rulesync process boundary in `src/renderer/rulesync-process.ts`;
-- an executable harness in `src/experiments/rulesync-gate1.ts`;
-- automated adapter tests in `test/renderer/staged-adapter.test.ts`;
-- deterministic private materialization in `src/renderer/materialize-compilation.ts`;
-- native emitters under `src/renderer/native/`;
-- six Fast and Balanced golden outputs under `test/fixtures/renderer/native/`;
-- native integration tests in `test/renderer/native-project-instructions.test.ts`.
+Current reproducible coverage is:
 
-Run:
-
-```bash
-npm install
-npm test
-npm run check
-```
-
-`npm run gate:renderer` remains an optional external Rulesync experiment. It may require package resolution and is not part of the normal offline test path.
-
-The harness defaults to `npx --yes rulesync@9.6.3`. A pnpm runner can be selected without changing the repository package manager:
-
-```bash
-RULESYNC_RUNNER=pnpm PNPM_BIN="$(command -v pnpm)" npm run gate:renderer
-```
-
-The direct CLI observations used the same fixture with commands equivalent to:
-
-```bash
-npx --yes rulesync@9.6.3 --json generate \
-  --config test/fixtures/renderer/minimal/rulesync.jsonc \
-  --input-root test/fixtures/renderer/minimal \
-  --output-roots "$OUTPUT_ROOT" \
-  --targets codexcli,claudecode,cursor \
-  --features rules
-```
-
-Add `--dry-run` or `--check` for the corresponding observation. The unsupported fixture uses `--targets codexcli --features commands`. The import fixture runs `import --targets claudecode --features rules` from a directory containing the hand-written `CLAUDE.md`.
+- `src/renderer/contract.ts`;
+- `src/renderer/staged-adapter.ts`;
+- `src/renderer/materialize-domain-project.ts`;
+- `src/renderer/native/`;
+- `test/renderer/staged-adapter.test.ts`;
+- `test/renderer/native-project-instructions.test.ts`;
+- `npm run check`.
 
 ## Version and source evidence
 
@@ -133,7 +110,7 @@ The prototype does not establish a public ownership format, implement import mer
 
 | Criterion | Result | Basis |
 | --- | --- | --- |
-| At least one deterministic plan, render, and verify strategy for Codex, Claude Code, and Cursor | Pass | Six native golden outputs plus adapter plan, apply, and verify tests. |
+| At least one deterministic plan, render, and verify strategy for Codex, Claude Code, and Cursor | Pass | Native output, adapter planning, convergent apply, and drift-verification tests. |
 | Ownership conflicts and unsupported capabilities fail visibly | Pass | Automated tests reject unsupported capabilities, mismatched sources, unowned output, and modified owned output. |
 | Backend replacement behind a narrow contract | Pass | The native emitter and Rulesync experiment both stage files through backend-neutral contracts. |
 | Patch, fork, and replacement cost documented and compatible with expected capacity | Pass for the closed native scope | The project owns three project-wide emitters and explicitly rejects broad Rulesync parity. No precise maintenance estimate is claimed. |

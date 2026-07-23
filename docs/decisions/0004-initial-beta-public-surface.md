@@ -1,8 +1,14 @@
 # 0004: Initial beta public surface
 
-Status: Accepted
+Status: Accepted historical release decision; command and workflow surface
+superseded in the unreleased working tree
 
 Date: 2026-07-21
+
+> **Historical snapshot:** this ADR records the exact first-beta boundary and
+> explains published `0.1.0-beta.1` and `0.1.0-beta.2`. It does not describe
+> the current working-tree command or workflow surface. The current contract is
+> [Current beta CLI contract](../development/beta-cli-contract.md).
 
 ## Context
 

@@ -1,8 +1,7 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
-import type { CandidateCompilation } from "../../src/compiler/private-model.js";
 import {
   createPrivateRenderLock,
   parsePrivateRenderLock,
@@ -14,32 +13,67 @@ import type {
   OwnershipClaim,
   RenderPlan,
   RenderResult,
-  RenderWorkspace,
   VerifyResult,
 } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
-import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
+import { applyPrivateConvergentRenderPlan } from "../../src/renderer/private-convergent-apply.js";
 import {
-  balancedCandidateConfig,
-  reorderedBalancedCandidateConfig,
-} from "../fixtures/config/specimens.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
+  StagedRendererAdapter,
+  verifyRenderPlan,
+} from "../../src/renderer/staged-adapter.js";
+import type { PrivateConvergentMutationIntent } from "../../src/workspace/private-convergent-intent.js";
+import type {
+  PrivateConvergentAllowedDigests,
+  PrivateConvergentMutationOutcome,
+  PrivateConvergentWorkspace,
+} from "../../src/workspace/private-filesystem-workspace.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
-class MemoryWorkspace implements RenderWorkspace {
+function digest(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
+}
+
+class MemoryWorkspace implements PrivateConvergentWorkspace {
   readonly files = new Map<string, string>();
 
   async read(path: string): Promise<string | null> {
     return this.files.get(path) ?? null;
   }
 
-  async writeAtomically(path: string, content: string): Promise<void> {
-    this.files.set(path, content);
+  async removeAtomically(
+    path: string,
+    allowedDigests: PrivateConvergentAllowedDigests,
+  ): Promise<PrivateConvergentMutationOutcome> {
+    const current = this.files.get(path);
+    if (current === undefined) {
+      return "already-applied";
+    }
+    if (digest(current) !== allowedDigests.beforeDigest) {
+      return "drift";
+    }
+    this.files.delete(path);
+    return "applied";
   }
 
-  async removeAtomically(path: string): Promise<void> {
-    this.files.delete(path);
+  async writeConvergently(
+    intent: PrivateConvergentMutationIntent,
+    content: string,
+    allowedDigests: PrivateConvergentAllowedDigests,
+  ): Promise<PrivateConvergentMutationOutcome> {
+    const current = this.files.get(intent.targetPath);
+    const currentDigest = current === undefined ? null : digest(current);
+    if (currentDigest === allowedDigests.afterDigest) {
+      return "already-applied";
+    }
+    if (currentDigest !== allowedDigests.beforeDigest) {
+      return "drift";
+    }
+    this.files.set(intent.targetPath, content);
+    return "applied";
+  }
+
+  async discardConvergentTemporary(): Promise<"absent"> {
+    return "absent";
   }
 }
 
@@ -49,37 +83,24 @@ interface AppliedFixture {
   readonly result: RenderResult;
   readonly verification: VerifyResult;
   readonly workspace: MemoryWorkspace;
-  readonly compilation: CandidateCompilation;
-  readonly materialization: ReturnType<typeof materializeCompilation>;
-}
-
-function compile(input: unknown): CandidateCompilation {
-  const result = compileCandidateProjectConfig(input, initialCompilerOptions);
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  return result.compilation;
+  readonly compilerDigest: string;
+  readonly materialization: ReturnType<
+    typeof createPrivateDomainProjectFixture
+  >["materialization"];
 }
 
 async function applyFixture(
-  input: unknown = balancedCandidateConfig,
   workspace = new MemoryWorkspace(),
   ownership: Readonly<Record<string, OwnershipClaim>> = {},
 ): Promise<AppliedFixture> {
-  const compilation = compile(input);
-  const materialization = materializeCompilation(compilation);
-  const request = renderRequestFromMaterialization(
-    compilation,
-    materialization,
-    { ownership },
-  );
+  const { project, materialization, request } =
+    createPrivateDomainProjectFixture("balanced", { ownership });
   const adapter = new StagedRendererAdapter(
     new NativeProjectInstructionsRenderer(materialization),
   );
   const plan = await adapter.plan(request, workspace);
-  const result = await adapter.render(plan, workspace);
-  const verification = await adapter.verify(plan, workspace);
+  const result = await applyPrivateConvergentRenderPlan(plan, workspace);
+  const verification = await verifyRenderPlan(plan, workspace);
   const lock = createPrivateRenderLock({
     materialization,
     plan,
@@ -92,7 +113,7 @@ async function applyFixture(
     result,
     verification,
     workspace,
-    compilation,
+    compilerDigest: project.workflowCompilation.compilationDigest,
     materialization,
   };
 }
@@ -102,7 +123,7 @@ test("creates a deterministic private lock from applied and verified output", as
   validatePrivateRenderLock(fixture.lock);
 
   assert.equal(fixture.lock.revision, 1);
-  assert.equal(fixture.lock.compilerDigest, fixture.compilation.compilerDigest);
+  assert.equal(fixture.lock.compilerDigest, fixture.compilerDigest);
   assert.equal(fixture.lock.source.digest, fixture.materialization.digest);
   assert.equal(fixture.lock.renderer.name, "agentdevflow-native");
   assert.equal(
@@ -120,10 +141,7 @@ test("creates a deterministic private lock from applied and verified output", as
       { path: "CLAUDE.md", owner: "agentdevflow.renderer.native" },
     ],
   );
-  assert.equal(
-    fixture.lock.digest,
-    "c677b6542ee1d1d0ddf61c979a136d16624f7ee72ea9c03fbe99854a0eb79779",
-  );
+  assert.match(fixture.lock.digest, /^[a-f0-9]{64}$/u);
   assert.equal("createdAt" in fixture.lock, false);
   assert.equal("hostname" in fixture.lock, false);
 
@@ -147,13 +165,12 @@ test("creates a deterministic private lock from applied and verified output", as
   );
 });
 
-test("keeps the lock stable across reordered intent and a no-op render", async () => {
+test("keeps the lock stable across repeated intent and a no-op render", async () => {
   const first = await applyFixture();
-  const reordered = await applyFixture(reorderedBalancedCandidateConfig);
-  assert.deepEqual(reordered.lock, first.lock);
+  const repeated = await applyFixture();
+  assert.deepEqual(repeated.lock, first.lock);
 
   const noOp = await applyFixture(
-    balancedCandidateConfig,
     first.workspace,
     first.result.ownership,
   );

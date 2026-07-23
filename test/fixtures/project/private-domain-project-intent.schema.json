@@ -106,19 +106,11 @@
               "cursor"
             ],
             "type": "string"
-          },
-          "surface": {
-            "enum": [
-              "cli",
-              "ide"
-            ],
-            "type": "string"
           }
         },
         "required": [
           "id",
-          "product",
-          "surface"
+          "product"
         ],
         "type": "object"
       },
@@ -183,10 +175,7 @@
           "additionalProperties": false,
           "properties": {
             "auxiliaryReview": {
-              "enum": [
-                "disabled",
-                "enabled"
-              ],
+              "const": "disabled",
               "type": "string"
             },
             "family": {

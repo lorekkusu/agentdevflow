@@ -2,15 +2,12 @@ import { createHash } from "node:crypto";
 import { posix } from "node:path";
 
 import type {
-  OwnershipClaim,
   PlannedFile,
   RenderPlan,
   RenderReadWorkspace,
   RenderRequest,
   RendererBackend,
   RendererDiagnostic,
-  RenderResult,
-  RenderWorkspace,
   StagedFile,
   StagingRenderer,
   VerifyResult,
@@ -120,7 +117,7 @@ export function validateRenderPlanIntegrity(plan: RenderPlan): void {
 
 export async function verifyRenderPlan(
   plan: RenderPlan,
-  workspace: RenderWorkspace,
+  workspace: RenderReadWorkspace,
 ): Promise<VerifyResult> {
   validateRenderPlanIntegrity(plan);
   const diagnostics: RendererDiagnostic[] = [];
@@ -352,50 +349,4 @@ export class StagedRendererAdapter implements RendererBackend {
     };
   }
 
-  async render(
-    plan: RenderPlan,
-    workspace: RenderWorkspace,
-  ): Promise<RenderResult> {
-    if (!plan.safeToApply) {
-      throw new Error("Refusing to apply an unsafe render plan.");
-    }
-
-    const written: string[] = [];
-    const removed: string[] = [];
-    const ownership: Record<string, OwnershipClaim> = {
-      ...plan.previousOwnership,
-    };
-
-    for (const file of plan.files) {
-      if (file.action === "create" || file.action === "update") {
-        await workspace.writeAtomically(file.path, file.expectedContent ?? "");
-        written.push(file.path);
-      } else if (file.action === "delete") {
-        await workspace.removeAtomically(file.path);
-        removed.push(file.path);
-        delete ownership[file.path];
-      }
-
-      if (file.action !== "delete" && file.expectedDigest !== null) {
-        ownership[file.path] = {
-          owner: plan.ownershipKey,
-          digest: file.expectedDigest,
-        };
-      }
-    }
-
-    return {
-      planDigest: plan.planDigest,
-      written,
-      removed,
-      ownership,
-    };
-  }
-
-  async verify(
-    plan: RenderPlan,
-    workspace: RenderWorkspace,
-  ): Promise<VerifyResult> {
-    return verifyRenderPlan(plan, workspace);
-  }
 }

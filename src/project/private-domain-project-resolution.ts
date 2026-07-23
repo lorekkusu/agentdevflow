@@ -52,8 +52,8 @@ export interface PrivateDomainCapabilityBinding {
 }
 
 /**
- * Typed, fixture-only input used to discover a future ProjectConfig boundary.
- * This is not a public schema or serialized configuration format.
+ * Typed internal representation of the revision-1 serialized project document.
+ * The JSONC parser and schema remain the public input boundary.
  */
 export interface PrivateDomainProjectIntent {
   readonly revision: 1;
@@ -257,7 +257,6 @@ function expectedTargetKind(
       return { kind: "responsibility", responsibility: "reviewer" };
     case "tracker":
       return { kind: "tracker" };
-    case "auxiliary-reviewer":
     case "ci":
     case "pull-request-host":
       return { kind: "external" };

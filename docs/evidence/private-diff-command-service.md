@@ -6,7 +6,10 @@ Snapshot date: 2026-07-18.
 
 **Pass on the tested local Darwin environment.** The private service reports exact managed before and target bytes for recognized creates, updates, deletes, and lock publication without obtaining a mutation-capable workspace interface.
 
-Blocked or concurrently changed observations return diagnostics and no partial entries. This is sufficient to retain `diff` as a thin future command over private services. It does not qualify a public patch format, formatter, discovery behavior, or output schema.
+Blocked or concurrently changed observations return diagnostics and no partial
+entries. This historical service evidence supports the internal core used by
+the current `diff` command; the current CLI contract and installed-entrypoint
+tests define public behavior.
 
 ## Reproduction
 
@@ -47,10 +50,16 @@ The focused suite passes 7 tests with zero failures and zero skips. The selected
 
 The service performs the check pass followed by one additional linear reread of planned files and the lock. Sorting is bounded by the number of exact changes and diagnostics. This intentionally favors clear validation boundaries over minimizing local file reads.
 
-The result contains exact recognized text content rather than a line-oriented presentation. It does not read unrelated paths or return foreign content. A future formatter must address sensitive managed content, output size, terminal behavior, and machine-readable compatibility before public exposure.
+The result contains exact recognized text content rather than a line-oriented
+presentation. It does not read unrelated paths or return foreign content. The
+current beta formatter and JSON report apply the bounded disclosure behavior
+defined in the beta CLI contract; this older service result did not define
+that public behavior.
 
 The reread detects a changed observation during service execution but does not lock the workspace or claim an atomic snapshot. The render service must still revalidate every digest before mutation.
 
 ## Recommendation
 
-Use this private service as the semantic core for future `diff` handling. Keep public formatting and JSON output deferred. The private `check`, `diff`, and mutating `render` semantic cores are now available; evaluate the read-only `doctor` boundary next without selecting a CLI framework.
+This historical slice established the read-only `diff` semantic core before
+the public CLI existed. Current behavior belongs in the beta CLI contract and
+current CLI tests; later command sequencing from this snapshot is superseded.

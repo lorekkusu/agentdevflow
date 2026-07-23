@@ -2,7 +2,11 @@
 
 ## Status
 
-This contract defines the internal render command service that composes exact-plan retention, forward-convergent output apply, verification, and private lock publication. It does not define a public command, API, configuration format, snapshot format, lock format, or filesystem location.
+This contract defines the internal service behind the current beta `render`
+command. It composes exact-plan retention, forward-convergent output apply,
+verification, and lock publication. Its TypeScript API, snapshot bytes, and
+lock bytes remain private; public paths and command behavior belong in the
+[beta CLI contract](beta-cli-contract.md).
 
 ## Required inputs
 
@@ -18,7 +22,12 @@ The service does not discover or persist these inputs. Snapshot and lock placeme
 
 ## Private CLI composition
 
-The experimental local CLI accepts explicit repository, revision-1 configuration, lock, and approval values. The value passed to `--approve-plan` is the complete private plan-snapshot digest, not the narrower renderer plan digest. When the lock is absent, preparation also stages native targets and binds exact adoption or proven lossless import authorization into that snapshot. Unsupported existing bytes keep the plan blocked.
+The CLI accepts explicit repository, revision-1 configuration, lock, and
+approval values. The value passed to `--approve-plan` is the complete private
+plan-snapshot digest, not the narrower renderer plan digest. Preparation also
+reads canonical guidance. When the lock is absent, it stages native targets
+and binds exact adoption or proven lossless-import authorization into that
+snapshot. Unsupported existing bytes keep the plan blocked.
 
 The CLI sequence is:
 
@@ -80,13 +89,16 @@ This design adds no multi-state journal. The before-or-after states are the exac
 The private service does not claim:
 
 - recovery without the exact snapshot, materialization, and base-lock expectation;
-- durable snapshot or lock discovery;
+- another snapshot or journal beyond the current configuration, outputs, and
+  ownership lock;
 - a stable serialized snapshot or lock format;
-- a stable lock or configuration filename;
+- 1.0 stability for the beta lock or configuration filename;
 - cross-file atomic visibility;
 - hostile concurrent-writer exclusion;
 - power-loss or filesystem-corruption durability;
 - network or distributed filesystem behavior;
-- a production CLI or public exit-code contract.
+- public stability for the internal TypeScript service.
 
-The stronger write-ahead implementation remains non-default evidence. Extending it requires a separately accepted property that the V1 service cannot satisfy.
+The stronger write-ahead prototype was removed from the executable tree.
+Reintroducing stronger durability requires a reproduced in-scope failure and a
+separately accepted property that this service cannot satisfy.

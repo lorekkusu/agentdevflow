@@ -5,7 +5,6 @@ import type {
 } from "../compiler/private-domain-workflow.js";
 
 export const privateIssueToPullRequestArtifactTypes = [
-  "AuxiliaryReviewResult",
   "BlockingFinding",
   "CiResult",
   "DelegationReceipt",
@@ -25,100 +24,11 @@ export type PrivatePullRequestInitialState = "draft" | "ready";
 
 export interface PrivateIssueToPullRequestOptions {
   readonly initialState: PrivatePullRequestInitialState;
-  readonly auxiliaryReview: "disabled" | "enabled";
+  readonly auxiliaryReview: "disabled";
   readonly mergeMethod: "squash";
-}
-
-export interface PrivateRevisionBoundEvidence {
-  readonly revision: string;
-}
-
-export interface PrivatePlanEvidence {
-  readonly planDigest: string;
-  readonly workflowDigest: string;
-}
-
-export interface PrivateWorkItemRef {
-  readonly tracker: "github-issues" | "linear" | "local";
-  readonly identity: string;
-}
-
-export interface PrivateDelegationReceipt {
-  readonly planDigest: string;
-  readonly developerBinding: string;
-}
-
-export interface PrivatePullRequestSnapshot extends PrivateRevisionBoundEvidence {
-  readonly identity: string;
-  readonly state: PrivatePullRequestInitialState;
-}
-
-export interface PrivateCiResult extends PrivateRevisionBoundEvidence {
-  readonly status: "failed" | "passed";
-  readonly requiredChecksDigest: string;
-  readonly observationDigest: string;
-}
-
-export interface PrivateAuxiliaryReviewResult
-  extends PrivateRevisionBoundEvidence {
-  readonly outcome: "blocking-findings" | "clear" | "revision-changed";
-}
-
-export interface PrivateBlockingFinding extends PrivateRevisionBoundEvidence {
-  readonly findingDigest: string;
-}
-
-export interface PrivateReviewVerdict extends PrivateRevisionBoundEvidence {
-  readonly verdict: "approved" | "changes-requested";
-  readonly reviewerPrincipal: string;
-  readonly reviewerExecutionContext: string;
-  readonly reviewerContextObservedFresh: boolean;
-}
-
-export interface PrivateReviewerIsolationEvidence
-  extends PrivateRevisionBoundEvidence {
-  readonly developerPrincipal: string;
-  readonly developerExecutionContext: string;
-  readonly reviewerPrincipal: string;
-  readonly reviewerExecutionContext: string;
-  readonly reviewerContextObservedFresh: boolean;
-}
-
-export interface PrivateMergeAuthorization extends PrivateRevisionBoundEvidence {
-  readonly evidenceDigest: string;
-  readonly mergeMethod: "squash";
-}
-
-export interface PrivateMergeReceipt extends PrivateRevisionBoundEvidence {
-  readonly pullRequestIdentity: string;
-  readonly mergeMethod: "squash";
-}
-
-export interface PrivateReviewIndependenceRequirement {
-  readonly distinctPrincipal: boolean;
-  readonly freshExecutionContext: boolean;
-}
-
-export interface PrivateReviewIndependenceObservation {
-  readonly developerPrincipal: string;
-  readonly developerExecutionContext: string;
-  readonly pullRequestRevision: string;
-  readonly review: PrivateReviewVerdict;
-}
-
-export type PrivateReviewIndependenceDiagnosticCode =
-  | "REVIEW_REVISION_MISMATCH"
-  | "REVIEWER_CONTEXT_NOT_DISTINCT"
-  | "REVIEWER_CONTEXT_NOT_FRESH"
-  | "REVIEWER_PRINCIPAL_NOT_DISTINCT";
-
-export interface PrivateReviewIndependenceDiagnostic {
-  readonly code: PrivateReviewIndependenceDiagnosticCode;
-  readonly message: string;
 }
 
 const revisionBoundArtifacts: readonly PrivateIssueToPullRequestArtifact[] = [
-  "AuxiliaryReviewResult",
   "BlockingFinding",
   "CiResult",
   "MergeAuthorization",
@@ -155,7 +65,7 @@ const sharedTransitions: readonly PrivateDomainTransition[] = [
     id: "05-ci-failed-repair",
     from: "pull-request-observed",
     to: "repair",
-    role: "developer",
+    role: "steward",
     invalidates: revisionBoundArtifacts,
     requiresCapabilities: ["observe-ci"],
   },
@@ -200,53 +110,37 @@ const sharedTransitions: readonly PrivateDomainTransition[] = [
   },
 ];
 
-function capabilityRequirements(auxiliaryReview: "disabled" | "enabled") {
+function capabilityRequirements() {
   return [
     {
       id: "create-work-item",
       binding: "tracker",
       capability: "tracker.work-item.create",
-      requiredStrength: "guarded",
     },
     {
       id: "delegate-implementation",
       binding: "developer",
       capability: "development.task.delegate",
-      requiredStrength: "advisory",
     },
     {
       id: "create-pull-request",
       binding: "pull-request-host",
       capability: "pull-request.create",
-      requiredStrength: "guarded",
     },
     {
       id: "observe-ci",
       binding: "ci",
       capability: "ci.result.observe",
-      requiredStrength: "guarded",
     },
-    ...(auxiliaryReview === "enabled"
-      ? [
-          {
-            id: "run-auxiliary-review",
-            binding: "auxiliary-reviewer",
-            capability: "review.auxiliary.run",
-            requiredStrength: "guarded" as const,
-          },
-        ]
-      : []),
     {
       id: "run-independent-review",
       binding: "reviewer",
       capability: "review.independent.run",
-      requiredStrength: "advisory",
     },
     {
       id: "merge-pull-request",
       binding: "pull-request-host",
       capability: "pull-request.merge",
-      requiredStrength: "guarded",
     },
   ] as const;
 }
@@ -266,47 +160,26 @@ export function createPrivateIssueToReviewedPullRequestDefinition(
     requiresCapabilities: ["create-pull-request"],
     guard: `pullRequest.initialState == ${options.initialState}`,
   };
-  const reviewTransitions: readonly PrivateDomainTransition[] =
-    options.auxiliaryReview === "enabled"
+  const reviewEntryNode =
+    options.initialState === "draft" ? "pull-request-ready" : "ci-passed";
+  const readinessTransitions: readonly PrivateDomainTransition[] =
+    options.initialState === "draft"
       ? [
           {
-            id: "07-ci-auxiliary-review",
+            id: "07-ensure-pull-request-ready",
             from: "ci-passed",
-            to: "auxiliary-review",
+            to: "pull-request-ready",
             role: "steward",
-            requiresCapabilities: ["run-auxiliary-review"],
-          },
-          {
-            id: "08-auxiliary-clear",
-            from: "auxiliary-review",
-            to: "independent-review",
-            role: "reviewer",
-            produces: ["AuxiliaryReviewResult"],
-          },
-          {
-            id: "08-auxiliary-blocking-repair",
-            from: "auxiliary-review",
-            to: "repair",
-            role: "reviewer",
-            produces: ["AuxiliaryReviewResult", "BlockingFinding"],
-          },
-          {
-            id: "08-auxiliary-autofix-reobserve",
-            from: "auxiliary-review",
-            to: "pull-request-observed",
-            role: "reviewer",
-            invalidates: revisionBoundArtifacts,
-            produces: ["PullRequestSnapshot"],
+            requiresCapabilities: ["mark-pull-request-ready"],
           },
         ]
-      : [
-          {
-            id: "07-ci-independent-review",
-            from: "ci-passed",
-            to: "independent-review",
-            role: "steward",
-          },
-        ];
+      : [];
+  const reviewTransition: PrivateDomainTransition = {
+    id: "08-start-independent-review",
+    from: reviewEntryNode,
+    to: "independent-review",
+    role: "steward",
+  };
 
   return {
     id: `candidate/issue-to-reviewed-pull-request/${options.initialState}/${options.auxiliaryReview}/${options.mergeMethod}`,
@@ -318,7 +191,7 @@ export function createPrivateIssueToReviewedPullRequestDefinition(
       "pull-request-observed",
       "repair",
       "ci-passed",
-      ...(options.auxiliaryReview === "enabled" ? ["auxiliary-review"] : []),
+      ...(options.initialState === "draft" ? ["pull-request-ready"] : []),
       "independent-review",
       "reviewed",
       "merge-authorized",
@@ -326,7 +199,12 @@ export function createPrivateIssueToReviewedPullRequestDefinition(
     ],
     initialNode: "plan",
     artifactTypes: privateIssueToPullRequestArtifactTypes,
-    transitions: [createPullRequest, ...sharedTransitions, ...reviewTransitions],
+    transitions: [
+      createPullRequest,
+      ...sharedTransitions,
+      ...readinessTransitions,
+      reviewTransition,
+    ],
     policies: [
       {
         id: "authorization-forbids-blocking-finding",
@@ -359,29 +237,17 @@ export function createPrivateIssueToReviewedPullRequestDefinition(
         artifact: "MergeAuthorization",
       },
     ],
-    capabilityRequirements: capabilityRequirements(options.auxiliaryReview),
-    evidenceRequirements: [
-      {
-        id: "ci-result-payload",
-        artifact: "CiResult",
-        schema: "ci-result@2",
-      },
-      {
-        id: "merge-authorization-payload",
-        artifact: "MergeAuthorization",
-        schema: "merge-authorization@1",
-      },
-      {
-        id: "review-verdict-payload",
-        artifact: "ReviewVerdict",
-        schema: "review-verdict@1",
-      },
-      {
-        id: "reviewer-isolation-payload",
-        artifact: "ReviewerIsolationEvidence",
-        schema: "reviewer-isolation@1",
-        referenceArtifact: "PullRequestSnapshot",
-      },
+    capabilityRequirements: [
+      ...capabilityRequirements(),
+      ...(options.initialState === "draft"
+        ? [
+            {
+              id: "mark-pull-request-ready",
+              binding: "pull-request-host",
+              capability: "pull-request.mark-ready",
+            },
+          ]
+        : []),
     ],
   };
 }
@@ -390,85 +256,36 @@ export const privateIssueToPullRequestCapabilityObservations: readonly PrivateDo
   {
     binding: "tracker",
     capability: "tracker.work-item.create",
-    strength: "guarded",
-    mechanism: "approved-external-adapter",
+    mechanism: "compiled-procedure",
   },
   {
     binding: "developer",
     capability: "development.task.delegate",
-    strength: "advisory",
     mechanism: "compiled-procedure",
   },
   {
     binding: "pull-request-host",
     capability: "pull-request.create",
-    strength: "guarded",
-    mechanism: "approved-external-adapter",
+    mechanism: "compiled-procedure",
   },
   {
     binding: "ci",
     capability: "ci.result.observe",
-    strength: "guarded",
-    mechanism: "hosted-check-observation",
-  },
-  {
-    binding: "auxiliary-reviewer",
-    capability: "review.auxiliary.run",
-    strength: "guarded",
-    mechanism: "approved-external-adapter",
+    mechanism: "compiled-procedure",
   },
   {
     binding: "reviewer",
     capability: "review.independent.run",
-    strength: "advisory",
     mechanism: "compiled-procedure",
   },
   {
     binding: "pull-request-host",
     capability: "pull-request.merge",
-    strength: "guarded",
-    mechanism: "approved-external-adapter",
+    mechanism: "compiled-procedure",
+  },
+  {
+    binding: "pull-request-host",
+    capability: "pull-request.mark-ready",
+    mechanism: "compiled-procedure",
   },
 ];
-
-export function validatePrivateReviewIndependence(
-  requirement: PrivateReviewIndependenceRequirement,
-  observation: PrivateReviewIndependenceObservation,
-): readonly PrivateReviewIndependenceDiagnostic[] {
-  const diagnostics: PrivateReviewIndependenceDiagnostic[] = [];
-  if (observation.review.revision !== observation.pullRequestRevision) {
-    diagnostics.push({
-      code: "REVIEW_REVISION_MISMATCH",
-      message: `Review revision ${observation.review.revision} does not match pull-request revision ${observation.pullRequestRevision}.`,
-    });
-  }
-  if (
-    requirement.distinctPrincipal &&
-    observation.review.reviewerPrincipal === observation.developerPrincipal
-  ) {
-    diagnostics.push({
-      code: "REVIEWER_PRINCIPAL_NOT_DISTINCT",
-      message: "Reviewer principal must differ from the Developer principal.",
-    });
-  }
-  if (
-    requirement.freshExecutionContext &&
-    observation.review.reviewerExecutionContext ===
-      observation.developerExecutionContext
-  ) {
-    diagnostics.push({
-      code: "REVIEWER_CONTEXT_NOT_DISTINCT",
-      message: "Reviewer execution context must differ from the Developer execution context.",
-    });
-  }
-  if (
-    requirement.freshExecutionContext &&
-    !observation.review.reviewerContextObservedFresh
-  ) {
-    diagnostics.push({
-      code: "REVIEWER_CONTEXT_NOT_FRESH",
-      message: "Reviewer execution context is not observed as fresh.",
-    });
-  }
-  return diagnostics.sort((left, right) => left.code.localeCompare(right.code));
-}

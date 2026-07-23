@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
@@ -9,24 +9,20 @@ import {
   PrivateRenderCommandError,
 } from "../../src/commands/private-render-command-service.js";
 import { createPrivateRenderPlanSnapshot } from "../../src/commands/private-render-plan-snapshot.js";
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
-import type { CandidateCompilation } from "../../src/compiler/private-model.js";
 import {
   derivePrivateRenderLockIntent,
   serializePrivateRenderLock,
   type PrivateRenderLock,
 } from "../../src/lock/private-render-lock.js";
-import type { OwnershipClaim, RenderRequest } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
+import type {
+  OwnershipClaim,
+  RendererProvider,
+  RenderRequest,
+} from "../../src/renderer/contract.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
 import { PrivateFilesystemWorkspace } from "../../src/workspace/private-filesystem-workspace.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
-import {
-  balancedCandidateConfig,
-  fastThreeProviderCandidateConfig,
-} from "../fixtures/config/specimens.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
 const lockPath = ".private-fixture/render-lock.json";
 
@@ -38,20 +34,6 @@ async function temporaryRepository(t: TestContext): Promise<string> {
   const repository = join(container, "repository");
   await mkdir(repository);
   return repository;
-}
-
-function compile(preset: "fast" | "balanced"): CandidateCompilation {
-  const result = compileCandidateProjectConfig(
-    preset === "fast"
-      ? fastThreeProviderCandidateConfig
-      : balancedCandidateConfig,
-    initialCompilerOptions,
-  );
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  return result.compilation;
 }
 
 function ownershipFromLock(
@@ -70,18 +52,23 @@ async function commandFixture(options: {
   readonly preset: "fast" | "balanced";
   readonly baseLock?: PrivateRenderLock | null;
   readonly ownership?: RenderRequest["ownership"];
+  readonly providers?: readonly RendererProvider[];
 }) {
-  const compilation = compile(options.preset);
-  const materialization = materializeCompilation(compilation);
+  const { materialization, request: baseRequest } =
+    createPrivateDomainProjectFixture(options.preset, {
+      ownership:
+        options.ownership ?? ownershipFromLock(options.baseLock ?? null),
+    });
   const renderer = new NativeProjectInstructionsRenderer(materialization);
   const adapter = new StagedRendererAdapter(renderer);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     options.repository,
   );
   const request = {
-    ...renderRequestFromMaterialization(compilation, materialization),
-    ownership:
-      options.ownership ?? ownershipFromLock(options.baseLock ?? null),
+    ...baseRequest,
+    ...(options.providers === undefined
+      ? {}
+      : { providers: options.providers }),
   };
   const plan = await adapter.plan(request, workspace);
   return {
@@ -156,6 +143,56 @@ test("updates outputs and lock from exact base ownership", async (t) => {
   ]);
 });
 
+test("clears obsolete ownership when a managed output is already absent", async (t) => {
+  const repository = await temporaryRepository(t);
+  const initial = await commandFixture({ repository, preset: "balanced" });
+  const rendered = await executePrivateRenderCommand({
+    ...initial,
+    baseLock: null,
+    lockPath,
+  });
+  await Promise.all([
+    unlink(join(repository, ".cursor/rules/agentdevflow.mdc")),
+    unlink(join(repository, "CLAUDE.md")),
+  ]);
+
+  const codexOnly = await commandFixture({
+    repository,
+    preset: "balanced",
+    baseLock: rendered.lock,
+    providers: ["codex"],
+  });
+  const absentDelete = codexOnly.plan.files.find(
+    (file) => file.path === ".cursor/rules/agentdevflow.mdc",
+  );
+  assert.equal(absentDelete?.action, "delete");
+  assert.equal(absentDelete?.observedDigest, null);
+  assert.equal(absentDelete?.expectedDigest, null);
+
+  const result = await executePrivateRenderCommand({
+    ...codexOnly,
+    baseLock: rendered.lock,
+    lockPath,
+  });
+
+  assert.equal(result.lockPublished, true);
+  assert.deepEqual(result.renderResult.written, []);
+  assert.deepEqual(result.renderResult.removed, []);
+  assert.deepEqual(
+    result.lock.files.map((file) => file.path),
+    ["AGENTS.md"],
+  );
+  assert.equal(
+    await codexOnly.workspace.read(".cursor/rules/agentdevflow.mdc"),
+    null,
+  );
+  assert.equal(await codexOnly.workspace.read("CLAUDE.md"), null);
+  assert.equal(
+    await codexOnly.workspace.read(lockPath),
+    serializePrivateRenderLock(result.lock),
+  );
+});
+
 test("resumes the exact snapshot before and after lock publication", async (t) => {
   for (const boundary of ["render-applied", "lock-target-replaced"] as const) {
     await t.test(boundary, async (boundaryTest) => {
@@ -177,7 +214,7 @@ test("resumes the exact snapshot before and after lock publication", async (t) =
       );
 
       const resumedWorkspace =
-        await PrivateFilesystemWorkspace.openForProcessTermination(repository);
+        await PrivateFilesystemWorkspace.open(repository);
       const resumed = await executePrivateRenderCommand({
         materialization: fixture.materialization,
         snapshot: fixture.snapshot,
@@ -193,6 +230,44 @@ test("resumes the exact snapshot before and after lock publication", async (t) =
       assert.equal(resumed.lockPublished, boundary === "render-applied");
     });
   }
+});
+
+test("preserves an intervening third state before lock publication", async (t) => {
+  const repository = await temporaryRepository(t);
+  const fixture = await commandFixture({
+    repository,
+    preset: "balanced",
+  });
+  const foreignContent = "intervening foreign lock\n";
+
+  await assert.rejects(
+    () =>
+      executePrivateRenderCommand({
+        ...fixture,
+        baseLock: null,
+        lockPath,
+        async faultInjector(event) {
+          if (event.kind === "lock-temporary-synced") {
+            await writeFile(
+              join(repository, lockPath),
+              foreignContent,
+              "utf8",
+            );
+          }
+        },
+      }),
+    (error: unknown) => {
+      assert.equal(error instanceof PrivateRenderCommandError, true);
+      assert.equal(
+        (error as PrivateRenderCommandError).code,
+        "PRIVATE_RENDER_LOCK_STATE_DRIFT",
+      );
+      assert.equal((error as PrivateRenderCommandError).path, lockPath);
+      return true;
+    },
+  );
+
+  assert.equal(await fixture.workspace.read(lockPath), foreignContent);
 });
 
 test("refuses foreign or contradictory lock state before output mutation", async (t) => {

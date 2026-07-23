@@ -3,13 +3,7 @@ import { readdir } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
 const root = resolve("dist/test");
-const excluded = new Set([
-  "transaction/private-transaction-executor.test.js",
-  "transaction/private-transaction-store-lifecycle.test.js",
-  "transaction/private-transaction-store.test.js",
-  "transaction/private-transaction-subprocess.test.js",
-  "workspace/private-filesystem-workspace.test.js",
-]);
+const excluded = new Set();
 const required = new Set([
   "renderer/private-convergent-apply.test.js",
   "renderer/private-convergent-subprocess.test.js",

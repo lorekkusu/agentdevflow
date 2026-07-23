@@ -38,7 +38,9 @@ Changing any candidate value requires an accepted decision and synchronized mani
 - Confirm the branch and release commit match the reviewed remote state.
 - Review the complete diff and public-disclosure classification before committing.
 - Before changing repository visibility, complete a separate public-disclosure review of the full reachable repository history and current settings, not only the candidate diff.
-- Confirm no bootstrap material, prompt, transcript, local absolute path, credential, private key, embargoed vulnerability detail, or raw review chronology is tracked.
+- Confirm no handoff material, prompt, transcript, local absolute path,
+  credential, private key, embargoed vulnerability detail, or raw review
+  chronology is tracked.
 - Do not use reset, clean, stash, commit, tag, push, or branch mutation automatically to manufacture a clean state.
 
 Run:
@@ -79,7 +81,10 @@ npm query ':attr(scripts, [postinstall])'
 - Confirm `.github/workflows/publish.yml` is manual-only, exact-version and exact-commit bound, environment-gated, and limited to `contents: read` plus `id-token: write`.
 - Confirm the tarball includes `LICENSE`, `README.md`, `package.json`, and only the allowlisted runtime graph.
 - Confirm tests, fixtures, experiments, frozen transaction code, private evidence, local caches, and credentials are absent.
-- Install the packed candidate into a clean temporary directory from exact local tarballs and exercise all five command names offline.
+- Install the packed candidate into a clean temporary directory from exact
+  local tarballs and exercise `init`, `diff`, `render`, and `check` offline.
+- Exercise both built-in workflows and canonical shared and responsibility
+  guidance through the installed entrypoint.
 - Verify the packed JavaScript bin retains executable POSIX mode and invoke the installed `.bin/agentdevflow` entrypoint directly without prefixing it with `node`.
 - Run the zero-context public-user review defined in `project-health-review.md` against the packed installed entrypoint and public onboarding material.
 - Verify exact-root defaults, JSON schema version 1, exit codes 0/1/2, foreign-byte non-disclosure, and repeated render convergence from the installed bin.
@@ -100,11 +105,17 @@ Stop and obtain explicit authorization before any of these actions:
 
 Authorization for one action does not imply authority for the others.
 
-For a brand-new npm package, treat first-publication authentication as a separate bootstrap decision. At the 2026-07-21 review snapshot, npm requires a package to exist before a trusted publisher can be configured, and staged publishing cannot create a brand-new package. Do not store or configure a bootstrap token until that one-time use is explicitly reviewed and authorized. After the first publication, configure trusted publishing and revoke or remove the bootstrap credential before a later release.
+The package already uses npm trusted publishing. Do not reintroduce a
+long-lived registry token or repository publishing secret. Any change to the
+trusted-publisher identity or workflow requires separate review and
+authorization.
 
 ## 6. Authorized publication
 
-After authorization, confirm the reviewed source repository is publicly accessible. Dispatch only the exact reviewed `main` commit through the `npm-publish` environment, and require the exact version input. For a first publication that cannot yet use trusted publishing, use only a separately authorized environment-scoped bootstrap secret. Confirm provenance is attached and publish with the non-default `next` tag.
+After authorization, confirm the reviewed source repository is publicly
+accessible. Dispatch only the exact reviewed `main` commit through the
+`npm-publish` environment, require the exact version input, use the configured
+trusted publisher, and confirm provenance is attached.
 
 The final publish command must name the tag explicitly:
 
@@ -114,7 +125,8 @@ npm publish --access public --tag next --provenance
 
 The package version cannot be reused after publication. If publication partially succeeds, inspect registry state before retrying; do not assume rollback or overwrite is possible. For a brand-new package, verify whether the registry also establishes the required `latest` field at the only published version despite the explicit `next` request. Record that platform constraint rather than publishing a fabricated stable version. Later prereleases must not move an existing stable `latest` value.
 
-Immediately after the first successful publication, remove the GitHub secret and revoke the bootstrap token. Configure the package's trusted publisher interactively with 2FA, then remove `NODE_AUTH_TOKEN` from the workflow before a later release.
+The publication workflow must not supply `NODE_AUTH_TOKEN`. Verify that the
+trusted publisher remains the only npm publication credential path.
 
 ## 7. Post-publication verification
 
@@ -130,7 +142,7 @@ Immediately after the first successful publication, remove the GitHub secret and
 ## References
 
 - [Initial beta public-surface decision](../decisions/0004-initial-beta-public-surface.md)
-- [Initial beta CLI contract](beta-cli-contract.md)
+- [Current beta CLI contract](beta-cli-contract.md)
 - [Private package qualification](../evidence/private-package-qualification.md)
 - [Initial beta publication evidence](../evidence/initial-beta-publication.md)
 - [npm provenance](https://docs.npmjs.com/generating-provenance-statements/)

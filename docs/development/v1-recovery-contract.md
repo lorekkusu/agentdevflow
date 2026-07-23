@@ -16,13 +16,22 @@ An exact render plan binds every managed path to before and after content digest
 
 The caller must retain or reproduce the exact plan after interruption. Changed inputs require a new plan and do not authorize resuming an older target.
 
+The exact-plan rule applies to ordinary managed create, update, delete, and
+exact-adoption operations. A lossless initialization import also binds its
+import disposition. If interruption leaves generated provider bytes in place
+without the ownership lock, a new plan observes an exact target rather than
+the original import. Recovery therefore requires a fresh diff and approval;
+the earlier import approval must fail instead of being reinterpreted.
+
 ## Single-file replacement
 
 Writes use a same-directory temporary file whose name is derived from the plan digest, target path, and target digest. The temporary file is synchronized before rename replacement. A regular file at that exact reserved path is treated as resumable staging owned by the exact plan, removed, and recreated exclusively; a symbolic link or non-file entry fails closed, as does a competing creation.
 
 Deletes converge from the before digest to absence. Other processes may observe mixed before and after files during apply. This is recoverability by rerun, not cross-file atomic visibility.
 
-The process-termination workspace deliberately does not synchronize parent directories. It is separate from the stronger experimental workspace so the latter's durability prerequisites are not silently weakened.
+The process-termination workspace deliberately does not synchronize parent
+directories. Parent-directory synchronization, write-ahead state, rollback,
+and power-loss durability are outside the accepted contract.
 
 ## Git boundary
 
@@ -38,6 +47,8 @@ Local automated fixtures cover:
 - delete convergence immediately before and after unlink;
 - real child-process termination with `SIGKILL` at every write boundary;
 - exact-plan rerun from mixed before and after files;
+- fresh diff and approval after an interrupted lossless initialization import
+  changes the observed disposition;
 - deterministic cleanup of reserved regular temporary files;
 - refusal of symbolic-link temporary paths and foreign managed-path digests;
 - no-op repeated apply.
@@ -56,4 +67,7 @@ V1 does not claim:
 - network or distributed filesystem behavior;
 - support on a platform that has not passed the V1 qualification matrix.
 
-The stronger private write-ahead prototype has a separate [experimental interruption contract](interruption-contract.md). Its journal, writer-clearance, cleanup, and directory-synchronization properties are not part of V1 unless a later accepted decision promotes them.
+The stronger write-ahead prototype was removed from the executable tree. Its
+journal, writer-clearance, cleanup, and directory-synchronization properties
+are not part of V1. ADR 0002 defines the evidence required to revisit stronger
+durability.
