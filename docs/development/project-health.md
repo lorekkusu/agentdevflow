@@ -4,10 +4,10 @@ Assessment date: 2026-07-23.
 
 ## Outcome
 
-**Continue with the usable candidate slice; complete exact-commit CI before a
-release decision.** The current working tree has a coherent path from bounded
-project choices and canonical guidance to responsibility-specific
-instructions, reviewed diff, exact-approved render, and clean check.
+**Continue with the usable candidate slice; complete PR delivery before a
+release decision.** The current tree has a coherent path from bounded project
+choices and canonical guidance to responsibility-specific instructions,
+reviewed diff, exact-approved render, and clean check.
 
 A synthetic private-repository exercise also completed the representative
 Linear-to-ready-pull-request workflow through CI failure and repair, fresh
@@ -23,7 +23,9 @@ explicit Steward steps.
 The candidate remains unreleased. Local final-tree repository, package,
 installed-entrypoint, and dependency-advisory checks passed. Initial
 whole-project review findings were addressed and the focused independent
-closure review passed. Exact-commit CI remains.
+closure review passed. The committed implementation candidate also passed the
+six-cell hosted matrix; every later PR commit remains gated by the same
+required checks.
 
 ## Active product core
 
@@ -106,12 +108,13 @@ responsibility-specific composition is already published.
 
 ## Remaining risks
 
-### Exact-commit CI is pending
+### Final PR delivery remains
 
 The complete local repository check, V1 qualification, installed-package
 entrypoint, tarball review, and dependency advisory query passed on the
-converged working tree. The same code must be committed and pass protected
-hosted checks before delivery is reproducible from Git.
+converged tree. The exact committed implementation passed all six hosted
+Ubuntu, macOS, and Windows cells on Node.js 22 and 24. Final delivery still
+requires the PR head to retain those checks through merge.
 
 ### Independent closure review passed
 
@@ -152,6 +155,7 @@ needs.
 | Representative tracker-backed flow completes through repair and fresh review | Passed in bounded dogfood |
 | Full final-tree repository checks | Passed locally: 203/203 |
 | Installed-package and tarball qualification on the converged tree | Passed locally |
+| Exact committed implementation passes the hosted platform matrix | Passed |
 | Independent whole-project review and finding disposition | Passed |
 | Public release authorization and publication | Out of scope for this milestone |
 

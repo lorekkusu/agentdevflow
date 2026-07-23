@@ -9,6 +9,18 @@ passed the original V1 matrix on Ubuntu 24.04 x64, macOS 15 arm64, and Windows
 2025 x64 with Node.js 22 and 24. That run qualified the published beta.2
 candidate and is historical evidence, not proof for later working-tree changes.
 
+## Current candidate result
+
+GitHub Actions run
+[29989549407](https://github.com/lorekkusu/agentdevflow/actions/runs/29989549407)
+passed the current committed implementation candidate on all six cells. The
+run used the workflow's explicit `workflow_dispatch` entry point and bound to
+commit `de3c320ede0d7e9e1eb7e282515c81c1a81b8d52`.
+
+Every cell passed the platform probe, zero-skip qualification, installed
+package entrypoint exercise, and tracked-file cleanliness check. Later commits
+remain subject to their own required checks.
+
 ## Current qualification contract
 
 `.github/workflows/v1-platform-qualification.yml` retains the same six cells:
@@ -65,5 +77,5 @@ convergence, hard-link-based exclusive state creation, and lock-last
 publication. It does not claim cross-file atomicity, automatic rollback,
 directory or power-loss durability, or hostile-writer exclusion.
 
-Working-tree changes after the historical run require a new protected CI pass
-before a later release can cite current hosted qualification.
+Changes after the current candidate run require a new protected CI pass before
+a later release can cite exact-commit hosted qualification.

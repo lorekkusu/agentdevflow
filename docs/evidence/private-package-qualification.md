@@ -119,5 +119,6 @@ directories. It does not publish or mutate external project state.
 
 ## Recommendation
 
-Use this snapshot as the package evidence for the current milestone. Complete
-exact-commit CI before making a release or version decision.
+Use this snapshot as the package evidence for the current milestone. The exact
+committed implementation passed the hosted matrix; complete final PR checks
+before making a release or version decision.
