@@ -29,6 +29,8 @@ function commonJsRequire(specifier: string): string {
 }
 
 async function writeGovernanceFiles(root: string): Promise<void> {
+  await mkdir(join(root, ".claude"), { recursive: true });
+  await writeFile(join(root, ".claude", "CLAUDE.md"), "@../AGENTS.md\n");
   await writeFile(
     join(root, "AGENTS.md"),
     "# Repository guidance\n\n## Roadmap governance\n\nUse `ROADMAP.md`.\n",
@@ -103,6 +105,42 @@ test("requires a root security policy", async () => {
     });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /REQUIRED_ROOT_FILE_MISSING/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("requires the exact Claude Code guidance adapter", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-claude-guidance-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, ".github", "workflows"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await copyFile(
+      resolve(".github/workflows/publish.yml"),
+      join(root, ".github", "workflows", "publish.yml"),
+    );
+    await writeGovernanceFiles(root);
+
+    await unlink(join(root, ".claude", "CLAUDE.md"));
+    const missing = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(missing.status, 1);
+    assert.match(
+      missing.stderr,
+      /\.claude\/CLAUDE\.md:1 REQUIRED_ROOT_FILE_MISSING/u,
+    );
+
+    await writeFile(join(root, ".claude", "CLAUDE.md"), "@AGENTS.md\n");
+    const drifted = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(drifted.status, 1);
+    assert.match(drifted.stderr, /CLAUDE_GUIDANCE_ADAPTER_INVALID/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

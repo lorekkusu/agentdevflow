@@ -1,6 +1,6 @@
 # Maintainer dogfood observation
 
-Snapshot date: 2026-07-23.
+Snapshot period: 2026-07-23 to 2026-07-24.
 
 ## Verdict
 

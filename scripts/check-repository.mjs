@@ -463,9 +463,11 @@ async function inspectPackageBoundary() {
   return diagnostics;
 }
 
-async function inspectRequiredRootFiles() {
+async function inspectRequiredRepositoryFiles() {
+  const claudeGuidanceAdapter = ".claude/CLAUDE.md";
   const requiredFiles = [
     ".github/workflows/publish.yml",
+    claudeGuidanceAdapter,
     "AGENTS.md",
     "ROADMAP.md",
     "SECURITY.md",
@@ -483,9 +485,24 @@ async function inspectRequiredRootFiles() {
         path: requiredFile,
         line: 1,
         code: "REQUIRED_ROOT_FILE_MISSING",
-        message: `Keep ${requiredFile} as a regular file at the repository root.`,
+        message: `Keep ${requiredFile} as a regular repository file.`,
       });
     }
+  }
+
+  try {
+    const content = await readFile(join(root, claudeGuidanceAdapter), "utf8");
+    if (content !== "@../AGENTS.md\n") {
+      diagnostics.push({
+        path: claudeGuidanceAdapter,
+        line: 1,
+        code: "CLAUDE_GUIDANCE_ADAPTER_INVALID",
+        message:
+          "Keep the Claude Code adapter as the exact @../AGENTS.md import.",
+      });
+    }
+  } catch {
+    // The required-file diagnostic reports a missing adapter.
   }
 
   return diagnostics;
@@ -593,7 +610,7 @@ const diagnostics = [];
 const files = await collectTextFiles();
 
 diagnostics.push(...(await inspectPackageBoundary()));
-diagnostics.push(...(await inspectRequiredRootFiles()));
+diagnostics.push(...(await inspectRequiredRepositoryFiles()));
 diagnostics.push(...(await inspectRoadmapBoundary()));
 
 for (const absolutePath of files) {

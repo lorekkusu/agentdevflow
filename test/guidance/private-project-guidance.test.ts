@@ -457,7 +457,7 @@ test("separates multiple responsibilities held by one provider id", () => {
   assert.match(view?.content ?? "", /### Reviewer/u);
 });
 
-test("prevents an unassigned provider projection from performing a workflow transition", () => {
+test("instructs an unassigned provider projection not to perform a workflow transition", () => {
   const intent: PrivateDomainProjectIntent = {
     ...privateLocalProjectIntent(),
     roles: {
