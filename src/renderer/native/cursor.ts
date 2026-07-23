@@ -1,4 +1,8 @@
-import { generatedMarkdown, type ProviderEmission } from "./common.js";
+import {
+  generatedMarkdown,
+  nativeProjectInstructionPaths,
+  type ProviderEmission,
+} from "./common.js";
 
 export const cursorProjectInstructionsFrontmatter = [
   "---",
@@ -9,7 +13,7 @@ export const cursorProjectInstructionsFrontmatter = [
 
 export function emitCursorProjectInstructions(body: string): ProviderEmission {
   return {
-    path: ".cursor/rules/agentdevflow.mdc",
+    path: nativeProjectInstructionPaths.cursor,
     content: [
       cursorProjectInstructionsFrontmatter,
       "",

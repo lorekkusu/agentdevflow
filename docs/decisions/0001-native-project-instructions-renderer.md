@@ -43,7 +43,8 @@ The native scope must remain narrow. Reimplementing Rulesync's broad provider ma
 ## Evidence
 
 - [Gate 1 renderer evidence](../evidence/renderer-backend.md)
-- [Renderer integration evidence](../evidence/renderer-integration.md)
+- [Renderer backend evidence](../evidence/renderer-backend.md)
+- Automated coverage in `test/renderer/native-project-instructions.test.ts`
 - Golden fixtures under `test/fixtures/renderer/native/`
 - Automated coverage in `test/renderer/native-project-instructions.test.ts`
 - [Official Codex `AGENTS.md` documentation](https://learn.chatgpt.com/docs/agent-configuration/agents-md)

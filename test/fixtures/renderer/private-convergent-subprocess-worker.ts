@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   }
   const plan = JSON.parse(await readFile(planPath, "utf8")) as RenderPlan;
   const workspace =
-    await PrivateFilesystemWorkspace.openForProcessTermination(repositoryRoot);
+    await PrivateFilesystemWorkspace.open(repositoryRoot);
   let reached = false;
   await applyPrivateConvergentRenderPlan(plan, workspace, async (event) => {
     if (!reached && eventKey(event) === requestedBoundary) {

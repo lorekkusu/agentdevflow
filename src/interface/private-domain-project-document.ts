@@ -1,13 +1,10 @@
 import { createHash } from "node:crypto";
 
 import {
-  applyEdits,
   createScanner,
   getNodeValue,
-  modify,
   parseTree,
   printParseErrorCode,
-  type Edit,
   type Node,
   type ParseError,
 } from "jsonc-parser";
@@ -15,7 +12,6 @@ import * as jsoncParser from "jsonc-parser";
 
 import {
   candidateProviderProducts,
-  candidateProviderSurfaces,
   candidateRoles,
 } from "../config/candidate.js";
 import type { PrivateDomainCapabilityObservation } from "../compiler/private-domain-workflow.js";
@@ -57,7 +53,6 @@ const syntaxKind = (
 const providerSchema = z.strictObject({
   id: z.string().min(1).max(64).regex(providerIdentifierPattern),
   product: z.enum(candidateProviderProducts),
-  surface: z.enum(candidateProviderSurfaces),
 });
 
 const responsibilityTargetSchema = z.strictObject({
@@ -84,7 +79,7 @@ export const privateDomainProjectIntentSchema = z.strictObject({
     z.strictObject({
       family: z.literal("issue-to-reviewed-pull-request"),
       initialState: z.enum(["draft", "ready"]),
-      auxiliaryReview: z.enum(["disabled", "enabled"]),
+      auxiliaryReview: z.literal("disabled"),
       mergeMethod: z.literal("squash"),
     }),
     z.strictObject({ family: z.literal("local-reviewed-change") }),
@@ -107,7 +102,6 @@ export type PrivateDomainProjectDocumentDiagnosticCode =
   | "DIAGNOSTIC_LIMIT_EXCEEDED"
   | "DOCUMENT_TOO_LARGE"
   | "DUPLICATE_PROPERTY"
-  | "EDIT_REQUEST_INVALID"
   | "NESTING_LIMIT_EXCEEDED"
   | "SCHEMA_INVALID"
   | "SYNTAX_INVALID"
@@ -115,7 +109,7 @@ export type PrivateDomainProjectDocumentDiagnosticCode =
   | "WORKFLOW_RESOLUTION_FAILED";
 
 export interface PrivateDomainProjectDocumentDiagnostic {
-  readonly stage: "edit" | "parse" | "schema" | "resolution";
+  readonly stage: "parse" | "schema" | "resolution";
   readonly code: PrivateDomainProjectDocumentDiagnosticCode;
   readonly path: string;
   readonly message: string;
@@ -129,6 +123,24 @@ export interface PrivateDomainProjectDocumentLimits {
   readonly maxNestingDepth?: number;
   readonly maxDiagnostics?: number;
 }
+
+export interface PrivateJsoncValueParseOptions
+  extends PrivateDomainProjectDocumentLimits {
+  readonly description: string;
+  readonly allowComments?: boolean;
+  readonly allowTrailingComma?: boolean;
+}
+
+export type PrivateJsoncValueParseResult =
+  | {
+      readonly ok: true;
+      readonly value: unknown;
+      readonly contentDigest: string;
+    }
+  | {
+      readonly ok: false;
+      readonly diagnostics: readonly PrivateDomainProjectDocumentDiagnostic[];
+    };
 
 export interface PrivateDomainProjectDocument {
   readonly revision: 1;
@@ -153,32 +165,6 @@ export type PrivateDomainProjectDocumentCompilationResult =
         PrivateDomainProjectResolutionResult,
         { readonly ok: true }
       >;
-    }
-  | {
-      readonly ok: false;
-      readonly diagnostics: readonly PrivateDomainProjectDocumentDiagnostic[];
-    };
-
-export type PrivateDomainProjectDocumentEditOperation =
-  | {
-      readonly kind: "set";
-      readonly path: readonly (string | number)[];
-      readonly value: unknown;
-    }
-  | {
-      readonly kind: "insert";
-      readonly path: readonly (string | number)[];
-      readonly value: unknown;
-    };
-
-export type PrivateDomainProjectDocumentEditResult =
-  | {
-      readonly ok: true;
-      readonly content: string;
-      readonly beforeContentDigest: string;
-      readonly afterContentDigest: string;
-      readonly edits: readonly Edit[];
-      readonly document: PrivateDomainProjectDocument;
     }
   | {
       readonly ok: false;
@@ -294,6 +280,7 @@ function boundDiagnostics(
 function nestingDiagnostic(
   content: string,
   maxNestingDepth: number,
+  description: string,
 ): PrivateDomainProjectDocumentDiagnostic | undefined {
   const scanner = createScanner(content, false);
   let depth = 0;
@@ -314,7 +301,7 @@ function nestingDiagnostic(
           path: "$",
           offset: scanner.getTokenOffset(),
           length: scanner.getTokenLength(),
-          message: `Project document nesting exceeds the configured limit ${maxNestingDepth}.`,
+          message: `${description} nesting exceeds the configured limit ${maxNestingDepth}.`,
         };
       }
     } else if (
@@ -328,6 +315,8 @@ function nestingDiagnostic(
 
 function syntaxDiagnostics(
   errors: readonly ParseError[],
+  description: string,
+  syntaxName: "JSON" | "JSONC",
 ): PrivateDomainProjectDocumentDiagnostic[] {
   return errors.map((error) => ({
     stage: "parse",
@@ -335,7 +324,7 @@ function syntaxDiagnostics(
     path: "$",
     offset: error.offset,
     length: error.length,
-    message: `JSONC syntax error ${printParseErrorCode(error.error)} at offset ${error.offset}.`,
+    message: `${description} ${syntaxName} syntax error ${printParseErrorCode(error.error)} at offset ${error.offset}.`,
   }));
 }
 
@@ -394,74 +383,19 @@ export function parsePrivateDomainProjectDocument(
   content: string,
   limits: PrivateDomainProjectDocumentLimits = {},
 ): PrivateDomainProjectDocumentParseResult {
-  const maxBytes = checkedLimit(
-    limits.maxBytes,
-    privateDomainProjectDocumentDefaultMaxBytes,
-    "maxBytes",
-  );
-  const maxNestingDepth = checkedLimit(
-    limits.maxNestingDepth,
-    privateDomainProjectDocumentDefaultMaxNestingDepth,
-    "maxNestingDepth",
-  );
+  const parsed = parsePrivateJsoncValue(content, {
+    ...limits,
+    description: "Project document",
+  });
+  if (!parsed.ok) {
+    return parsed;
+  }
   const maxDiagnostics = checkedLimit(
     limits.maxDiagnostics,
     privateDomainProjectDocumentDefaultMaxDiagnostics,
     "maxDiagnostics",
   );
-  const contentBytes = Buffer.byteLength(content, "utf8");
-  if (contentBytes > maxBytes) {
-    return {
-      ok: false,
-      diagnostics: [
-        {
-          stage: "parse",
-          code: "DOCUMENT_TOO_LARGE",
-          path: "$",
-          message: `Project document is ${contentBytes} UTF-8 bytes, exceeding the configured limit ${maxBytes}.`,
-        },
-      ],
-    };
-  }
-
-  const depthFailure = nestingDiagnostic(content, maxNestingDepth);
-  if (depthFailure !== undefined) {
-    return { ok: false, diagnostics: [depthFailure] };
-  }
-
-  const errors: ParseError[] = [];
-  const tree = parseTree(content, errors, {
-    allowTrailingComma: true,
-    disallowComments: false,
-    allowEmptyContent: false,
-  });
-  if (errors.length > 0 || tree === undefined) {
-    const diagnostics = syntaxDiagnostics(errors);
-    if (tree === undefined && diagnostics.length === 0) {
-      diagnostics.push({
-        stage: "parse",
-        code: "SYNTAX_INVALID",
-        path: "$",
-        message: "Project document does not contain a JSONC value.",
-      });
-    }
-    return {
-      ok: false,
-      diagnostics: boundDiagnostics(diagnostics, maxDiagnostics),
-    };
-  }
-
-  const treeDiagnostics: PrivateDomainProjectDocumentDiagnostic[] = [];
-  inspectTree(tree, [], treeDiagnostics);
-  if (treeDiagnostics.length > 0) {
-    return {
-      ok: false,
-      diagnostics: boundDiagnostics(treeDiagnostics, maxDiagnostics),
-    };
-  }
-
-  const parsed = getNodeValue(tree) as unknown;
-  const schemaResult = privateDomainProjectIntentSchema.safeParse(parsed, {
+  const schemaResult = privateDomainProjectIntentSchema.safeParse(parsed.value, {
     jitless: true,
   });
   if (!schemaResult.success) {
@@ -482,10 +416,101 @@ export function parsePrivateDomainProjectDocument(
     document: {
       revision: privateDomainProjectDocumentRevision,
       syntax: "jsonc",
-      contentDigest: digestText(content),
+      contentDigest: parsed.contentDigest,
       schemaDigest: privateDomainProjectIntentJsonSchemaDigest,
       intent: schemaResult.data,
     },
+  };
+}
+
+export function parsePrivateJsoncValue(
+  content: string,
+  options: PrivateJsoncValueParseOptions,
+): PrivateJsoncValueParseResult {
+  if (options.description.length === 0) {
+    throw new Error("description must not be empty.");
+  }
+  const maxBytes = checkedLimit(
+    options.maxBytes,
+    privateDomainProjectDocumentDefaultMaxBytes,
+    "maxBytes",
+  );
+  const maxNestingDepth = checkedLimit(
+    options.maxNestingDepth,
+    privateDomainProjectDocumentDefaultMaxNestingDepth,
+    "maxNestingDepth",
+  );
+  const maxDiagnostics = checkedLimit(
+    options.maxDiagnostics,
+    privateDomainProjectDocumentDefaultMaxDiagnostics,
+    "maxDiagnostics",
+  );
+  const contentBytes = Buffer.byteLength(content, "utf8");
+  if (contentBytes > maxBytes) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          stage: "parse",
+          code: "DOCUMENT_TOO_LARGE",
+          path: "$",
+          message: `${options.description} is ${contentBytes} UTF-8 bytes, exceeding the configured limit ${maxBytes}.`,
+        },
+      ],
+    };
+  }
+
+  const depthFailure = nestingDiagnostic(
+    content,
+    maxNestingDepth,
+    options.description,
+  );
+  if (depthFailure !== undefined) {
+    return { ok: false, diagnostics: [depthFailure] };
+  }
+
+  const errors: ParseError[] = [];
+  const allowComments = options.allowComments ?? true;
+  const allowTrailingComma = options.allowTrailingComma ?? true;
+  const syntaxName = !allowComments && !allowTrailingComma ? "JSON" : "JSONC";
+  const tree = parseTree(content, errors, {
+    allowTrailingComma,
+    disallowComments: !allowComments,
+    allowEmptyContent: false,
+  });
+  if (errors.length > 0 || tree === undefined) {
+    const diagnostics = syntaxDiagnostics(
+      errors,
+      options.description,
+      syntaxName,
+    );
+    if (tree === undefined && diagnostics.length === 0) {
+      diagnostics.push({
+        stage: "parse",
+        code: "SYNTAX_INVALID",
+        path: "$",
+        message: `${options.description} does not contain a ${syntaxName} value.`,
+      });
+    }
+    return {
+      ok: false,
+      diagnostics: boundDiagnostics(diagnostics, maxDiagnostics),
+    };
+  }
+
+  const treeDiagnostics: PrivateDomainProjectDocumentDiagnostic[] = [];
+  inspectTree(tree, [], treeDiagnostics);
+  if (treeDiagnostics.length > 0) {
+    return {
+      ok: false,
+      diagnostics: boundDiagnostics(treeDiagnostics, maxDiagnostics),
+    };
+  }
+
+  return {
+    ok: true,
+    value: getNodeValue(tree) as unknown,
+    contentDigest: digestText(content),
   };
 }
 
@@ -521,86 +546,4 @@ export function compilePrivateDomainProjectDocument(
     };
   }
   return { ok: true, document: parsed.document, project };
-}
-
-function validateEditPath(
-  path: readonly (string | number)[],
-): PrivateDomainProjectDocumentDiagnostic | undefined {
-  if (path.length === 0 || path.length > 16) {
-    return {
-      stage: "edit",
-      code: "EDIT_REQUEST_INVALID",
-      path: "$",
-      message: "Private JSONC edit paths must contain between 1 and 16 segments.",
-    };
-  }
-  for (const [index, segment] of path.entries()) {
-    if (
-      (typeof segment === "string" &&
-        (segment.length === 0 || segment === "__proto__")) ||
-      (typeof segment === "number" &&
-        (!Number.isSafeInteger(segment) || segment < 0))
-    ) {
-      return {
-        stage: "edit",
-        code: "EDIT_REQUEST_INVALID",
-        path: `$[editPath][${index}]`,
-        message: `Private JSONC edit path segment ${index} is invalid.`,
-      };
-    }
-  }
-  return undefined;
-}
-
-export function editPrivateDomainProjectDocument(
-  content: string,
-  operation: PrivateDomainProjectDocumentEditOperation,
-  limits: PrivateDomainProjectDocumentLimits = {},
-): PrivateDomainProjectDocumentEditResult {
-  const current = parsePrivateDomainProjectDocument(content, limits);
-  if (!current.ok) {
-    return current;
-  }
-  const pathFailure = validateEditPath(operation.path);
-  if (pathFailure !== undefined) {
-    return { ok: false, diagnostics: [pathFailure] };
-  }
-
-  let edits: Edit[];
-  try {
-    edits = modify(content, [...operation.path], operation.value, {
-      ...(operation.kind === "insert" ? { isArrayInsertion: true } : {}),
-      formattingOptions: {
-        insertSpaces: true,
-        tabSize: 2,
-        eol: "\n",
-      },
-    });
-  } catch {
-    return {
-      ok: false,
-      diagnostics: [
-        {
-          stage: "edit",
-          code: "EDIT_REQUEST_INVALID",
-          path: pathText(operation.path),
-          message: `Private JSONC ${operation.kind} edit could not be represented at ${pathText(operation.path)}.`,
-        },
-      ],
-    };
-  }
-
-  const editedContent = applyEdits(content, edits);
-  const edited = parsePrivateDomainProjectDocument(editedContent, limits);
-  if (!edited.ok) {
-    return edited;
-  }
-  return {
-    ok: true,
-    content: editedContent,
-    beforeContentDigest: current.document.contentDigest,
-    afterContentDigest: edited.document.contentDigest,
-    edits,
-    document: edited.document,
-  };
 }

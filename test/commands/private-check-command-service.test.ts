@@ -7,8 +7,6 @@ import test, { type TestContext } from "node:test";
 import { executePrivateCheckCommand } from "../../src/commands/private-check-command-service.js";
 import { executePrivateRenderCommand } from "../../src/commands/private-render-command-service.js";
 import { createPrivateRenderPlanSnapshot } from "../../src/commands/private-render-plan-snapshot.js";
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
-import type { CandidateCompilation } from "../../src/compiler/private-model.js";
 import {
   derivePrivateRenderLockIntent,
   serializePrivateRenderLock,
@@ -19,16 +17,10 @@ import type {
   RendererCapability,
   RenderRequest,
 } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
 import { PrivateFilesystemWorkspace } from "../../src/workspace/private-filesystem-workspace.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
-import {
-  balancedCandidateConfig,
-  fastThreeProviderCandidateConfig,
-} from "../fixtures/config/specimens.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
 const lockPath = ".private-fixture/render-lock.json";
 
@@ -40,20 +32,6 @@ async function temporaryRepository(t: TestContext): Promise<string> {
   const repository = join(container, "repository");
   await mkdir(repository);
   return repository;
-}
-
-function compile(preset: "fast" | "balanced"): CandidateCompilation {
-  const result = compileCandidateProjectConfig(
-    preset === "fast"
-      ? fastThreeProviderCandidateConfig
-      : balancedCandidateConfig,
-    initialCompilerOptions,
-  );
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  return result.compilation;
 }
 
 function ownershipFromLock(
@@ -74,18 +52,18 @@ async function fixture(options: {
   readonly ownership?: RenderRequest["ownership"];
   readonly capabilities?: readonly RendererCapability[];
 }) {
-  const compilation = compile(options.preset ?? "balanced");
-  const materialization = materializeCompilation(compilation);
+  const { materialization, request: baseRequest } =
+    createPrivateDomainProjectFixture(options.preset ?? "balanced", {
+      ownership:
+        options.ownership ?? ownershipFromLock(options.baseLock ?? null),
+    });
   const renderer = new NativeProjectInstructionsRenderer(materialization);
   const adapter = new StagedRendererAdapter(renderer);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     options.repository,
   );
   const request = {
-    ...renderRequestFromMaterialization(compilation, materialization, {
-      ownership:
-        options.ownership ?? ownershipFromLock(options.baseLock ?? null),
-    }),
+    ...baseRequest,
     ...(options.capabilities === undefined
       ? {}
       : { capabilities: options.capabilities }),

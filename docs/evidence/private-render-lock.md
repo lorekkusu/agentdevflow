@@ -6,7 +6,9 @@ Snapshot date: 2026-07-21.
 
 **Pass for deterministic private lock creation and bounded canonical parsing.** An applied and verified render produces a lock that binds compiler intent, source materialization, renderer identity, generated-file ownership, content digests, and source references. The private application planner can read those exact bytes without requiring a caller-supplied lock object.
 
-This remains a private implementation contract. It does not select a public lock filename, serialized compatibility promise, discovery rule, migration contract, transaction directory, or CLI behavior.
+This remains a private serialized implementation contract. The current beta
+CLI selects `.agentdevflow/lock.json` by default, but lock bytes, migrations,
+and the TypeScript API are not stable 1.0 promises.
 
 ## Reproduction
 
@@ -82,7 +84,7 @@ The validator rejects:
 
 Nested object key order does not affect digest validation. Array order remains meaningful and is required to be canonical.
 
-The byte parser additionally enforces a private 1,048,576-byte default limit, strict JSON syntax, the complete runtime validator, and exact canonical serialization including the terminal newline. Alternate whitespace and key ordering are rejected even if they decode to the same object.
+The byte parser additionally enforces a private 262,144-byte default limit, strict JSON syntax, the complete runtime validator, and exact canonical serialization including the terminal newline. Alternate whitespace and key ordering are rejected even if they decode to the same object.
 
 ## Ownership correction
 
@@ -100,4 +102,6 @@ The staged adapter now emits a deterministic delete action for an obsolete owned
 
 ## Current use
 
-The local private application planner reads this canonical form when producing an exact plan. Public path discovery, format compatibility, and migration remain deferred. The stronger transaction subsystem is frozen and is not the next lock direction.
+The local application planner reads this canonical form when producing an
+exact plan. The accepted beta defines the current path and format boundary.
+Stronger transaction state was removed and is not the next lock direction.

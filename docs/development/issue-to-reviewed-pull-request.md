@@ -1,203 +1,180 @@
-# Issue-to-reviewed-pull-request workflow candidate
+# Issue-to-reviewed-pull-request workflow
 
 ## Status
 
-This workflow family is an approved domain-validation direction. Its names, configuration shape, evidence transport, and capability contracts remain private candidates rather than public API.
+The current unreleased CLI can select this built-in workflow through
+`init`. Its configuration remains a beta surface; the finite-state definition
+and arbitrary workflow topology remain private.
 
-The purpose of this document is to preserve the minimum durable model needed to validate a realistic development flow without turning `agentdevflow` into an orchestration runtime or publishing a general workflow DSL.
+The workflow compiles an operational procedure and role-specific project
+instructions. It is not a tracker client, pull-request client, CI monitor,
+agent scheduler, or merge service.
 
-The first executable private definition and a local no-pull-request contrast workflow now pass the domain-validation slice. See [private domain workflow evidence](../evidence/private-domain-workflows.md). This result validates the internal boundary but does not freeze the candidate representation.
+## User-visible choices
 
-## Product boundary
+The CLI requires:
 
-`agentdevflow` should configure, compile, and validate the workflow. It may export deterministic procedures, provider artifacts, capability requirements, evidence requirements, and an execution manifest.
+| Choice | Current values |
+| --- | --- |
+| Tracker | `linear` or `github-issues` |
+| Pull-request initial state | `draft` or `ready` |
+| Pull-request host | One project-local external id |
+| CI system | One project-local external id |
+| Merge method | Fixed to `squash` |
+| Providers | Codex, Claude Code, or Cursor role bindings |
 
-External agents and systems remain responsible for long-running execution, credentials, API mutation, retries, rate limits, scheduling, pull-request monitoring, and merge operations. The compiler must describe the actual enforcement strength and must not present an instruction or imported observation as mechanical enforcement.
+The host and CI ids name integrations in generated instructions. They do not
+select an SDK, configure credentials, prove access, or perform discovery.
 
-## Candidate flow
-
-The workflow supports either a draft pull request or a pull request that is ready for review immediately. Pull-request readiness is a hosting-surface state; it is not proof that merge policy has been satisfied.
+## Operational flow
 
 ```mermaid
 flowchart TD
-    Plan["Plan the change"] --> WorkItem["Create or select a work item"]
-    WorkItem --> Delegate["Delegate implementation"]
-    Delegate --> InitialState{"Configured pull-request initial state"}
-    InitialState -->|Draft| DraftPr["Create draft pull request"]
-    InitialState -->|Ready| ReadyPr["Create ready pull request"]
-    DraftPr --> Observe["Observe exact pull-request revision"]
-    ReadyPr --> Observe
-    Observe --> Ci{"Required CI result"}
-    Ci -->|Failed| Repair["Repair the change"]
-    Repair --> Invalidate["Invalidate revision-bound evidence"]
-    Invalidate --> Observe
-    Ci -->|Passed| EnsureReady["Promote draft or preserve ready state"]
-    EnsureReady --> Auxiliary{"Auxiliary review enabled?"}
-    Auxiliary -->|Yes| RunAuxiliary["Run auxiliary automated review"]
-    RunAuxiliary --> AuxOutcome{"Auxiliary review outcome"}
-    AuxOutcome -->|Revision changed| Invalidate
-    AuxOutcome -->|Blocking findings| Repair
-    AuxOutcome -->|Clear| Independent["Run independent review"]
-    Auxiliary -->|No| Independent
-    Independent -->|Changes requested| Repair
-    Independent -->|Approved| Authorize["Compile merge authorization"]
-    Authorize --> Merge["External configured merge"]
+    Plan["Steward plans the change"] --> Issue["Steward creates a Linear or GitHub Issues work item"]
+    Issue --> Delegate["Steward delegates the accepted scope to Developer"]
+    Delegate --> Initial{"Configured pull-request state"}
+    Initial -->|Draft| Draft["Developer creates draft pull request"]
+    Initial -->|Ready| Ready["Developer creates ready pull request"]
+    Draft --> Observe["Steward observes current revision"]
+    Ready --> Observe
+    Observe --> CI{"Steward observes required CI"}
+    CI -->|Failed| Route["Steward routes exact failure to Developer"]
+    Route --> Repair["Developer repairs and publishes a new revision"]
+    Repair --> Observe
+    CI -->|Passed, draft| MarkReady["Steward marks pull request ready"]
+    CI -->|Passed, ready| Review["Reviewer applies the compiled review requirements"]
+    MarkReady --> Review
+    Review -->|Changes requested| Repair
+    Review -->|Approved| Authorize["Current evidence authorizes squash merge"]
+    Authorize --> Merge["Steward performs external squash merge"]
 ```
 
-Cycles are intentional. A repair cycle must not require a configured retry bound for safety validation. Operational retry and escalation policy belongs to an executor, not the finite-state safety core.
+Cycles are intentional. A repair changes the revision and invalidates stale CI,
+review, and merge-authorization artifacts. Safety does not require a fixed
+retry count.
 
-## Stable modeling dimensions
+### Steward
 
-The experiment should keep seven concerns separate:
+The generated Steward procedure:
 
-1. **Responsibilities**: Steward, Developer, and Reviewer remain provider-neutral roles.
-2. **Procedures**: planning, work-item creation, delegation, pull-request observation, CI repair, review, findings reconciliation, and merge preparation.
-3. **Capabilities**: versioned external actions or observations with explicit authorization, side effects, failure behavior, and provenance.
-4. **Evidence**: typed, revision-bound records used by policy checks.
-5. **Policies**: closed safety requirements that decide whether a transition is authorized.
-6. **Bindings**: provider, surface, version, execution context, principal, and supported capabilities.
-7. **Enforcement**: the actual mechanism, scope, bypass authority, availability, and required strength.
+1. prepares an explicit plan and creates the selected tracker work item;
+2. delegates the accepted plan and work-item identity to the configured
+   Developer;
+3. observes the pull-request identity, current revision, and required CI;
+4. routes exact failed CI evidence back to the Developer;
+5. marks a draft ready after CI passes, or preserves a pull request that
+   started ready;
+6. starts the configured Reviewer under the selected preset's compiled review
+   requirements;
+7. performs squash merge only when current-revision CI and the review verdict
+   satisfy policy; Balanced additionally requires current reviewer-isolation
+   evidence and no remaining blocking finding.
 
-A provider replacement should normally change bindings, not workflow topology. An optional automated reviewer should normally enable or disable one bounded stage, not create a provider-specific workflow.
+### Developer
 
-## Candidate procedures
+The generated Developer procedure:
 
-The private workflow definition should initially compose a closed set of procedures:
+1. implements only the delegated plan and work-item scope;
+2. creates the configured draft or ready pull request;
+3. reports the pull-request identity and revision to the Steward;
+4. repairs CI or review findings, verifies the repair, and publishes the new
+   revision;
+5. never approves, authorizes, or merges its own work.
 
-- `plan-task`;
-- `create-work-item`;
-- `delegate-implementation`;
-- `observe-pull-request`;
-- `verify-ci`;
-- `repair-change`;
-- `prepare-pull-request-review`;
-- `run-auxiliary-review`;
-- `review-change`;
-- `reconcile-findings`;
-- `authorize-merge`;
-- `record-progress`.
+### Reviewer
 
-These names are experimental. The first implementation should use one internal workflow definition rather than expose arbitrary procedure composition.
+The generated Reviewer procedure always:
 
-## Candidate capabilities
+1. reviews the current revision and its current CI evidence;
+2. reports actionable findings or an approval verdict without
+   implementing the repair itself;
+3. treats the verdict as stale after every repair or revision change.
 
-Provider and tracker adapters may satisfy capabilities such as:
+Balanced additionally requires a clean execution context distinct from
+implementation and forbids completion while a blocking finding remains. Fast
+requires a current review verdict without those additional gates. A different
+provider product does not by itself prove reviewer isolation. The Balanced
+procedure states the required context boundary; the CLI does not authenticate
+it.
 
-- `tracker.work-item.create`;
-- `tracker.work-item.observe`;
-- `development.task.delegate`;
-- `pull-request.create`;
-- `pull-request.observe`;
-- `pull-request.mark-ready`;
-- `ci.result.observe`;
-- `review.auxiliary.run`;
-- `review.independent.run`;
-- `pull-request.merge`.
+## Capability semantics
 
-Capability identifiers and versions are not yet public. A capability contract must state whether it observes or mutates external state, which authorization it needs, whether it supports a dry run, what evidence it returns, and how partial or ambiguous failure is reported.
+The internal definition currently uses these capability names:
 
-Linear, GitHub, Codex, Claude Code, and Cursor are adapter targets or execution bindings, not workflow primitives. The compiler must diagnose an unavailable capability rather than silently substitute a weaker operation.
-
-## Typed evidence and invalidation
-
-The initial experiment should consider these private artifact candidates:
-
-| Artifact | Minimum binding |
+| Binding | Capability |
 | --- | --- |
-| `Plan` | Workflow and plan digest |
-| `WorkItemRef` | Tracker kind and immutable item identity |
-| `DelegationReceipt` | Work item, Developer binding, and delegated plan digest |
-| `PullRequestSnapshot` | Pull-request identity, exact revision, and draft or ready state |
-| `CiResult` | Exact revision, required check set, and result |
-| `AuxiliaryReviewResult` | Exact revision, reviewer binding, findings, and whether mutation occurred |
-| `ReviewVerdict` | Exact revision, Reviewer binding, independence evidence, findings, and verdict |
-| `MergeAuthorization` | Exact revision and the complete policy-evidence digest set |
-| `MergeReceipt` | Pull-request identity, merged revision, method, and external result |
+| Tracker | `tracker.work-item.create` |
+| Developer | `development.task.delegate` |
+| Pull-request host | `pull-request.create` |
+| Pull-request host for draft mode | `pull-request.mark-ready` |
+| CI | `ci.result.observe` |
+| Reviewer | `review.independent.run` |
+| Pull-request host | `pull-request.merge` |
 
-At minimum, a change to the pull-request revision invalidates `CiResult`, `AuxiliaryReviewResult`, `ReviewVerdict`, and `MergeAuthorization`. A review or autofix step that changes bytes must return to revision observation and CI validation. A draft-to-ready state change updates the pull-request snapshot but does not by itself prove or invalidate revision-bound CI results.
+Every current issue-workflow capability is represented as:
 
-Changing the locked workflow, required checks, reviewer-independence policy, or merge policy invalidates an earlier `MergeAuthorization`. Closing, replacing, or retargeting a pull request must fail closed when the compiler cannot prove that existing evidence still applies.
+```text
+mechanism: compiled-procedure
+```
 
-Artifact structure and digest consistency do not prove semantic truth. Evidence imported from a human or external runner must retain its provenance and enforcement limitations.
+This means the compiler can produce coherent instructions, not that
+`agentdevflow` has acquired an external adapter. The CLI performs no network
+access, credential lookup, API mutation, polling, retry, or provider
+invocation.
 
-## Reviewer independence
+Generated instructions require the active agent to stop and report the exact
+missing tool, integration, permission, or capability. They forbid silently
+switching trackers, substituting a weaker mechanism, skipping a gate, or
+simulating success.
 
-A different provider name is insufficient evidence of an independent review. The candidate policy should be able to require constraints on:
+## Policy model
 
-- principal separation between Developer and Reviewer;
-- a fresh execution context or session;
-- permitted inherited state;
-- credentials or authority separation where relevant;
-- an exact reviewed revision.
+The private finite-state compiler models:
 
-The first experiment should model these facts as explicit observations and validate their consistency. It must not claim authenticated identity or isolation that the producing system cannot attest.
+- static nodes and transitions, including cycles;
+- typed artifact production and invalidation;
+- current-revision CI and review requirements;
+- Balanced reviewer isolation and blocking-finding absence;
+- merge authorization and squash-merge completion;
+- deterministic counterexample traces for unsafe paths.
 
-## Pull-request initial state
+Guards are treated as potentially enabled, so guard-related diagnostics are
+an explicit over-approximation. The compiler does not schedule work or validate
+arbitrary executable predicates.
 
-The initial state should be an explicit private configuration choice with two closed values:
+Artifact validity is an internal safety abstraction, not a versioned evidence
+payload or proof of external truth. The current product instructs participants
+to use the current revision and invalidate stale CI and review results; it does
+not receive or authenticate observations from Linear, GitHub, CI, or coding
+agents.
 
-- `draft`: create a draft pull request and mark it ready after required CI succeeds;
-- `ready`: create a pull request that is ready for review and preserve that state while required gates run.
+## Provider neutrality
 
-The compiler should not assume that every project uses draft pull requests. No public default should be selected until preset behavior, provider support, and migration expectations have evidence. Both modes converge on the same revision-bound CI, review, and merge policies. The first candidate promotes a draft after CI succeeds; later evidence may justify a separate bounded promotion-policy choice.
+Steward, Developer, and Reviewer are workflow responsibilities. Codex, Claude
+Code, and Cursor are bindings used to render native project instructions. A
+provider change normally changes role bindings and generated views, not the
+workflow topology.
 
-## Execution export
+The same Codex provider id may act as Steward for coordination and Reviewer in
+a separately clean context. The generated `AGENTS.md` contains separate role
+sections. Two distinct Codex ids are not currently supported because both
+would map to the same project-wide `AGENTS.md`.
 
-The recommended boundary is a deterministic execution manifest plus versioned evidence envelopes. An external Steward, agent, CI job, or future runner may consume the manifest and return evidence. The compiler then revalidates the current revision and artifacts before authorizing the next transition.
+## Product boundary
 
-The first private implementation now exports both this workflow family and the local no-pull-request contrast through one [private execution contract](private-execution-contract.md). The contract verifies supplied traces but does not choose or execute them.
+The current slice deliberately excludes:
 
-The core should not acquire an always-running monitor, credential vault, retry scheduler, or provider session manager. If end-to-end autonomous execution later proves valuable, it should begin as a separately bounded runner with explicit security, persistence, and recovery contracts.
+- automatic tracker or pull-request mutation;
+- live CI observation;
+- agent process delegation or monitoring;
+- auxiliary review configuration or execution;
+- automatic merge;
+- credentials, webhooks, queues, polling, retries, and persistent runtime
+  state;
+- a public workflow DSL.
 
-A manual binding remains valid when automation is unavailable: the generated procedure may ask an operator or agent to perform an action and supply evidence. Such a binding is advisory or observed, not mechanically enforced, unless an external control proves otherwise.
-
-## Representative variations
-
-The same workflow definition should cover at least these variations through configuration and bindings:
-
-| Variation | Expected representation |
-| --- | --- |
-| Different Steward provider | Replace the Steward binding |
-| Cursor or another Developer | Replace the Developer binding and delegation capability |
-| Draft pull request | Select `draft` initial state |
-| Immediately ready pull request | Select `ready` initial state |
-| Auxiliary automated review enabled | Enable the bounded auxiliary-review stage and bind its capability |
-| Auxiliary automated review disabled | Omit that stage without weakening required independent review |
-| Tracker-backed work | Bind GitHub Issues or Linear capabilities |
-| Local work | Bind local evidence procedures without a tracker runtime |
-| Squash merge | Select squash as the configured external merge method after authorization |
-
-## Open decisions and recommendations
-
-| Question | Recommendation | Evidence required before acceptance |
-| --- | --- | --- |
-| Public workflow representation | Keep the workflow definition private and expose only bounded project choices first | At least two materially different realistic workflows compile without provider-specific topology |
-| Pull-request initial-state default | Do not select a public default; require explicit private specimens and let future presets choose documented defaults | Provider qualification and migration fixtures for both modes |
-| Draft promotion timing | Use required CI success for the first candidate; separate it from initial state only when another real workflow requires different timing | A realistic workflow that promotes a draft before or after a different closed gate |
-| Auxiliary review cardinality | Start with zero or one optional stage; generalize to an ordered bounded list only when a second real case requires it | Multiple reviewer-stage fixtures with deterministic invalidation semantics |
-| CI and review ordering | Start with CI before review, but keep their evidence requirements independent so a later workflow may permit concurrent collection | A realistic concurrent-review fixture and deterministic evidence-state budget |
-| Execution protocol | Export a deterministic manifest and typed evidence; do not add a scheduler to the core | End-to-end fixture driven by a replaceable external executor |
-| Evidence transport | Retain repository files as the leading local-first candidate | Discovery, ownership, confidentiality, and concurrent-update evidence |
-| Tracker mutation | Separate proposal from approved mutation and keep credentials outside the compiler model | Linear and GitHub fixtures covering authorization and ambiguous failures |
-| Merge execution | Keep merge external and compile only exact-revision authorization | Hosted protection evidence and stale-authorization rejection |
-| Merge method | Keep the method explicit and capability-checked; use squash in the first fixture without making it universal | Provider support and policy fixtures for each additional method |
-| Reviewer isolation | Model explicit execution-context and principal observations | Provider-specific evidence showing which isolation facts are observable or attestable |
-
-## Validation slice
-
-Before freezing a public parser, schema, filename, or arbitrary workflow API, implement one private `IssueToReviewedPullRequest` definition and deterministic fixtures for:
-
-1. a draft pull request that becomes ready after CI passes;
-2. a pull request created ready that remains blocked from merge until gates pass;
-3. CI failure followed by an unbounded repair cycle;
-4. a new revision that invalidates an earlier successful CI result;
-5. an auxiliary-review autofix that invalidates CI and review evidence;
-6. auxiliary blocking findings without mutation that route to repair;
-7. an independent-review requirement that rejects the Developer execution context;
-8. a stale review verdict after rework;
-9. a direct merge bypass;
-10. an auxiliary-review-disabled flow that remains safe through independent review;
-11. an unavailable or advisory-only capability that cannot satisfy a stronger policy;
-12. a local reviewed-change workflow that compiles without tracker, pull-request, CI, or merge concepts.
-
-The slice passes when the same private definition covers the listed variations through bounded configuration, diagnostics and counterexample traces remain deterministic, and provider-specific fields do not enter workflow topology. It fails if realistic variation requires arbitrary executable predicates, a runtime scheduler, or provider-specific branches throughout the compiler.
+Those exclusions keep `agentdevflow` useful as a configurator and policy
+compiler without turning it into an orchestration platform. A live adapter
+should be added only after one concrete user outcome proves that generated
+procedures are insufficient and the adapter's credentials, failure model, and
+ownership boundary are accepted.

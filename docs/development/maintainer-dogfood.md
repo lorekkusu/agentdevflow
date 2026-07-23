@@ -1,144 +1,151 @@
 # Maintainer dogfood observation
 
-Snapshot date: 2026-07-21.
+Snapshot date: 2026-07-23.
 
 ## Verdict
 
-**Pass as a bounded maintainer observation of the published beta's local workflow.** A private,
-non-sensitive repository used the public `agentdevflow@0.1.0-beta.2` package to
-configure, render, and verify both a single-provider Fast flow and a
-three-provider Balanced flow. Clean headless sessions for Codex, Cursor Agent,
-and Claude Code discovered their native project instructions, identified their
-configured responsibilities, and completed one advisory
-`plan -> implement -> review -> accepted` handoff.
-
-This observation supports the current local configurator and policy-rendering
-boundary. The private repository prevents independent reproduction of the
-project-specific handoff, so that result is not a compatibility qualification.
-The public package path remains independently reproducible through
-[public first-run qualification](../evidence/public-first-run.md). This observation does not
-qualify runtime orchestration, authenticated artifact production, automatic
-transition authorization, pull-request operation, or tracker integration.
-
-## Environment
-
-| Component | Observed version |
-| --- | --- |
-| Published package | `agentdevflow@0.1.0-beta.2` through unqualified `npx` |
-| Node.js | `24.18.0` |
-| npm | `11.16.0` |
-| Codex CLI | `0.144.6` |
-| Claude Code | `2.1.216` |
-| Cursor Agent | `2026.07.17-3e2a980` |
-
-## Configuration exercise
-
-The first pass used the public non-interactive `init` command with:
-
-- the `local-reviewed-change` workflow;
-- the Fast preset;
-- tracker mode `none`;
-- one Codex CLI provider assigned to Steward, Developer, and Reviewer.
-
-The observed sequence was:
+**Pass for an earlier pre-closure working-tree candidate as one bounded,
+usable product slice.** An exact local tarball from that snapshot configured a
+synthetic private repository,
+projected materially different responsibility-specific instructions, and
+converged through:
 
 ```text
 init -> changing diff -> exact approved render -> clean check
 ```
 
-`init` created only `agentdevflow.config.jsonc`. The reviewed render created
-`AGENTS.md` and `.agentdevflow/lock.json`. The project tests passed before and
-after rendering.
+Fresh headless Codex, Claude Code, and Cursor Agent contexts understood their
+assigned responsibilities and handoff boundaries. The representative
+tracker-backed flow then completed a real issue, ready pull request, CI repair,
+fresh review, squash merge, issue closure, and branch cleanup.
 
-The second pass changed the same configuration to:
+This is maintainer evidence, not public compatibility qualification. Later
+closure changes altered configuration bytes, policy projection, and mutation
+checks, so this observation is not evidence for the final tarball digest. The
+current candidate is not the published beta.
 
-| Responsibility | Provider id | Product | Surface |
-| --- | --- | --- | --- |
-| Steward | `codex-steward` | `codex` | `cli` |
-| Developer | `cursor-developer` | `cursor` | `cli` |
-| Reviewer | `claude-reviewer` | `claude-code` | `cli` |
+## Environment
 
-The preset changed to Balanced while the workflow and tracker mode remained
-local and `none`. `diff` reported exactly four reviewable changes: update the
-lock, update `AGENTS.md`, create `CLAUDE.md`, and create
-`.cursor/rules/agentdevflow.mdc`. Exact approved `render` applied those changes,
-and `check` then reported clean state. The repository-owned verification suite
-remained green.
+| Component | Observed version |
+| --- | --- |
+| Candidate package | Exact locally packed pre-closure working-tree tarball |
+| Node.js | `24.18.0` |
+| Codex CLI | `0.145.0` |
+| Claude Code | `2.1.217` |
+| Cursor Agent | `2026.07.20` |
 
-## Clean role-comprehension exercise
+Versions record the observed invocation environment. They do not establish a
+support matrix.
 
-Each provider CLI ran in a new non-persistent or fresh headless context with
-read-only repository access. Each session was asked to identify its configured
-provider id and responsibility, the selected preset and workflow, its required
-handoff artifacts, the acceptance and rework rules, the advisory enforcement
-boundary, and the repository's local verification command.
+## Configuration and rendering exercise
 
-Observed results:
+The private repository contained only synthetic content. Canonical guidance
+came from the optional user-owned files under `.agentdevflow/rules/`.
 
-- Codex identified `codex-steward`, the Steward responsibility, and `Plan` as
-  the handoff artifact before implementation.
-- Cursor Agent identified `cursor-developer`, the Developer responsibility,
-  `VerificationEvidence`, and invalidation of `BlockingFinding` before review.
-- Claude Code identified `claude-reviewer`, the Reviewer responsibility, the
-  acceptance artifacts, the rework invalidations, and the reviewer-isolation
-  requirement.
-- all three found the same repository-owned verification command when
-  allowed read-only access to project documentation;
-- all three distinguished advisory project instructions from separately
-  validated policy, capability, and artifact state.
+The renderer exercise covered Codex, Claude Code, and Cursor with distinct
+Steward, Developer, and Reviewer assignments. Their generated project files
+were materially different by responsibility, and clean headless contexts
+identified the expected duties, handoffs, stop conditions, and prohibited
+actions.
 
-## Advisory handoff exercise
+The final representative configuration used:
 
-The dogfood change made one bounded deterministic behavior change with explicit
-regression requirements. Its implementation details are not public evidence.
+| Choice | Value |
+| --- | --- |
+| Workflow | `issue-to-reviewed-pull-request` |
+| Tracker | Linear |
+| Steward | Codex |
+| Developer | Cursor |
+| Reviewer | Fresh Codex context |
+| Pull request | GitHub, ready at creation |
+| CI | GitHub Actions |
+| Auxiliary review | Disabled |
+| Merge method | Squash |
 
-1. A fresh Codex Steward inspected the repository without mutation and produced
-   a `Plan` containing the intended project-owned files, exact acceptance
-   criteria, repository verification command, risks, and Developer handoff
-   condition.
-2. Cursor Agent implemented only the plan-declared files and reported
-   `VerificationEvidence` from the documented repository command. The complete
-   repository-owned suite passed.
-3. The coordinating process independently confirmed that only plan-declared
-   paths changed, `git diff --check` passed, the complete repository-owned suite
-   passed, and `agentdevflow check` reported clean state.
-4. A new Claude Code Reviewer with no prior handoff context inspected repository
-   content and the bounded verification statement. It produced an accepting
-   `review-verdict@1` result, `reviewer-isolation@1` evidence referencing the
-   verification evidence, no `BlockingFinding`, and an
-   `AcceptanceAuthorization` recommendation.
+One Codex provider assignment contained both Steward and Reviewer
+responsibilities as separate generated sections. Fresh contexts selected only
+the responsibility relevant to the current workflow step. The Developer
+projection did not receive Steward or Reviewer authority.
 
-## Limits and next decision
+The exact tarball completed initialization, a reviewed diff, exact-approved
+rendering, and a clean check. The resulting lock and provider outputs remained
+under the existing single-writer ownership model.
 
-- The exercised provider mapping had one provider id per product. It does not
-  prove that a provider can self-select among multiple configured instances of
-  the same product without additional invocation context.
-- The sessions produced artifacts as bounded messages. The beta did not persist,
-  authenticate, or mechanically validate those messages, and it did not move a
-  runtime state machine.
-- The repository started without unrelated provider instruction files. Existing
-  content adoption, lossless import, and abort behavior remain covered by
-  deterministic package tests rather than this private scenario.
-- The exercise used a local no-tracker workflow. It did not create an issue,
-  branch, pull request, CI run, review-service result, or merge.
-- Provider results apply only to the observed versions and invocation modes.
-- Generated workflow guidance did not replace repository-owned build and test
-  documentation. A Codex context without any repository file-reading mechanism
-  could load `AGENTS.md` but could not discover a command stored elsewhere.
-- In the observed Claude Code version, combining read-only planning mode with a
-  shell tool did not complete, while a file-read-only review mode completed.
-  Neither mode mutated repository files.
+## Tracker-backed workflow exercise
 
-The next recommended product decision is whether to expose the smallest bounded
-local consumer of compiled transition and artifact policy using explicit
-caller-supplied evidence. That decision should precede live tracker,
-pull-request, CI, or merge adapters. It must not silently turn advisory messages
-into authenticated evidence, add a scheduler, or freeze a public workflow DSL.
+The following bounded sequence exercised the generated procedures:
+
+1. A real issue was created in the configured tracker with deterministic
+   acceptance criteria.
+2. The Developer implemented the change, ran repository verification,
+   committed and pushed the revision, and created a ready pull request.
+3. A controlled CI failure was observed. The exact failing result was returned
+   to the Developer, which repaired the implementation and produced a new
+   revision with green push and pull-request checks.
+4. A fresh read-only Reviewer found one missing README update and withheld
+   approval.
+5. The Developer repaired the omission. A second fresh read-only Reviewer
+   approved the exact replacement revision.
+6. The pull request was squash-merged, the issue was closed, and the local and
+   remote working branches were deleted.
+
+The exercise confirms that the compiled procedures can guide role-separated
+work through failure, repair, invalidated review evidence, and fresh approval.
+It does not claim that instruction text mechanically enforced any step.
+
+## Tracker-native delegation follow-up
+
+A second bounded exercise used the tracker's native Cursor delegation rather
+than invoking the Developer directly. A repository child label following the
+existing `owner/repository` convention under the workspace `repo` label group
+provided the repository binding required by the integration.
+
+The delegated issue moved into progress and produced a ready pull request in
+about one minute. The change stayed within its three-file scope, added no
+runtime dependency, passed its local tests, and passed GitHub Actions. A fresh
+read-only Reviewer approved the exact revision. The Steward then squash-merged
+the pull request, deleted the remote work branch, and moved the issue through
+review to completion.
+
+The tracker did not automatically move the issue from implementation through
+review and completion. This confirms a useful responsibility boundary:
+delegation can start and return Developer work, while the Steward procedure
+still owns CI observation, independent review, merge, branch cleanup, and
+tracker-state closure.
+
+## External-system boundary
+
+`agentdevflow` did not connect to Linear or GitHub, execute providers, poll CI,
+manage credentials, mutate a pull request, merge, close an issue, or delete a
+branch. Agents and maintainers used capabilities already available in their
+authorized environment while following the advisory compiled procedures.
+
+Missing external capability must therefore remain a stop-and-report condition,
+not a claim that the CLI can supply or verify the capability.
+
+## Limits
+
+- The private repository prevents independent reproduction of its external
+  issue, pull request, and review history.
+- Headless comprehension is a point-in-time observation of the listed provider
+  versions, not a deterministic provider guarantee.
+- The external exercise covered the representative ready-pull-request path.
+  It did not repeat the same remote lifecycle with a draft pull request.
+- The native delegation observation depends on the tracker's current repository
+  label convention and provider integration; it is not an agentdevflow API or
+  compatibility guarantee.
+- The repository started from controlled synthetic content. Arbitrary legacy
+  instruction adoption and import remain bounded separately.
+- The observation proves advisory workflow usefulness, not live adapters,
+  runtime orchestration, authenticated evidence, automatic authorization, or
+  automatic merge.
+- The observation was not rerun against the later closure tarball. Current
+  repository, package, and review evidence is recorded separately.
 
 ## Disclosure boundary
 
-This document retains configuration shape, tool versions, bounded maintainer
-observations, stable failure boundaries, and the next decision gate. It excludes
-prompts, raw model output, reviewer identities, private repository name, URL,
-source, runtime, test names, verification command, credentials, local absolute
-paths, and discussion chronology.
+This document retains the configuration shape, observed tool versions, bounded
+sequence, outcomes, non-claims, and remaining gates. It excludes the private
+repository name and URL, issue identifier, commit hashes, prompts, raw provider
+output, reviewer and session identities, credentials, local absolute paths,
+and private discussion chronology.

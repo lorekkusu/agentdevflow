@@ -2,7 +2,10 @@
 
 ## Status
 
-This contract defines an internal read-only exact-byte diff service. It is not a stable CLI, API, patch format, machine-output schema, discovery rule, configuration filename, or lock filename.
+This contract defines the internal read-only exact-byte service behind the
+current beta `diff` command. Its TypeScript API and intermediate values remain
+private; public paths, output, and exit classes belong in the
+[beta CLI contract](beta-cli-contract.md).
 
 ## Required inputs
 
@@ -10,7 +13,11 @@ The service accepts the same caller-supplied private materialization, exact plan
 
 It does not discover, parse, compile, plan, render, or persist state. It calls the private check service first and produces no change entries when check is blocked.
 
-The separate private application planner may supply its exact local plan and materialization. With no lock, that plan can include exact adoption or analyzer-proven lossless import. Diff remains a read-only consumer and does not duplicate configuration, lock parsing, staging, or import-analysis behavior.
+The application planner supplies an exact plan and responsibility-specific
+materialization for either built-in workflow. With no lock, that plan can
+include exact adoption or analyzer-proven lossless import. Diff remains a
+read-only consumer and does not duplicate configuration, guidance reading,
+lock parsing, staging, or import analysis.
 
 The private local CLI composes that planner with this service from explicit repository, configuration, and lock paths. It does not accept a caller-supplied compiler result, materialization, plan, snapshot, or lock object.
 
@@ -28,13 +35,14 @@ Entries are sorted by path and kind. Managed outputs already at target are omitt
 
 The result reuses the private check outcomes and candidate exit codes:
 
-| Outcome | Candidate exit code | Diff behavior |
+| Outcome | Beta exit code | Diff behavior |
 | --- | ---: | --- |
 | `clean` | `0` | No exact changes remain. |
 | `changes-required` | `1` | One or more exact, recognized changes are returned. |
 | `blocked` | `2` | No change entries are returned. Diagnostics explain why. |
 
-These remain private candidates until end-to-end CLI and machine-output behavior is explicitly accepted.
+The beta CLI contract defines these public exit classes. This internal result
+shape remains private.
 
 ## Observation protocol
 
@@ -60,9 +68,16 @@ The service still does not provide a multi-file atomic snapshot. Another process
 
 The workspace interface contains only `read(path)`. The service reads only plan-declared managed paths and the caller-supplied lock path. It does not scan the repository, inspect Git status, or return foreign content when a digest does not match the retained plan.
 
-Exact before and after content is retained only for recognized managed state. A future formatter must make terminal disclosure, redaction, truncation, and machine-output behavior explicit before this shape becomes public.
-
-The experimental local formatter emits the complete snapshot digest as `exact-plan-digest`, the lower-level renderer digest separately, and exact recognized before and after text as JSON-quoted strings. A blocked result emits no change entries, and end-to-end fixtures verify that foreign bytes are absent from output. The private render entry requires `--approve-plan` to equal that exact snapshot digest. This formatter is deliberately untruncated so approval can bind to the complete exact target. It is unsuitable as a public terminal contract until output-size limits, sensitive managed content, paging, redaction, and machine-output behavior are decided.
+Exact before and after content is retained only for recognized managed state.
+The current beta formatter emits the complete snapshot digest as
+`exact-plan-digest`, the lower-level renderer digest separately, and complete
+recognized before and after text as numbered human-readable lines. It marks
+absence and final-newline state explicitly. JSON output retains exact string
+values. A blocked result emits no change entries, and end-to-end fixtures
+verify that foreign bytes are absent from output. The render entry requires
+`--approve-plan` to equal that exact snapshot digest. Human and JSON output use
+the bounded behavior defined by the beta CLI contract; changing disclosure or
+truncation behavior requires an explicit compatibility decision.
 
 ## Explicit non-claims
 
@@ -71,7 +86,8 @@ The private service does not define:
 - a unified-diff or line-diff representation;
 - binary-file behavior;
 - terminal coloring, paging, redaction, or truncation;
-- a public JSON schema or compatibility policy;
+- the public JSON schema or compatibility policy, which belongs to the beta
+  CLI contract;
 - configuration, snapshot, or lock discovery;
 - filesystem-wide or Git-wide change reporting;
 - an atomic repository snapshot;

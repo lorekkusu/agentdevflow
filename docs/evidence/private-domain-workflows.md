@@ -1,129 +1,95 @@
-# Private domain workflow evidence
+# Domain workflow implementation evidence
 
-Snapshot date: 2026-07-20.
+## Scope
 
-## Verdict
+This document records reproducible source-level evidence for the two built-in
+workflow definitions. It does not claim live tracker, pull-request, CI,
+coding-agent, review-service, or merge integration.
 
-**Pass for the private domain-validation slice.** One provider-neutral compiler seam accepts both an issue-to-reviewed-pull-request workflow family and a local reviewed-change workflow with no tracker, pull request, CI, or merge concepts. Draft and immediately ready pull requests, optional auxiliary review, repair cycles, stale evidence, reviewer-context observations, exact merge authorization, capability strength, deterministic normalization, and an explicit state budget have executable coverage.
-
-This result does not accept a public workflow definition, configuration shape, artifact transport, capability identifier, execution protocol, merge method, or provider adapter contract.
-
-## Reproduction
-
-Implementation:
+Authoritative implementation:
 
 - `src/compiler/private-domain-workflow.ts`;
-- `src/workflows/private-issue-to-reviewed-pull-request.ts`;
-- `src/workflows/private-local-reviewed-change.ts`.
+- `src/workflows/private-local-reviewed-change.ts`;
+- `src/workflows/private-issue-to-reviewed-pull-request.ts`.
 
-Fixtures and tests:
+Primary automated coverage:
 
-- `test/fixtures/workflows/run.ts`;
-- `test/workflows/private-domain-workflows.test.ts`.
+- `test/workflows/private-domain-workflows.test.ts`;
+- `test/application/private-domain-project-plan.test.ts`;
+- `test/renderer/materialize-domain-project.test.ts`;
+- `test/cli/private-local-cli.test.ts`.
 
-Run:
+## Current workflow families
 
-```bash
-npm run build
-node --test dist/test/workflows/private-domain-workflows.test.js
-npm run phase1:domain-workflows
-npm run check
-```
+### Local reviewed change
 
-## Compiler boundary
+The local definition contains planning, implementation, verification, review,
+rework, and acceptance without issue, pull-request, CI, or merge artifacts.
 
-The private seam accepts:
+### Issue to reviewed pull request
 
-- finite nodes and role-labeled transitions;
-- finite typed artifact identifiers and explicit production or invalidation;
-- closed required-artifact and forbidden-artifact policies;
-- opaque provider-neutral capability bindings;
-- observed enforcement strength and mechanism;
-- an explicit abstract-state budget.
+The issue definition accepts draft or ready initial state. Draft mode includes
+an explicit `07-mark-pull-request-ready` transition after CI passes. Ready mode
+enters independent review after CI without that transition.
 
-It normalizes the internal definition, resolves capability observations, calculates the conservative `node count * 2 ^ artifact type count` bound, invokes the existing guard-blind finite-state validator, and returns a deterministic compilation digest.
+The workflow proceeds from current CI to the Reviewer responsibility.
+Auxiliary review is not part of the current definition. Squash is the only
+current merge method. Balanced requires clean-context reviewer-isolation
+evidence and no blocking finding at authorization; Fast retains the current CI
+and review-verdict gates without those additional requirements.
 
-Domain-specific artifacts and capabilities remain in `src/workflows/`. The generic compiler imports no issue, tracker, pull-request, CI, review-service, or merge types. Both workflow families use the same compiler function and policy validator.
+## Capability observations
 
-## Captured specimens
+Every current issue-workflow capability observation records
+`mechanism: compiled-procedure`.
 
-| Specimen | Nodes | Artifacts | Theoretical maximum | Explored states | Capabilities | Compilation digest |
-| --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Draft pull request with auxiliary review | 11 | 11 | 22,528 | 12 | 7 | `9f685ecd727364f23cd3b8df6bb704d2456ac120401fdeb45a02d19113f858a3` |
-| Ready pull request without auxiliary review | 10 | 11 | 20,480 | 11 | 6 | `6f8302de37aa94c60554766538ccdaa90a6e3ba43851ca702457ae213a1e9bef` |
-| Local reviewed change | 4 | 4 | 64 | 4 | 2 | `ff4530c2430c294eda60492c1d8d08f9700c7ed6404bf6f4308a939fd4371415` |
+Covered capabilities are:
 
-The focused domain suite passed 13 tests. At this evidence snapshot, the complete repository check passed the publication audit over 198 text files, TypeScript type checking, and 355 tests with zero failures or skips.
+- `tracker.work-item.create`;
+- `development.task.delegate`;
+- `pull-request.create`;
+- `pull-request.mark-ready`;
+- `ci.result.observe`;
+- `review.independent.run`;
+- `pull-request.merge`.
 
-The issue-to-pull-request definition uses logical bindings such as `tracker`, `developer`, `reviewer`, `ci`, and `pull-request-host`; it contains no Codex, Claude Code, Cursor, Linear, or GitHub topology branch. Replacing a product remains a binding concern.
+Compilation requires each procedure observation used by the selected
+definition. Removing the advisory merge procedure, for example, produces
+`CAPABILITY_UNAVAILABLE`. This proves closed capability accounting; it does not
+prove an external adapter exists or that an action occurred.
 
-Transitions now reference declared logical capability requirement ids. This changes the private compilation digests and allows deterministic execution manifests to route capabilities without adding provider-specific topology. See [private execution contract evidence](private-execution-contract.md).
+There is no approved external-adapter claim in this evidence. The installed
+CLI compiles instructions and performs no network or provider operation.
 
-The local definition contains `Plan`, `VerificationEvidence`, `ReviewVerdict`, and `AcceptanceAuthorization`. Its normalized bytes contain no `PullRequest`, `WorkItem`, `CiResult`, or `Merge` identifier. It is not represented by empty pull-request fields or fictitious tracker artifacts.
+## Safety coverage
 
-## Pull-request variation
+The automated fixtures cover:
 
-The private issue-to-pull-request factory takes bounded options for initial state, auxiliary review, and the first merge-method fixture:
+- a draft path with explicit mark-ready after CI;
+- an immediately ready path without draft promotion;
+- unbounded CI repair and review rework cycles;
+- stale CI after a revision-changing repair;
+- stale independent-review evidence after rework;
+- direct merge before authorization;
+- deterministic normalization;
+- explicit state-space budgeting;
+- a local workflow with no issue-to-PR assumptions.
 
-- `draft` creates the draft branch;
-- `ready` creates the immediately reviewable branch;
-- auxiliary review may be enabled or disabled;
-- the first fixture uses squash without claiming that squash is universal.
+Counterexamples are deterministic transition traces. Cycles are explored as
+finite abstract artifact-validity states rather than by bounding operational
+retry count.
 
-Both initial states converge on the same revision-bound CI, independent-review, and merge-authorization policies. Pull-request ready state remains separate from merge authorization.
+## Limits
 
-Auxiliary review has three explicit outcomes:
+- Guards are treated as potentially enabled; reported guard-related failures
+  may be intentional over-approximation.
+- Artifact validity is an internal safety abstraction, not a versioned payload
+  or proof of semantic truth or producer identity.
+- The compiler does not acquire evidence, schedule work, authenticate an
+  agent, or execute a transition.
+- Balanced generated procedures require a clean Reviewer context, but the
+  compiler does not authenticate reviewer identity or execution context.
+- The public CLI does not expose arbitrary workflow definitions.
 
-1. clear evidence proceeds to independent review;
-2. non-mutating blocking findings proceed to repair;
-3. autofix produces a new pull-request snapshot and invalidates the prior snapshot, CI result, auxiliary result, blocking findings, review verdict, reviewer-isolation evidence, and merge authorization.
-
-## Safety observations
-
-| Fixture | Result |
-| --- | --- |
-| Draft path with auxiliary review | Accepted |
-| Immediately ready path without auxiliary review | Accepted |
-| Unbounded CI repair and review-rework cycles | Accepted |
-| Auxiliary autofix followed by fresh observation and CI | Accepted |
-| Auxiliary blocking findings routed to repair | Accepted |
-| Revision-changing repair followed by stale CI reuse | Rejected with `authorization-requires-ci` counterexample |
-| Rework followed by stale review reuse | Rejected with independent-review and verdict counterexamples |
-| Direct delegated-to-merged bypass | Rejected with `merge-requires-authorization` counterexample |
-| Developer principal and execution context reused as Reviewer | Rejected by deterministic observation diagnostics |
-| Advisory merge capability offered to a guarded requirement | Rejected with `CAPABILITY_STRENGTH_INSUFFICIENT` |
-| Reordered equivalent definition and observations | Accepted with deeply equal compilation output |
-| Theoretical maximum 22,528 with configured limit 22,527 | Rejected before exploration |
-
-Reviewer independence remains an observed consistency check. The experiment checks exact revision, principal separation, execution-context separation, and an asserted fresh-context observation. It does not authenticate a principal or prove session isolation.
-
-## Criteria
-
-| Criterion | Result | Basis |
-| --- | --- | --- |
-| Issue-to-pull-request workflow does not constrain the compiler core | Pass | Domain types remain outside the generic compiler; the local definition compiles through the same seam. |
-| Draft pull requests are optional | Pass | Both draft and immediately ready specimens compile safely. |
-| Optional auxiliary review does not weaken independent review | Pass | The disabled specimen retains the same review and authorization policies. |
-| Revision-changing work invalidates stale evidence | Pass | Autofix and repair transitions invalidate revision-bound artifacts; unsafe reuse fixtures fail. |
-| Independent review is more than a provider label | Pass for observed consistency | Principal, context, freshness, and exact revision produce deterministic diagnostics. |
-| Capability degradation remains visible | Pass | Advisory merge evidence cannot satisfy a guarded requirement. |
-| Cycles do not require a retry bound | Pass | Finite abstract states make repair and review cycles terminate in analysis. |
-| Public workflow representation is ready | Fail by design | Project configuration, artifact transport, execution manifest, migration, and adapter contracts remain private or undefined. |
-
-## Limitations
-
-- Capability observations are fixture input, not live provider or hosting-platform evidence.
-- Opaque binding names are internal and have no accepted discovery or authentication contract.
-- Artifact identifiers are finite presence bits for safety analysis; the TypeScript evidence interfaces are not persisted or discovered.
-- Revision and reviewer-independence observations have a pure consistency validator but no trusted producer or attestation.
-- The default state budget is private and deliberately conservative.
-- The first merge-method fixture is squash; other methods require explicit capability and policy evidence.
-- CI and review are sequential in the first issue-to-pull-request definition. Concurrent evidence collection remains an open bounded-workflow question.
-- The compiler exports no scheduler, monitor, credential manager, tracker runtime, or merge executor.
-- The private domain seam now accepts a bounded private project intent and orthogonal Fast or Balanced preset expansion. The older schema-version-0 candidate converges only with explicit new choices; no public `ProjectConfig` is frozen.
-
-## Recommendation
-
-Keep the compiler core provider-neutral and domain-neutral. Retain issue, pull-request, CI, and merge semantics in versioned built-in workflow definitions. Keep the local no-pull-request fixture as a regression guard against accidental domain coupling.
-
-The follow-on [private execution contract](private-execution-contract.md) exports deterministic manifests and evidence envelopes for both workflow families, [private project-resolution evidence](private-domain-project-resolution.md) binds project intent to those manifests, and [private preset expansion evidence](private-preset-expansion.md) keeps policy profiles separate from workflow selection. These layers remain free of scheduling and external mutation and do not accept a public configuration contract.
+Run the repository verification commands in `AGENTS.md` to establish the
+current pass or fail result for a specific working tree.

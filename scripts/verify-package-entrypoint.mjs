@@ -17,6 +17,8 @@ const packageBaseName = `${String(manifest.name).replace(/^@/u, "").replace(/\//
 const temporaryRoot = await mkdtemp(join(tmpdir(), "agentdevflow-package-entrypoint-"));
 const installRoot = join(temporaryRoot, "install");
 const projectRoot = join(temporaryRoot, "project");
+const issueProjectRoot = join(temporaryRoot, "issue-project");
+const draftIssueProjectRoot = join(temporaryRoot, "draft-issue-project");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 function run(command, args, cwd, expectedStatuses = [0]) {
@@ -103,10 +105,9 @@ try {
     throw new Error(`Installed ${basename(binPath)} did not print CLI help.`);
   }
   const helpAssertions = [
-    ["init", ["local-reviewed-change", "fast|balanced", "claude-code, codex, cursor"]],
+    ["init", ["local-reviewed-change", "issue-to-reviewed-pull-request", "linear|github-issues", "fast|balanced", "id,product", "claude-code, codex, cursor"]],
     ["check", ["read-only", "exit 1"]],
     ["diff", ["exact-plan-digest", "Exit 1"]],
-    ["doctor", ["caller-supplied", "does not run provider commands"]],
     ["render", ["exact-plan-digest", "stale or foreign state fails closed"]],
   ];
   for (const [command, expectedText] of helpAssertions) {
@@ -129,18 +130,44 @@ try {
       "--tracker",
       "none",
       "--provider",
-      "codex-main,codex,cli",
+      "codex-main,codex",
       "--provider",
-      "claude-secondary,claude-code,cli",
+      "claude-secondary,claude-code",
+      "--provider",
+      "cursor-developer,cursor",
       "--steward",
       "codex-main",
       "--developer",
-      "codex-main",
+      "cursor-developer",
       "--reviewer",
-      "codex-main",
+      "claude-secondary",
     ],
     projectRoot,
   );
+  const rulesRoot = join(projectRoot, ".agentdevflow", "rules");
+  await mkdir(rulesRoot, { recursive: true });
+  await Promise.all([
+    writeFile(
+      join(rulesRoot, "shared.md"),
+      "Always report the exact handoff target.\n",
+      "utf8",
+    ),
+    writeFile(
+      join(rulesRoot, "steward.md"),
+      "Keep acceptance criteria visible.\n",
+      "utf8",
+    ),
+    writeFile(
+      join(rulesRoot, "developer.md"),
+      "Run the repository verification command before handoff.\n",
+      "utf8",
+    ),
+    writeFile(
+      join(rulesRoot, "reviewer.md"),
+      "Review only the current revision.\n",
+      "utf8",
+    ),
+  ]);
   const diff = run(binPath, ["diff", "--json"], projectRoot, [1]);
   const diffReport = JSON.parse(diff.stdout);
   const digest = diffReport.exactPlanDigest;
@@ -152,6 +179,33 @@ try {
     throw new Error("Packed agentdevflow diff did not return a versioned exact plan.");
   }
   run(binPath, ["render", "--approve-plan", digest], projectRoot);
+  const [codexInstructions, claudeInstructions, cursorInstructions] =
+    await Promise.all([
+      readFile(join(projectRoot, "AGENTS.md"), "utf8"),
+      readFile(join(projectRoot, "CLAUDE.md"), "utf8"),
+      readFile(
+        join(projectRoot, ".cursor", "rules", "agentdevflow.mdc"),
+        "utf8",
+      ),
+    ]);
+  if (
+    new Set([codexInstructions, claudeInstructions, cursorInstructions]).size !==
+      3 ||
+    !codexInstructions.includes("Keep acceptance criteria visible.") ||
+    codexInstructions.includes("Review only the current revision.") ||
+    !claudeInstructions.includes("Review only the current revision.") ||
+    claudeInstructions.includes(
+      "Run the repository verification command before handoff.",
+    ) ||
+    !cursorInstructions.includes(
+      "Run the repository verification command before handoff.",
+    ) ||
+    cursorInstructions.includes("Keep acceptance criteria visible.")
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not produce distinct responsibility-scoped provider instructions.",
+    );
+  }
   const convergedDiff = run(binPath, ["diff", "--json"], projectRoot);
   const convergedReport = JSON.parse(convergedDiff.stdout);
   if (
@@ -172,8 +226,143 @@ try {
     throw new Error("Packed agentdevflow check did not return a clean versioned report.");
   }
   run(binPath, ["diff"], projectRoot);
+  await mkdir(issueProjectRoot);
+  run(
+    binPath,
+    [
+      "init",
+      "--workflow",
+      "issue-to-reviewed-pull-request",
+      "--preset",
+      "balanced",
+      "--tracker",
+      "linear",
+      "--pull-request-state",
+      "ready",
+      "--pull-request-host",
+      "github",
+      "--ci",
+      "github-actions",
+      "--provider",
+      "codex-control,codex",
+      "--provider",
+      "cursor-developer,cursor",
+      "--steward",
+      "codex-control",
+      "--developer",
+      "cursor-developer",
+      "--reviewer",
+      "codex-control",
+    ],
+    issueProjectRoot,
+  );
+  const issueDiff = run(
+    binPath,
+    ["diff", "--json"],
+    issueProjectRoot,
+    [1],
+  );
+  const issueDiffReport = JSON.parse(issueDiff.stdout);
+  run(
+    binPath,
+    ["render", "--approve-plan", issueDiffReport.exactPlanDigest],
+    issueProjectRoot,
+  );
+  const issueCheck = run(binPath, ["check", "--json"], issueProjectRoot);
+  const issueAgents = await readFile(
+    join(issueProjectRoot, "AGENTS.md"),
+    "utf8",
+  );
+  const issueCursor = await readFile(
+    join(issueProjectRoot, ".cursor", "rules", "agentdevflow.mdc"),
+    "utf8",
+  );
+  if (
+    JSON.parse(issueCheck.stdout).outcome !== "clean" ||
+    !issueAgents.includes("### Steward") ||
+    !issueAgents.includes("### Reviewer") ||
+    issueAgents.includes("### Developer") ||
+    !issueCursor.includes("### Developer") ||
+    issueCursor.includes("### Steward") ||
+    issueCursor.includes("### Reviewer")
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not complete the bounded Linear workflow with responsibility-scoped output.",
+    );
+  }
+  await mkdir(draftIssueProjectRoot);
+  run(
+    binPath,
+    [
+      "init",
+      "--workflow",
+      "issue-to-reviewed-pull-request",
+      "--preset",
+      "balanced",
+      "--tracker",
+      "github-issues",
+      "--pull-request-state",
+      "draft",
+      "--pull-request-host",
+      "github",
+      "--ci",
+      "github-actions",
+      "--provider",
+      "codex-control,codex",
+      "--provider",
+      "cursor-developer,cursor",
+      "--steward",
+      "codex-control",
+      "--developer",
+      "cursor-developer",
+      "--reviewer",
+      "codex-control",
+    ],
+    draftIssueProjectRoot,
+  );
+  const draftIssueDiff = run(
+    binPath,
+    ["diff", "--json"],
+    draftIssueProjectRoot,
+    [1],
+  );
+  const draftIssueDiffReport = JSON.parse(draftIssueDiff.stdout);
+  run(
+    binPath,
+    ["render", "--approve-plan", draftIssueDiffReport.exactPlanDigest],
+    draftIssueProjectRoot,
+  );
+  const draftIssueCheck = run(
+    binPath,
+    ["check", "--json"],
+    draftIssueProjectRoot,
+  );
+  const draftIssueAgents = await readFile(
+    join(draftIssueProjectRoot, "AGENTS.md"),
+    "utf8",
+  );
+  const draftIssueCursor = await readFile(
+    join(draftIssueProjectRoot, ".cursor", "rules", "agentdevflow.mdc"),
+    "utf8",
+  );
+  if (
+    JSON.parse(draftIssueCheck.stdout).outcome !== "clean" ||
+    !draftIssueAgents.includes("Tracker mode: `github-issues`") ||
+    !draftIssueAgents.includes(
+      "create the corresponding work item in GitHub Issues",
+    ) ||
+    !draftIssueAgents.includes(
+      "mark the draft pull request ready for review",
+    ) ||
+    !draftIssueCursor.includes("create a `draft` pull request")
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not complete the bounded GitHub Issues draft workflow.",
+    );
+  }
   const configurationPath = join(projectRoot, "agentdevflow.config.jsonc");
   const configuration = JSON.parse(await readFile(configurationPath, "utf8"));
+  configuration.roles.reviewer = "codex-main";
   configuration.providers = configuration.providers.filter(
     (provider) => provider.id !== "claude-secondary",
   );
@@ -221,61 +410,6 @@ try {
   if (JSON.parse(deletionCheck.stdout).outcome !== "clean") {
     throw new Error("Packed agentdevflow did not converge after managed deletion.");
   }
-  const observationPath = join(projectRoot, "agentdevflow-doctor-observations.json");
-  await writeFile(
-    observationPath,
-    `${JSON.stringify({
-      revision: 1,
-      providerObservations: [
-        {
-          providerId: "codex-main",
-          product: "codex",
-          surface: "cli",
-          version: null,
-          executionContext: "local-project",
-          principal: null,
-          capabilities: [
-            {
-              capability: "project-instructions",
-              strength: "advisory",
-              mechanism: "instruction-file",
-            },
-          ],
-          evidence: {
-            source: "manual",
-            reference: "manual:getting-started",
-            freshness: "current",
-          },
-        },
-      ],
-      environmentObservations: ["filesystem-read", "filesystem-write"].map(
-        (capability) => ({
-          capability,
-          availability: "available",
-          evidence: {
-            source: "manual",
-            reference: `manual:getting-started-${capability}`,
-            freshness: "current",
-          },
-        }),
-      ),
-    }, null, 2)}\n`,
-    "utf8",
-  );
-  const doctor = run(
-    binPath,
-    ["doctor", "--observations", observationPath, "--json"],
-    projectRoot,
-    [1],
-  );
-  const doctorReport = JSON.parse(doctor.stdout);
-  if (
-    doctorReport.schemaVersion !== 1 ||
-    doctorReport.outcome !== "degraded" ||
-    doctorReport.exitCode !== 1
-  ) {
-    throw new Error("Packed agentdevflow doctor did not retain manual evidence limits.");
-  }
   await Promise.all([
     readFile(join(projectRoot, "agentdevflow.config.jsonc"), "utf8"),
     readFile(join(projectRoot, "AGENTS.md"), "utf8"),
@@ -294,7 +428,7 @@ try {
     throw new Error("Packed agentdevflow diff did not fail closed on foreign bytes.");
   }
   await unlink(join(projectRoot, "AGENTS.md"));
-  await symlink(observationPath, join(projectRoot, "AGENTS.md"));
+  await symlink(configurationPath, join(projectRoot, "AGENTS.md"));
   const symbolicLink = run(binPath, ["diff", "--json"], projectRoot, [2]);
   const symbolicLinkReport = JSON.parse(symbolicLink.stdout);
   if (

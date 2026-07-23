@@ -2,21 +2,20 @@ import { parseArgs } from "node:util";
 
 import {
   candidateProviderProducts,
-  candidateProviderSurfaces,
   type CandidateProviderInstance,
   type CandidateProviderProduct,
-  type CandidateProviderSurface,
 } from "../config/candidate.js";
+import type { PrivateDomainCapabilityObservation } from "../compiler/private-domain-workflow.js";
 import {
   resolvePrivateDomainProject,
   type PrivateDomainProjectIntent,
 } from "../project/private-domain-project-resolution.js";
+import { privateIssueToPullRequestCapabilityObservations } from "../workflows/private-issue-to-reviewed-pull-request.js";
 import { privateLocalReviewedChangeCapabilityObservations } from "../workflows/private-local-reviewed-change.js";
 
 export const privateCliCommands = [
   "check",
   "diff",
-  "doctor",
   "init",
   "render",
 ] as const;
@@ -49,13 +48,6 @@ export type PrivateCliInvocation =
       readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly lockPath: string;
-      readonly outputFormat: PrivateCliOutputFormat;
-    }
-  | {
-      readonly command: "doctor";
-      readonly projectConfigPath: string;
-      readonly repositoryPath: string;
-      readonly observationsPath: string;
       readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
@@ -214,14 +206,14 @@ function parseProvider(
   value: string,
 ): CandidateProviderInstance | PrivateCliFailure {
   const parts = value.split(",");
-  if (parts.length !== 3 || parts.some((part) => part.length === 0)) {
+  if (parts.length !== 2 || parts.some((part) => part.length === 0)) {
     return failure(
       "INVALID_OPTION_VALUE",
-      "Option --provider must use id,product,surface form.",
+      "Option --provider must use id,product form.",
       "--provider",
     );
   }
-  const [id, productValue, surfaceValue] = parts as [string, string, string];
+  const [id, productValue] = parts as [string, string];
   const product = parseClosedValue<CandidateProviderProduct>(
     productValue,
     candidateProviderProducts,
@@ -230,27 +222,22 @@ function parseProvider(
   if (typeof product !== "string") {
     return product;
   }
-  const surface = parseClosedValue<CandidateProviderSurface>(
-    surfaceValue,
-    candidateProviderSurfaces,
-    "provider",
-  );
-  if (typeof surface !== "string") {
-    return surface;
-  }
-  return { id, product, surface };
+  return { id, product };
 }
 
 function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(
     args,
     {
+      ci: stringOption,
       config: stringOption,
       developer: stringOption,
       lock: stringOption,
       json: booleanOption,
       preset: stringOption,
       provider: multipleStringOption,
+      "pull-request-host": stringOption,
+      "pull-request-state": stringOption,
       repository: stringOption,
       reviewer: stringOption,
       steward: stringOption,
@@ -288,17 +275,13 @@ function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
       "--preset",
     );
   }
-  if (trackerValue !== "local" && trackerValue !== "none") {
+  if (
+    workflowValue !== "local-reviewed-change" &&
+    workflowValue !== "issue-to-reviewed-pull-request"
+  ) {
     return failure(
       "INVALID_OPTION_VALUE",
-      "Option --tracker must be one of: local, none.",
-      "--tracker",
-    );
-  }
-  if (workflowValue !== "local-reviewed-change") {
-    return failure(
-      "INVALID_OPTION_VALUE",
-      "Option --workflow must be local-reviewed-change for the current offline init path.",
+      "Option --workflow must be one of: issue-to-reviewed-pull-request, local-reviewed-change.",
       "--workflow",
     );
   }
@@ -310,26 +293,105 @@ function parseInitArguments(args: readonly string[]): PrivateCliArgumentResult {
     providers.push(provider);
   }
   providers.sort((left, right) => left.id.localeCompare(right.id));
-  const intent: PrivateDomainProjectIntent = {
-    revision: 1,
-    preset: presetValue,
-    providers,
-    roles: { developer, reviewer, steward },
-    tracker: { mode: trackerValue },
-    workflow: { family: workflowValue },
-    capabilityBindings: [
-      {
-        binding: "developer",
-        target: { kind: "responsibility", responsibility: "developer" },
+  const ci = stringValue(parsed.values, "ci");
+  const pullRequestHost = stringValue(parsed.values, "pull-request-host");
+  const pullRequestState = stringValue(parsed.values, "pull-request-state");
+  let intent: PrivateDomainProjectIntent;
+  let capabilityObservations: readonly PrivateDomainCapabilityObservation[];
+  if (workflowValue === "local-reviewed-change") {
+    if (trackerValue !== "local" && trackerValue !== "none") {
+      return failure(
+        "INVALID_OPTION_VALUE",
+        "Local reviewed change requires --tracker local or none.",
+        "--tracker",
+      );
+    }
+    if (
+      ci !== undefined ||
+      pullRequestHost !== undefined ||
+      pullRequestState !== undefined
+    ) {
+      return failure(
+        "INVALID_ARGUMENTS",
+        "Pull-request options are not accepted for local-reviewed-change.",
+      );
+    }
+    intent = {
+      revision: 1,
+      preset: presetValue,
+      providers,
+      roles: { developer, reviewer, steward },
+      tracker: { mode: trackerValue },
+      workflow: { family: workflowValue },
+      capabilityBindings: [
+        {
+          binding: "developer",
+          target: { kind: "responsibility", responsibility: "developer" },
+        },
+        {
+          binding: "reviewer",
+          target: { kind: "responsibility", responsibility: "reviewer" },
+        },
+      ],
+    };
+    capabilityObservations = privateLocalReviewedChangeCapabilityObservations;
+  } else {
+    if (trackerValue !== "github-issues" && trackerValue !== "linear") {
+      return failure(
+        "INVALID_OPTION_VALUE",
+        "Issue-to-reviewed-pull-request requires --tracker github-issues or linear.",
+        "--tracker",
+      );
+    }
+    if (pullRequestState === undefined) {
+      return missingOption("pull-request-state");
+    }
+    if (pullRequestState !== "draft" && pullRequestState !== "ready") {
+      return failure(
+        "INVALID_OPTION_VALUE",
+        "Option --pull-request-state must be one of: draft, ready.",
+        "--pull-request-state",
+      );
+    }
+    if (pullRequestHost === undefined) {
+      return missingOption("pull-request-host");
+    }
+    if (ci === undefined) {
+      return missingOption("ci");
+    }
+    intent = {
+      revision: 1,
+      preset: presetValue,
+      providers,
+      roles: { developer, reviewer, steward },
+      tracker: { mode: trackerValue },
+      workflow: {
+        family: workflowValue,
+        initialState: pullRequestState,
+        auxiliaryReview: "disabled",
+        mergeMethod: "squash",
       },
-      {
-        binding: "reviewer",
-        target: { kind: "responsibility", responsibility: "reviewer" },
-      },
-    ],
-  };
+      capabilityBindings: [
+        { binding: "tracker", target: { kind: "tracker" } },
+        {
+          binding: "developer",
+          target: { kind: "responsibility", responsibility: "developer" },
+        },
+        {
+          binding: "pull-request-host",
+          target: { kind: "external", id: pullRequestHost },
+        },
+        { binding: "ci", target: { kind: "external", id: ci } },
+        {
+          binding: "reviewer",
+          target: { kind: "responsibility", responsibility: "reviewer" },
+        },
+      ],
+    };
+    capabilityObservations = privateIssueToPullRequestCapabilityObservations;
+  }
   const resolved = resolvePrivateDomainProject(intent, {
-    capabilityObservations: privateLocalReviewedChangeCapabilityObservations,
+    capabilityObservations,
   });
   if (!resolved.ok) {
     return {
@@ -378,30 +440,6 @@ function parseConfigCommand(
       projectConfigPath: configPath,
       repositoryPath,
       lockPath,
-      outputFormat: outputFormat(parsed.values),
-    },
-  };
-}
-
-function parseDoctorArguments(args: readonly string[]): PrivateCliArgumentResult {
-  const parsed = parseCommandOptions(args, {
-    config: stringOption,
-    json: booleanOption,
-    observations: stringOption,
-    repository: stringOption,
-  });
-  if (!parsed.ok) return parsed.result;
-  const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
-  const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
-  const observationsPath = requireStringOption(parsed.values, "observations");
-  if (isFailure(observationsPath)) return observationsPath;
-  return {
-    ok: true,
-    invocation: {
-      command: "doctor",
-      projectConfigPath: configPath,
-      repositoryPath,
-      observationsPath,
       outputFormat: outputFormat(parsed.values),
     },
   };
@@ -463,8 +501,6 @@ export function parsePrivateCliArguments(
     case "check":
     case "diff":
       return parseConfigCommand(command, commandArgs);
-    case "doctor":
-      return parseDoctorArguments(commandArgs);
     case "init":
       return parseInitArguments(commandArgs);
     case "render":

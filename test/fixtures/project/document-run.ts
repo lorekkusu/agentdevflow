@@ -9,9 +9,9 @@ const intent: PrivateDomainProjectIntent = {
   revision: 1,
   preset: "balanced",
   providers: [
-    { id: "codex-steward", product: "codex", surface: "cli" },
-    { id: "cursor-developer", product: "cursor", surface: "ide" },
-    { id: "codex-reviewer", product: "codex", surface: "cli" },
+    { id: "codex-steward", product: "codex" },
+    { id: "cursor-developer", product: "cursor" },
+    { id: "codex-reviewer", product: "codex" },
   ],
   roles: {
     steward: "codex-steward",

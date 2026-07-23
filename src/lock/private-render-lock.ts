@@ -14,7 +14,7 @@ import {
 import { validateRenderPlanIntegrity } from "../renderer/staged-adapter.js";
 
 export const privateRenderLockRevision = 1;
-export const privateRenderLockDefaultMaxBytes = 1_048_576;
+export const privateRenderLockDefaultMaxBytes = 262_144;
 
 export interface PrivateRenderLockSource {
   readonly revision: number;

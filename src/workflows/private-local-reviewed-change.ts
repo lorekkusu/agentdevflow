@@ -76,20 +76,11 @@ export const privateLocalReviewedChangeDefinition: PrivateDomainWorkflowDefiniti
       id: "developer-guidance",
       binding: "developer",
       capability: "project-instructions",
-      requiredStrength: "advisory",
     },
     {
       id: "reviewer-guidance",
       binding: "reviewer",
       capability: "project-instructions",
-      requiredStrength: "advisory",
-    },
-  ],
-  evidenceRequirements: [
-    {
-      id: "review-verdict-payload",
-      artifact: "ReviewVerdict",
-      schema: "review-verdict@1",
     },
   ],
 };
@@ -98,13 +89,11 @@ export const privateLocalReviewedChangeCapabilityObservations: readonly PrivateD
   {
     binding: "developer",
     capability: "project-instructions",
-    strength: "advisory",
     mechanism: "instruction-file",
   },
   {
     binding: "reviewer",
     capability: "project-instructions",
-    strength: "advisory",
     mechanism: "instruction-file",
   },
 ];

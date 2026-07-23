@@ -10,7 +10,6 @@ import {
 import {
   createPrivateIssueToReviewedPullRequestDefinition,
   privateIssueToPullRequestCapabilityObservations,
-  validatePrivateReviewIndependence,
 } from "../../src/workflows/private-issue-to-reviewed-pull-request.js";
 import {
   privateLocalReviewedChangeCapabilityObservations,
@@ -44,10 +43,10 @@ function compileIssueWorkflow(
   });
 }
 
-test("compiles the draft pull-request path with auxiliary review", () => {
+test("compiles the draft pull-request path", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "draft",
-    auxiliaryReview: "enabled",
+    auxiliaryReview: "disabled",
     mergeMethod: "squash",
   });
   const result = compileIssueWorkflow(definition);
@@ -56,8 +55,8 @@ test("compiles the draft pull-request path with auxiliary review", () => {
   assert.equal(result.compilation.policyValidation.safe, true);
   assert.deepEqual(result.compilation.budget, {
     nodeCount: 11,
-    artifactTypeCount: 11,
-    theoreticalMaxStates: "22528",
+    artifactTypeCount: 10,
+    theoreticalMaxStates: "11264",
     configuredMaxStates: 32768,
   });
   assert.equal(
@@ -67,9 +66,15 @@ test("compiles the draft pull-request path with auxiliary review", () => {
     "pullRequest.initialState == draft",
   );
   assert.equal(result.compilation.capabilityResolutions.length, 7);
+  assert.equal(
+    result.compilation.definition.transitions.find(
+      (transition) => transition.id === "07-mark-pull-request-ready",
+    )?.from,
+    "ci-passed",
+  );
 });
 
-test("compiles an immediately ready pull request without auxiliary review", () => {
+test("compiles an immediately ready pull request", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "ready",
     auxiliaryReview: "disabled",
@@ -97,7 +102,7 @@ test("compiles an immediately ready pull request without auxiliary review", () =
 test("accepts the unbounded CI repair and review rework cycles", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "draft",
-    auxiliaryReview: "enabled",
+    auxiliaryReview: "disabled",
     mergeMethod: "squash",
   });
   const result = compileIssueWorkflow(definition);
@@ -113,47 +118,6 @@ test("accepts the unbounded CI repair and review rework cycles", () => {
     ),
     true,
   );
-});
-
-test("invalidates revision-bound evidence after auxiliary autofix", () => {
-  const definition = createPrivateIssueToReviewedPullRequestDefinition({
-    initialState: "draft",
-    auxiliaryReview: "enabled",
-    mergeMethod: "squash",
-  });
-  const transition = definition.transitions.find(
-    (item) => item.id === "08-auxiliary-autofix-reobserve",
-  );
-
-  assert.deepEqual(transition?.invalidates, [
-    "AuxiliaryReviewResult",
-    "BlockingFinding",
-    "CiResult",
-    "MergeAuthorization",
-    "PullRequestSnapshot",
-    "ReviewVerdict",
-    "ReviewerIsolationEvidence",
-  ]);
-  assert.deepEqual(transition?.produces, ["PullRequestSnapshot"]);
-  expectSuccess(compileIssueWorkflow(definition));
-});
-
-test("routes non-mutating auxiliary blocking findings to repair", () => {
-  const definition = createPrivateIssueToReviewedPullRequestDefinition({
-    initialState: "ready",
-    auxiliaryReview: "enabled",
-    mergeMethod: "squash",
-  });
-  const transition = definition.transitions.find(
-    (item) => item.id === "08-auxiliary-blocking-repair",
-  );
-
-  assert.equal(transition?.to, "repair");
-  assert.deepEqual(transition?.produces, [
-    "AuxiliaryReviewResult",
-    "BlockingFinding",
-  ]);
-  expectSuccess(compileIssueWorkflow(definition));
 });
 
 test("rejects a stale CI result after a revision-changing repair", () => {
@@ -303,63 +267,14 @@ test("rejects a direct merge bypass before CI and review", () => {
   );
 });
 
-test("rejects the Developer execution context as an independent review", () => {
-  const diagnostics = validatePrivateReviewIndependence(
-    { distinctPrincipal: true, freshExecutionContext: true },
-    {
-      developerPrincipal: "developer-principal",
-      developerExecutionContext: "shared-context",
-      pullRequestRevision: "revision-b",
-      review: {
-        revision: "revision-a",
-        verdict: "approved",
-        reviewerPrincipal: "developer-principal",
-        reviewerExecutionContext: "shared-context",
-        reviewerContextObservedFresh: false,
-      },
-    },
-  );
-
-  assert.deepEqual(
-    diagnostics.map((diagnostic) => diagnostic.code),
-    [
-      "REVIEW_REVISION_MISMATCH",
-      "REVIEWER_CONTEXT_NOT_DISTINCT",
-      "REVIEWER_CONTEXT_NOT_FRESH",
-      "REVIEWER_PRINCIPAL_NOT_DISTINCT",
-    ],
-  );
-  assert.deepEqual(
-    validatePrivateReviewIndependence(
-      { distinctPrincipal: true, freshExecutionContext: true },
-      {
-        developerPrincipal: "developer-principal",
-        developerExecutionContext: "developer-context",
-        pullRequestRevision: "revision-b",
-        review: {
-          revision: "revision-b",
-          verdict: "approved",
-          reviewerPrincipal: "reviewer-principal",
-          reviewerExecutionContext: "fresh-review-context",
-          reviewerContextObservedFresh: true,
-        },
-      },
-    ),
-    [],
-  );
-});
-
-test("does not let advisory merge capability satisfy a guarded requirement", () => {
+test("requires the advisory merge procedure to be present explicitly", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "ready",
     auxiliaryReview: "disabled",
     mergeMethod: "squash",
   });
-  const observations = privateIssueToPullRequestCapabilityObservations.map(
-    (observation) =>
-      observation.capability === "pull-request.merge"
-        ? { ...observation, strength: "advisory" as const }
-        : observation,
+  const observations = privateIssueToPullRequestCapabilityObservations.filter(
+    (observation) => observation.capability !== "pull-request.merge",
   );
   const result = compileIssueWorkflow(definition, observations);
 
@@ -367,7 +282,7 @@ test("does not let advisory merge capability satisfy a guarded requirement", () 
   assert.equal(
     result.diagnostics.some(
       (diagnostic) =>
-        diagnostic.code === "CAPABILITY_STRENGTH_INSUFFICIENT" &&
+        diagnostic.code === "CAPABILITY_UNAVAILABLE" &&
         diagnostic.message.includes("pull-request.merge"),
     ),
     true,
@@ -379,7 +294,6 @@ test("rejects malformed capability observations instead of treating them as avai
     {
       binding: "developer",
       capability: "project-instructions",
-      strength: "bogus",
       mechanism: "",
     },
   ] as unknown as readonly PrivateDomainCapabilityObservation[];
@@ -402,30 +316,6 @@ test("rejects malformed capability observations instead of treating them as avai
       (diagnostic) => diagnostic.code === "CAPABILITY_UNAVAILABLE",
     ),
     true,
-  );
-});
-
-test("rejects an unsupported capability requirement strength", () => {
-  const definition = {
-    ...privateLocalReviewedChangeDefinition,
-    capabilityRequirements:
-      privateLocalReviewedChangeDefinition.capabilityRequirements.map(
-        (requirement, index) =>
-          index === 0
-            ? { ...requirement, requiredStrength: "bogus" }
-            : requirement,
-      ),
-  } as unknown as PrivateDomainWorkflowDefinition;
-  const result = compilePrivateDomainWorkflow(definition, {
-    capabilityObservations:
-      privateLocalReviewedChangeCapabilityObservations,
-  });
-
-  expectFailure(result);
-  assert.equal(result.diagnostics[0]?.code, "INVALID_WORKFLOW_DEFINITION");
-  assert.match(
-    result.diagnostics[0]?.message ?? "",
-    /unsupported required strength/u,
   );
 });
 
@@ -462,7 +352,7 @@ test("compiles a local reviewed change without issue or pull-request assumptions
 test("normalizes reorder-equivalent domain definitions deterministically", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "draft",
-    auxiliaryReview: "enabled",
+    auxiliaryReview: "disabled",
     mergeMethod: "squash",
   });
   const reordered: PrivateDomainWorkflowDefinition = {
@@ -487,12 +377,12 @@ test("normalizes reorder-equivalent domain definitions deterministically", () =>
 test("enforces the explicit theoretical state-space budget", () => {
   const definition = createPrivateIssueToReviewedPullRequestDefinition({
     initialState: "draft",
-    auxiliaryReview: "enabled",
+    auxiliaryReview: "disabled",
     mergeMethod: "squash",
   });
   const result = compilePrivateDomainWorkflow(definition, {
     capabilityObservations: privateIssueToPullRequestCapabilityObservations,
-    maxAbstractStates: 22_527,
+    maxAbstractStates: 11_263,
   });
 
   expectFailure(result);
@@ -502,12 +392,12 @@ test("enforces the explicit theoretical state-space budget", () => {
       code: "STATE_SPACE_BUDGET_EXCEEDED",
       path: "$.workflow",
       message:
-        "Workflow candidate/issue-to-reviewed-pull-request/draft/enabled/squash@1 has a theoretical 22528 abstract states, exceeding the configured limit 22527.",
+        "Workflow candidate/issue-to-reviewed-pull-request/draft/disabled/squash@1 has a theoretical 11264 abstract states, exceeding the configured limit 11263.",
       budget: {
         nodeCount: 11,
-        artifactTypeCount: 11,
-        theoreticalMaxStates: "22528",
-        configuredMaxStates: 22_527,
+        artifactTypeCount: 10,
+        theoreticalMaxStates: "11264",
+        configuredMaxStates: 11_263,
       },
     },
   ]);

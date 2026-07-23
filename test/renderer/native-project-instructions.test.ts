@@ -1,71 +1,40 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import test from "node:test";
 
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
-import type { CandidateCompilation } from "../../src/compiler/private-model.js";
-import type { RenderWorkspace } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
+import type { RenderReadWorkspace } from "../../src/renderer/contract.js";
 import { generatedMarkdown } from "../../src/renderer/native/common.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
-import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
 import {
-  balancedCandidateConfig,
-  fastThreeProviderCandidateConfig,
-} from "../fixtures/config/specimens.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
+  StagedRendererAdapter,
+  verifyRenderPlan,
+} from "../../src/renderer/staged-adapter.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
-class MemoryWorkspace implements RenderWorkspace {
+class MemoryWorkspace implements RenderReadWorkspace {
   readonly files = new Map<string, string>();
 
   async read(path: string): Promise<string | null> {
     return this.files.get(path) ?? null;
   }
-
-  async writeAtomically(path: string, content: string): Promise<void> {
-    this.files.set(path, content);
-  }
-
-  async removeAtomically(path: string): Promise<void> {
-    this.files.delete(path);
-  }
-}
-
-function compile(input: unknown): CandidateCompilation {
-  const result = compileCandidateProjectConfig(input, initialCompilerOptions);
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  return result.compilation;
 }
 
 async function stagedPreset(
   preset: "fast" | "balanced",
 ): Promise<{
-  readonly compilation: CandidateCompilation;
-  readonly materialization: ReturnType<typeof materializeCompilation>;
-  readonly request: ReturnType<typeof renderRequestFromMaterialization>;
+  readonly materialization: ReturnType<
+    typeof createPrivateDomainProjectFixture
+  >["materialization"];
+  readonly request: ReturnType<
+    typeof createPrivateDomainProjectFixture
+  >["request"];
   readonly renderer: NativeProjectInstructionsRenderer;
   readonly files: ReadonlyMap<string, string>;
 }> {
-  const input =
-    preset === "fast"
-      ? fastThreeProviderCandidateConfig
-      : balancedCandidateConfig;
-  const compilation = compile(input);
-  const materialization = materializeCompilation(compilation);
-  const request = renderRequestFromMaterialization(
-    compilation,
-    materialization,
-  );
+  const { materialization, request } = createPrivateDomainProjectFixture(preset);
   const renderer = new NativeProjectInstructionsRenderer(materialization);
   const staged = await renderer.stage(request);
   assert.deepEqual(staged.diagnostics, []);
   return {
-    compilation,
     materialization,
     request,
     renderer,
@@ -73,14 +42,8 @@ async function stagedPreset(
   };
 }
 
-const goldenByOutputPath = {
-  "AGENTS.md": "AGENTS.md",
-  "CLAUDE.md": "CLAUDE.md",
-  ".cursor/rules/agentdevflow.mdc": "agentdevflow.mdc",
-} as const;
-
 for (const preset of ["fast", "balanced"] as const) {
-  test(`renders ${preset} golden project instructions for all three providers`, async () => {
+  test(`renders ${preset} project instructions for all three providers`, async () => {
     const staged = await stagedPreset(preset);
     assert.deepEqual([...staged.files.keys()], [
       "CLAUDE.md",
@@ -88,18 +51,27 @@ for (const preset of ["fast", "balanced"] as const) {
       ".cursor/rules/agentdevflow.mdc",
     ]);
 
-    for (const [outputPath, fixtureName] of Object.entries(
-      goldenByOutputPath,
-    )) {
-      const expected = await readFile(
-        join("test", "fixtures", "renderer", "native", preset, fixtureName),
-        "utf8",
-      );
-      const actual = staged.files.get(outputPath);
-      assert.equal(actual, expected, `${preset} ${outputPath}`);
+    for (const actual of staged.files.values()) {
       assert.equal(actual?.endsWith("\n"), true);
       assert.doesNotMatch(actual ?? "", /\r/u);
       assert.doesNotMatch(actual ?? "", /Compiler digest|candidate-config/u);
+      assert.equal(actual?.includes(`Preset: ${"`"}${preset}${"`"}`), true);
+      assert.match(actual ?? "", /Workflow family: `local-reviewed-change`/u);
+    }
+
+    const steward = staged.files.get("AGENTS.md") ?? "";
+    const reviewer = staged.files.get("CLAUDE.md") ?? "";
+    if (preset === "balanced") {
+      assert.match(steward, /reviewer-isolation evidence/u);
+      assert.match(steward, /no blocking finding remains/u);
+      assert.match(reviewer, /clean execution context/u);
+      assert.match(reviewer, /no blocking finding remains/u);
+    } else {
+      assert.doesNotMatch(steward, /reviewer-isolation evidence/u);
+      assert.doesNotMatch(steward, /no blocking finding remains/u);
+      assert.doesNotMatch(reviewer, /clean execution context/u);
+      assert.doesNotMatch(reviewer, /no blocking finding remains/u);
+      assert.match(reviewer, /explicit acceptance verdict/u);
     }
   });
 }
@@ -107,17 +79,24 @@ for (const preset of ["fast", "balanced"] as const) {
 test("retains machine provenance outside provider-facing content", async () => {
   const { materialization, request, renderer } = await stagedPreset("balanced");
   const staged = await renderer.stage(request);
-  const sourceRefs = staged.files[0]?.sourceRefs ?? [];
 
   assert.equal(request.sourceDigest, materialization.digest);
-  assert.deepEqual(
-    sourceRefs,
-    [
-      materialization.files[0]?.path ?? "",
-      ...(materialization.files[0]?.sourceRefs ?? []),
-    ].sort(),
-  );
-  assert.equal(staged.files.every((file) => file.sourceRefs === sourceRefs), true);
+  const productByTarget = new Map([
+    ["AGENTS.md", "codex"],
+    ["CLAUDE.md", "claude-code"],
+    [".cursor/rules/agentdevflow.mdc", "cursor"],
+  ]);
+  for (const file of staged.files) {
+    const product = productByTarget.get(file.path);
+    const source = materialization.files.find(
+      (candidate) => candidate.provider === product,
+    );
+    assert.ok(source);
+    assert.deepEqual(
+      file.sourceRefs,
+      [source.path, ...source.sourceRefs].sort(),
+    );
+  }
 });
 
 test("fails closed for unsupported capabilities or mismatched source materialization", async () => {
@@ -184,10 +163,14 @@ test("integrates with ownership planning, apply, and drift verification", async 
     ],
   );
 
-  await adapter.render(plan, workspace);
-  assert.equal((await adapter.verify(plan, workspace)).ok, true);
+  for (const file of plan.files) {
+    if (file.expectedContent !== null) {
+      workspace.files.set(file.path, file.expectedContent);
+    }
+  }
+  assert.equal((await verifyRenderPlan(plan, workspace)).ok, true);
   workspace.files.set("AGENTS.md", "manually modified\n");
-  const verification = await adapter.verify(plan, workspace);
+  const verification = await verifyRenderPlan(plan, workspace);
   assert.equal(verification.ok, false);
   assert.deepEqual(
     verification.diagnostics.map(({ code, path }) => ({ code, path })),

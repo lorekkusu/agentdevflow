@@ -1,5 +1,10 @@
 # Public first-run qualification
 
+> **Historical snapshot:** this document records the published
+> `0.1.0-beta.2` first-run review. Its five-command, local-only behavior has
+> been superseded in the current working tree. It is not evidence for current
+> workflows, canonical guidance, or the installed candidate.
+
 Snapshot date: 2026-07-21.
 
 ## Verdict

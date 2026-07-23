@@ -5,7 +5,6 @@ import type {
 } from "../commands/private-check-command-service.js";
 import type { PrivateDiffCommandResult } from "../commands/private-diff-command-service.js";
 import type { PrivateRenderCommandResult } from "../commands/private-render-command-service.js";
-import type { PrivateDoctorCommandResult } from "../commands/private-doctor-command-service.js";
 import type {
   PrivateCliDiagnostic,
   PrivateCliOutputFormat,
@@ -31,7 +30,6 @@ type PlanningDiagnostic =
 export type PrivateLocalCliCommand =
   | "check"
   | "diff"
-  | "doctor"
   | "init"
   | "render";
 
@@ -163,31 +161,40 @@ export function formatCheck(
   });
 }
 
-export function formatDoctor(
-  result: PrivateDoctorCommandResult,
-  format: PrivateCliOutputFormat = "human",
-): string {
-  const human = [
-    `agentdevflow doctor: ${result.outcome}`,
-    "trust-boundary: caller assertions only; observation provenance is not authenticated",
-    ...formatDiagnostics(result.diagnostics),
-    `providers-observed: ${result.providerReports.length}`,
-    `environment-capabilities-observed: ${result.environmentReports.length}`,
-    `compiler-capabilities-available: ${result.capabilityAvailability.length}`,
-  ].join("\n");
-  return selectedOutput(format, human, {
-    command: "doctor",
-    outcome: result.outcome,
-    exitCode: result.candidateExitCode,
-    diagnostics: [...result.diagnostics].sort(compareDisplayDiagnostics),
-    providerReports: result.providerReports,
-    environmentReports: result.environmentReports,
-    capabilityAvailability: result.capabilityAvailability,
-  });
+function safeHumanContentLine(line: string): string {
+  return line.replace(
+    /[\u0000-\u0009\u000b-\u001f\u007f]/gu,
+    (character) => {
+      switch (character) {
+        case "\t":
+          return "\\t";
+        case "\r":
+          return "\\r";
+        default:
+          return `\\u${character.codePointAt(0)?.toString(16).padStart(4, "0")}`;
+      }
+    },
+  );
 }
 
-function exactContent(value: string | null): string {
-  return value === null ? "null" : JSON.stringify(value);
+function humanContent(label: "before" | "after", value: string | null): string[] {
+  if (value === null) {
+    return [`  ${label}-content: <absent>`];
+  }
+  const hasFinalNewline = value.endsWith("\n");
+  const contentLines = value.split("\n");
+  if (hasFinalNewline) {
+    contentLines.pop();
+  }
+  const width = String(Math.max(1, contentLines.length)).length;
+  return [
+    `  ${label}-content:`,
+    ...contentLines.map(
+      (line, index) =>
+        `    ${String(index + 1).padStart(width)} | ${safeHumanContentLine(line)}`,
+    ),
+    `  ${label}-final-newline: ${hasFinalNewline ? "yes" : "no"}`,
+  ];
 }
 
 export function formatDiff(
@@ -231,8 +238,8 @@ export function formatDiff(
       `  path: ${change.path}`,
       `  before-sha256: ${change.beforeDigest ?? "absent"}`,
       `  after-sha256: ${change.afterDigest ?? "absent"}`,
-      `  before-content-json: ${exactContent(change.beforeContent)}`,
-      `  after-content-json: ${exactContent(change.afterContent)}`,
+      ...humanContent("before", change.beforeContent),
+      ...humanContent("after", change.afterContent),
     );
   }
   return selectedOutput(format, lines.join("\n"), {

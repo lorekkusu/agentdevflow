@@ -2,30 +2,39 @@
 
 ## Status
 
-This is a private, fixture-only contract. It resolves a bounded project intent into one authoritative workflow compilation, responsibility providers, tracker selection, and logical capability targets. The same result now feeds renderer materialization directly. Execution-manifest export is optional downstream evidence and is no longer part of project resolution. This contract does not define a public `ProjectConfig`, filename, parser, schema, compatibility promise, provider adapter, tracker runtime, or workflow DSL.
+This internal contract resolves the bounded beta project intent into
+one authoritative workflow compilation, responsibility providers, tracker
+selection, and logical capability targets. The same result feeds renderer
+materialization directly. It does not define a provider runtime, tracker
+runtime, execution transport, or public arbitrary-workflow DSL.
 
 The implementation is in `src/project/private-domain-project-resolution.ts`. Reproducible results are in [private domain project resolution evidence](../evidence/private-domain-project-resolution.md).
 
 ## Purpose
 
-The experiment tests whether a project-level configuration boundary can choose materially different development flows without adding provider products, tracker products, or pull-request fields to the generic compiler.
+The resolver lets the project-level configuration choose materially different
+development flows without adding provider products, tracker products, or
+pull-request fields to the generic compiler.
 
-The bounded input contains:
+The revision-1 beta input contains:
 
-- private revision `1`;
-- one private Fast, Balanced, or recognized-but-unavailable Strict preset;
+- revision `1`;
+- one Fast, Balanced, or recognized-but-unavailable Strict preset;
 - provider instances from the initial Codex, Claude Code, and Cursor validation set;
 - Steward, Developer, and Reviewer references to provider instances;
 - one tracker mode;
 - one built-in workflow family with its bounded options;
 - logical capability bindings to responsibilities, the selected tracker, or opaque external integration identifiers.
 
-The accepted workflow families are:
+The current workflow families are:
 
-- `issue-to-reviewed-pull-request`, with draft or immediately ready pull-request creation, optional auxiliary review, and squash merge as the only current fixture;
+- `issue-to-reviewed-pull-request`, with draft or immediately ready
+  pull-request creation and squash merge; the current CLI fixes auxiliary
+  review to disabled;
 - `local-reviewed-change`, with no issue, pull-request, CI, or merge concepts.
 
-These are private TypeScript specimens. They are not accepted configuration syntax.
+Both are selectable through the current CLI. Their finite-state definitions
+remain private and are not a public workflow-extension language.
 
 ## Resolution layers
 
@@ -34,13 +43,12 @@ Resolution keeps four integrity identities separate:
 1. The intent digest binds normalized providers, roles, tracker mode, workflow choice, and logical capability targets.
 2. The workflow-compilation digest binds provider-neutral topology, policies, artifact invalidation, and observed logical capabilities.
 3. The project-resolution digest binds the intent digest, exact workflow compilation, tracker, responsibility-to-provider resolution, and capability targets.
-4. An optional execution-manifest digest binds a deterministic export of the already accepted workflow compilation. It does not define or change project resolution.
-
 Preset expansion adds a separate deterministic identity inside project resolution. The effective definition id binds the preset name while the expansion digest binds the private profile and effective workflow definition.
 
-Changing the Reviewer from one provider instance to another changes the project resolution but does not change an otherwise identical provider-neutral workflow compilation. Changing draft to ready or enabling auxiliary review changes the workflow definition and compilation.
+Changing the Reviewer from one provider instance to another changes the project resolution but does not change an otherwise identical provider-neutral workflow compilation. Changing draft to ready changes the workflow definition and compilation.
 
-`src/project/` does not import `src/execution/`; the repository audit enforces this direction. `createPrivateExecutionManifestPackage` accepts the resolved workflow compilation only when an execution consumer explicitly needs that export.
+Project resolution has no execution-manifest, evidence-transport, scheduler, or
+provider-client dependency.
 
 ## Logical capability targets
 
@@ -55,9 +63,11 @@ The current bounded target rules are:
 | `tracker` | Selected GitHub Issues or Linear tracker |
 | `pull-request-host` | Opaque external integration identifier |
 | `ci` | Opaque external integration identifier |
-| `auxiliary-reviewer` | Opaque external integration identifier when the stage is enabled |
 
-An external identifier is a configuration reference, not an authenticated client, credential, package, executable, or proof of capability. Capability observations remain separate input to the workflow compiler and must meet the declared enforcement strength.
+An external identifier is a configuration reference, not an authenticated
+client, credential, package, executable, or proof of capability. The current
+issue workflow resolves each requirement through a compiled-procedure
+observation.
 
 ## Compatibility and failure behavior
 
@@ -72,7 +82,9 @@ Resolution also fails for:
 - invalid opaque external identifiers;
 - any downstream workflow definition, capability, state-budget, or safety-policy compilation failure.
 
-Diagnostics are deterministic private candidates. No partial project or workflow compilation is returned after failure.
+Diagnostics are deterministic internal values. Their public presentation and
+beta compatibility belong to the CLI contract. No partial project or workflow
+compilation is returned after failure.
 
 ## Provider neutrality
 
@@ -82,22 +94,36 @@ Provider replacement should normally change the intent and project-resolution di
 
 ## Private application planning bridge
 
-`src/application/private-domain-project-plan.ts` accepts bounded revision-1 document bytes, an explicit private lock path, and a read-only repository workspace. It selects only capability observations that the native local project-instructions path actually provides, compiles the project, materializes provider instructions, reads and validates canonical lock bytes, derives ownership, stages the native outputs, and retains the exact plan snapshot.
+`src/application/private-domain-project-plan.ts` accepts bounded revision-1
+document bytes, an explicit lock path, and a read-only repository workspace.
+It selects the built-in workflow's declared capability observations, compiles
+the project, reads canonical guidance, materializes responsibility-specific
+provider instructions, reads and validates lock bytes, derives ownership,
+stages native outputs, and retains the exact plan snapshot.
 
 The bridge does not accept caller-supplied compiler output, materialization, manifest, lock object, render request, plan, or snapshot. Planning performs no write or external operation. Identical configuration, lock, and repository bytes produce an identical result.
 
-The issue-to-reviewed-pull-request family remains valid resolver and compiler evidence, but the application bridge does not invent its external adapter availability. It fails with capability diagnostics until tracker, pull-request, CI, optional review-service, and merge capabilities have real acquisition and adapter evidence.
+The issue-to-reviewed-pull-request capabilities are all advisory
+`compiled-procedure` observations. This lets the bridge generate honest
+instructions without inventing an external adapter. The output requires the
+active agent to stop and report when a required tool, integration, or
+permission is unavailable.
 
 ## Non-claims and open boundaries
 
 - The resolver accepts typed in-memory data. The separate private project-document boundary validates untrusted serialized content before calling it.
-- Revision `1` is an experiment identifier, not a public version.
+- Revision `1` is the current beta configuration revision, not a permanent 1.0
+  compatibility promise.
 - Role bindings do not prove fresh reviewer context or distinct identity; execution evidence handles those observations separately.
 - External identifiers do not select or initialize adapters.
 - No network access, credential access, provider invocation, tracking, scheduling, waiting, retry, merge, or filesystem mutation occurs.
-- Custom workflows, provider versions, execution context selection, discovery, migration, and public lock placement remain open.
-- Fast and Balanced preset expansion is private and executable. Strict remains intentionally unavailable until stronger evidence semantics exist.
+- Custom workflows, provider versions, execution-context selection, discovery,
+  and migration remain open.
+- Fast and Balanced are executable. Strict remains intentionally unavailable
+  until stronger evidence semantics exist.
 
 ## Change boundary
 
-Keep this contract private until a real migration boundary can preserve all resolution layers without silent intent loss. Keep execution exports downstream and optional. Do not add a public filename or arbitrary workflow representation merely to serialize these fixtures.
+Keep the resolver and workflow definitions private while the bounded project
+choices remain user-facing. Keep execution outside the compiler. Do not expose
+arbitrary workflow topology merely to generalize the current built-ins.

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A project health review is a bounded, read-only check that compares the current repository with the product direction, architecture, roadmap, and smallest usable delivery path. It is intended to detect priority drift, unnecessary complexity, stale documentation, unreviewable change size, and unsupported progress claims before they become product commitments.
+A project health review is a bounded, read-only check that compares the current repository with the product direction, architecture, [engineering boundary](engineering-boundary.md), roadmap, and smallest usable delivery path. It is intended to detect priority drift, unnecessary complexity, stale documentation, unreviewable change size, and unsupported progress claims before they become product commitments.
 
 The review is not a substitute for ordinary code review, threat modeling, dependency review, or a security audit. It must not create another stream of chronological engineering notes.
 
@@ -29,6 +29,11 @@ Use at least three bounded perspectives when the change is material:
 1. product direction and roadmap alignment;
 2. implementation complexity and maintenance cost;
 3. smallest usable delivery path and milestone ordering.
+
+Every perspective must apply the engineering-boundary keep, freeze, defer, and
+remove criteria to both old and new work. Prior investment, accepted historical
+evidence, and downstream adaptation are not reasons to retain executable
+complexity without a current product caller.
 
 For every public version or onboarding change, one perspective must instead act as a zero-context user. It begins with only the README and installed package help, attempts the documented first-use path through the real package entrypoint, and records unanswered product, option, safety, and limitation questions before reading implementation or test files. Source inspection may verify the findings afterward.
 

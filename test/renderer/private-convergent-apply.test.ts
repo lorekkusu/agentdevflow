@@ -4,8 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test, { type TestContext } from "node:test";
 
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
-import type { CandidateCompilation } from "../../src/compiler/private-model.js";
 import {
   applyPrivateConvergentRenderPlan,
   PrivateConvergentApplyError,
@@ -16,8 +14,6 @@ import type {
   RenderRequest,
   StagingRenderer,
 } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
 import { createPrivateConvergentMutationIntent } from "../../src/workspace/private-convergent-intent.js";
@@ -25,8 +21,7 @@ import {
   PrivateFilesystemWorkspace,
   PrivateFilesystemWorkspaceError,
 } from "../../src/workspace/private-filesystem-workspace.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
-import { balancedCandidateConfig } from "../fixtures/config/specimens.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
 async function temporaryDirectory(t: TestContext): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), "agentdevflow-convergent-"));
@@ -36,29 +31,15 @@ async function temporaryDirectory(t: TestContext): Promise<string> {
   return directory;
 }
 
-function compile(): CandidateCompilation {
-  const result = compileCandidateProjectConfig(
-    balancedCandidateConfig,
-    initialCompilerOptions,
-  );
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  return result.compilation;
-}
-
 async function createPlan(root: string): Promise<{
   readonly plan: RenderPlan;
   readonly request: RenderRequest;
   readonly renderer: NativeProjectInstructionsRenderer;
 }> {
-  const compilation = compile();
-  const materialization = materializeCompilation(compilation);
+  const { materialization, request } = createPrivateDomainProjectFixture();
   const renderer = new NativeProjectInstructionsRenderer(materialization);
   const adapter = new StagedRendererAdapter(renderer);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(root);
-  const request = renderRequestFromMaterialization(compilation, materialization);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
   return {
     plan: await adapter.plan(request, workspace),
     request,
@@ -97,7 +78,7 @@ test("converges after every cooperative write boundary", async (t) => {
         const root = await temporaryDirectory(boundaryTest);
         const { plan } = await createPlan(root);
         const workspace =
-          await PrivateFilesystemWorkspace.openForProcessTermination(root);
+          await PrivateFilesystemWorkspace.open(root);
         await assert.rejects(
           () =>
             applyPrivateConvergentRenderPlan(plan, workspace, (event) => {
@@ -109,7 +90,7 @@ test("converges after every cooperative write boundary", async (t) => {
         );
 
         const resumed =
-          await PrivateFilesystemWorkspace.openForProcessTermination(root);
+          await PrivateFilesystemWorkspace.open(root);
         const result = await applyPrivateConvergentRenderPlan(plan, resumed);
         assert.equal(result.planDigest, plan.planDigest);
         for (const file of plan.files) {
@@ -134,7 +115,7 @@ test("fails all-path preflight before mutation on foreign target drift", async (
   const root = await temporaryDirectory(t);
   const { plan } = await createPlan(root);
   await writeFile(join(root, "CLAUDE.md"), "foreign\n", "utf8");
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(root);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
 
   await assert.rejects(
     () => applyPrivateConvergentRenderPlan(plan, workspace),
@@ -152,6 +133,42 @@ test("fails all-path preflight before mutation on foreign target drift", async (
   assert.equal(await workspace.read(".cursor/rules/agentdevflow.mdc"), null);
 });
 
+test("preserves an intervening third state before target replacement", async (t) => {
+  const root = await temporaryDirectory(t);
+  const { plan } = await createPlan(root);
+  const target = plan.files[0];
+  assert.ok(target?.expectedDigest);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const foreignContent = "intervening foreign content\n";
+
+  await assert.rejects(
+    () =>
+      applyPrivateConvergentRenderPlan(plan, workspace, async (event) => {
+        if (
+          event.kind === "temporary-synced" &&
+          event.path === target.path
+        ) {
+          await writeFile(join(root, target.path), foreignContent, "utf8");
+        }
+      }),
+    (error: unknown) => {
+      assert.equal(error instanceof PrivateConvergentApplyError, true);
+      assert.equal(
+        (error as PrivateConvergentApplyError).code,
+        "CONVERGENT_PATH_DRIFT",
+      );
+      assert.equal(
+        (error as PrivateConvergentApplyError).path,
+        target.path,
+      );
+      return true;
+    },
+  );
+
+  assert.equal(await workspace.read(target.path), foreignContent);
+  assert.deepEqual(await privateTemporaryPaths(root), []);
+});
+
 test("reclaims only a regular deterministic temporary path", async (t) => {
   const root = await temporaryDirectory(t);
   const { plan } = await createPlan(root);
@@ -164,7 +181,7 @@ test("reclaims only a regular deterministic temporary path", async (t) => {
   });
   await mkdir(join(root, ".cursor", "rules"), { recursive: true });
   await writeFile(join(root, intent.temporaryPath), "partial\n", "utf8");
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(root);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
   await applyPrivateConvergentRenderPlan(plan, workspace);
   assert.deepEqual(await privateTemporaryPaths(root), []);
   assert.equal(await workspace.read(first.path), first.expectedContent);
@@ -183,7 +200,7 @@ test("reclaims only a regular deterministic temporary path", async (t) => {
   await writeFile(outside, "outside\n", "utf8");
   await symlink(outside, join(otherRoot, otherIntent.temporaryPath));
   const otherWorkspace =
-    await PrivateFilesystemWorkspace.openForProcessTermination(otherRoot);
+    await PrivateFilesystemWorkspace.open(otherRoot);
   await assert.rejects(
     () => applyPrivateConvergentRenderPlan(otherPlan, otherWorkspace),
     (error: unknown) => {
@@ -203,7 +220,7 @@ test("converges delete operations before and after unlink", async (t) => {
       const root = await temporaryDirectory(boundaryTest);
       const { plan, renderer, request } = await createPlan(root);
       const workspace =
-        await PrivateFilesystemWorkspace.openForProcessTermination(root);
+        await PrivateFilesystemWorkspace.open(root);
       const initial = await applyPrivateConvergentRenderPlan(plan, workspace);
       const staged = await renderer.stage(request);
       const agents = staged.files.find((file) => file.path === "AGENTS.md");
@@ -232,11 +249,67 @@ test("converges delete operations before and after unlink", async (t) => {
         /Injected fault/u,
       );
       const resumed =
-        await PrivateFilesystemWorkspace.openForProcessTermination(root);
+        await PrivateFilesystemWorkspace.open(root);
       await applyPrivateConvergentRenderPlan(deletePlan, resumed);
       assert.equal(await resumed.read(deletePath), null);
       assert.equal(await resumed.read("CLAUDE.md"), null);
       assert.equal(await resumed.read("AGENTS.md"), agents.content);
     });
   }
+});
+
+test("preserves an intervening third state before removal", async (t) => {
+  const root = await temporaryDirectory(t);
+  const { plan, renderer, request } = await createPlan(root);
+  const workspace = await PrivateFilesystemWorkspace.open(root);
+  const initial = await applyPrivateConvergentRenderPlan(plan, workspace);
+  const staged = await renderer.stage(request);
+  const agents = staged.files.find((file) => file.path === "AGENTS.md");
+  assert.ok(agents);
+  const reduced: StagingRenderer = {
+    name: "convergent-delete-drift-fixture",
+    version: "1",
+    ownershipKey: renderer.ownershipKey,
+    async stage() {
+      return { files: [agents], diagnostics: [] };
+    },
+  };
+  const deletePlan = await new StagedRendererAdapter(reduced).plan(
+    { ...request, ownership: initial.ownership },
+    workspace,
+  );
+  const deletePath = ".cursor/rules/agentdevflow.mdc";
+  const foreignContent = "intervening foreign content\n";
+
+  await assert.rejects(
+    () =>
+      applyPrivateConvergentRenderPlan(
+        deletePlan,
+        workspace,
+        async (event) => {
+          if (
+            event.kind === "path-removing" &&
+            event.path === deletePath
+          ) {
+            await writeFile(
+              join(root, deletePath),
+              foreignContent,
+              "utf8",
+            );
+          }
+        },
+      ),
+    (error: unknown) => {
+      assert.equal(error instanceof PrivateConvergentApplyError, true);
+      assert.equal(
+        (error as PrivateConvergentApplyError).code,
+        "CONVERGENT_PATH_DRIFT",
+      );
+      assert.equal((error as PrivateConvergentApplyError).path, deletePath);
+      return true;
+    },
+  );
+
+  assert.equal(await workspace.read(deletePath), foreignContent);
+  assert.equal(await workspace.read("AGENTS.md"), agents.content);
 });

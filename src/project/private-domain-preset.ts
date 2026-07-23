@@ -156,15 +156,35 @@ function balancedLocalDefinition(
         artifact: "ReviewerIsolationEvidence",
       },
     ],
-    evidenceRequirements: [
-      ...(definition.evidenceRequirements ?? []),
-      {
-        id: "reviewer-isolation-payload",
-        artifact: "ReviewerIsolationEvidence",
-        schema: "reviewer-isolation@1",
-        referenceArtifact: "VerificationEvidence",
-      },
-    ],
+  };
+}
+
+function fastIssueDefinition(
+  definition: PrivateDomainWorkflowDefinition,
+): PrivateDomainWorkflowDefinition {
+  return {
+    ...definition,
+    artifactTypes: definition.artifactTypes.filter(
+      (artifact) => artifact !== "ReviewerIsolationEvidence",
+    ),
+    transitions: definition.transitions.map((transition) => {
+      const produces = transition.produces?.filter(
+        (artifact) => artifact !== "ReviewerIsolationEvidence",
+      );
+      const invalidates = transition.invalidates?.filter(
+        (artifact) => artifact !== "ReviewerIsolationEvidence",
+      );
+      return {
+        ...transition,
+        ...(produces === undefined ? {} : { produces }),
+        ...(invalidates === undefined ? {} : { invalidates }),
+      };
+    }),
+    policies: definition.policies.filter(
+      (policy) =>
+        policy.artifact !== "BlockingFinding" &&
+        policy.artifact !== "ReviewerIsolationEvidence",
+    ),
   };
 }
 
@@ -224,9 +244,11 @@ export function expandPrivateDomainPreset(
 
   const profile = preset === "balanced" ? balancedProfile : fastProfile;
   const overlaidDefinition =
-    preset === "balanced" && workflowFamily === "local-reviewed-change"
-      ? balancedLocalDefinition(baseDefinition)
-      : baseDefinition;
+    preset === "fast" && workflowFamily === "issue-to-reviewed-pull-request"
+      ? fastIssueDefinition(baseDefinition)
+      : preset === "balanced" && workflowFamily === "local-reviewed-change"
+        ? balancedLocalDefinition(baseDefinition)
+        : baseDefinition;
   const definition = withPresetIdentity(overlaidDefinition, preset);
 
   if (!satisfiesProfile(definition, profile)) {

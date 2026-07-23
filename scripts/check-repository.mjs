@@ -333,43 +333,6 @@ function inspectDependencyBoundaries(relativePath, content) {
   return diagnostics;
 }
 
-function inspectArchitectureBoundaries(relativePath, content) {
-  const diagnostics = [];
-  if (relativePath.startsWith("src/project/") && relativePath.endsWith(".ts")) {
-    const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["']\.\.\/execution\//u.exec(
-      content,
-    );
-    if (match !== null && match.index !== undefined) {
-      diagnostics.push({
-        path: relativePath,
-        line: lineNumberAt(content, match.index),
-        code: "PROJECT_EXECUTION_BOUNDARY_BYPASSED",
-        message:
-          "Keep project resolution independent from optional execution exports.",
-      });
-    }
-  }
-  if (
-    relativePath.startsWith("src/") &&
-    !relativePath.startsWith("src/experiments/") &&
-    !relativePath.startsWith("src/transaction/") &&
-    relativePath.endsWith(".ts")
-  ) {
-    const match = /(?:\bfrom\s+|\bimport\s*(?:\(\s*)?|\brequire\s*\(\s*)["'][^"']*\/transaction\//u.exec(
-      content,
-    );
-    if (match !== null && match.index !== undefined) {
-      diagnostics.push({
-        path: relativePath,
-        line: lineNumberAt(content, match.index),
-        code: "FROZEN_TRANSACTION_BOUNDARY_BYPASSED",
-        message: "Keep the normal runtime graph independent from frozen transaction code.",
-      });
-    }
-  }
-  return diagnostics;
-}
-
 async function inspectPackageBoundary() {
   let content;
   try {
@@ -461,32 +424,6 @@ async function inspectPackageBoundary() {
       code: "PACKAGE_GETTING_STARTED_MISSING",
       message: "Include the public beta getting-started guide in the package allowlist.",
     });
-  }
-  const privateConsumerExclusion =
-    "!dist/src/application/private-compiled-policy-consumer.*";
-  const privateConsumerExclusionIndex = manifest.files.indexOf(
-    privateConsumerExclusion,
-  );
-  if (privateConsumerExclusionIndex < 0) {
-    diagnostics.push({
-      path: "package.json",
-      line: 1,
-      code: "PACKAGE_PRIVATE_CONSUMER_EXPOSED",
-      message:
-        "Exclude the private compiled-policy consumer and its omitted execution dependencies from the runtime package.",
-    });
-  } else {
-    const laterPositiveEntry = manifest.files
-      .slice(privateConsumerExclusionIndex + 1)
-      .find((entry) => typeof entry === "string" && !entry.startsWith("!"));
-    if (laterPositiveEntry !== undefined) {
-      diagnostics.push({
-        path: "package.json",
-        line: 1,
-        code: "PACKAGE_PRIVATE_CONSUMER_REINCLUDED",
-        message: `Move positive package entry ${JSON.stringify(laterPositiveEntry)} before the private compiled-policy consumer exclusion.`,
-      });
-    }
   }
   if (manifest.scripts?.postbuild !== "node scripts/prepare-cli-bin.mjs") {
     diagnostics.push({
@@ -622,7 +559,6 @@ for (const absolutePath of files) {
     continue;
   }
   diagnostics.push(...inspectDisclosure(relativePath, content));
-  diagnostics.push(...inspectArchitectureBoundaries(relativePath, content));
   diagnostics.push(...inspectDependencyBoundaries(relativePath, content));
   diagnostics.push(...inspectWorkflowSecurity(relativePath, content));
   if (extname(absolutePath) === ".md") {

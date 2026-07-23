@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { constants } from "node:fs";
 import {
+  link,
   lstat,
   mkdtemp,
   open,
@@ -88,6 +89,12 @@ try {
   await rename(temporaryPath, targetPath);
   assert.equal(await readFile(targetPath, "utf8"), "after\n");
 
+  const hardLinkSourcePath = join(root, "hard-link-source");
+  const hardLinkTargetPath = join(root, "hard-link-target");
+  await writeFile(hardLinkSourcePath, "linked\n", "utf8");
+  await link(hardLinkSourcePath, hardLinkTargetPath);
+  assert.equal(await readFile(hardLinkTargetPath, "utf8"), "linked\n");
+
   const symlinkPath = join(root, "linked-target");
   await symlink(targetPath, symlinkPath, "file");
   assert.equal((await lstat(symlinkPath)).isSymbolicLink(), true);
@@ -117,7 +124,7 @@ try {
       caseSensitive,
       forcedTermination,
       directorySyncRequired: false,
-      hardLinkRequired: false,
+      hardLinkRequired: true,
     }),
   );
 } finally {

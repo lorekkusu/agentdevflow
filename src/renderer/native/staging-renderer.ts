@@ -97,15 +97,21 @@ export class NativeProjectInstructionsRenderer implements StagingRenderer {
       });
     }
 
+    const requestedProviders = [...new Set(request.providers)].sort(compareText);
+    const sourceByProvider = new Map(
+      this.materialization.files.map((source) => [source.provider, source]),
+    );
     if (
-      this.materialization.files.length !== 1 ||
-      this.materialization.files[0]?.capability !== "project-instructions"
+      this.materialization.files.some(
+        (source) => source.capability !== "project-instructions",
+      ) ||
+      requestedProviders.some((provider) => !sourceByProvider.has(provider))
     ) {
       diagnostics.push({
         code: "UNSUPPORTED_SOURCE_LAYOUT",
         severity: "error",
         message:
-          "The native renderer requires exactly one project-instructions source document.",
+          "The native renderer requires exactly one project-instructions source document for each requested provider product.",
       });
     }
 
@@ -118,19 +124,20 @@ export class NativeProjectInstructionsRenderer implements StagingRenderer {
       return { files: [], diagnostics };
     }
 
-    const source = this.materialization.files[0];
-    if (!source) {
-      throw new Error("Validated source materialization is unexpectedly empty.");
-    }
-    const sourceRefs = [...new Set([source.path, ...source.sourceRefs])].sort(
-      compareText,
-    );
-    const files = [...new Set(request.providers)]
-      .sort(compareText)
-      .map((provider) => ({
+    const files = requestedProviders.map((provider) => {
+      const source = sourceByProvider.get(provider);
+      if (!source) {
+        throw new Error(
+          `Validated source materialization is missing provider ${provider}.`,
+        );
+      }
+      return {
         ...emitByProvider[provider](source.content),
-        sourceRefs,
-      }));
+        sourceRefs: [...new Set([source.path, ...source.sourceRefs])].sort(
+          compareText,
+        ),
+      };
+    });
 
     return { files, diagnostics: [] };
   }

@@ -1,10 +1,6 @@
 import { posix } from "node:path";
 
-import type { CandidateCompilation } from "../compiler/private-model.js";
-import {
-  materializePrivateDomainProject,
-  type PrivateResolvedDomainProject,
-} from "./materialize-domain-project.js";
+import type { PrivateResolvedDomainProject } from "./materialize-domain-project.js";
 import type {
   InitializationImportAuthorization,
   OwnershipClaim,
@@ -102,45 +98,6 @@ function normalizeInitializationImports(
   });
 }
 
-function rendererCapability(
-  capability: CandidateCompilation["capabilityResolutions"][number]["capability"],
-): RendererCapability {
-  switch (capability) {
-    case "project-instructions":
-      return "rules";
-  }
-}
-
-function validateCapabilityCoverage(compilation: CandidateCompilation): void {
-  const resolutions = new Set<string>();
-  for (const resolution of compilation.capabilityResolutions) {
-    const key = `${resolution.requirementId}\u0000${resolution.providerId}\u0000${resolution.capability}`;
-    if (resolutions.has(key)) {
-      throw new Error(
-        `Compilation contains duplicate capability resolution ${resolution.requirementId} for provider ${resolution.providerId}.`,
-      );
-    }
-    resolutions.add(key);
-  }
-  const expected = new Set<string>();
-  for (const requirement of compilation.workflow.capabilityRequirements) {
-    for (const provider of compilation.workflow.providers) {
-      const key = `${requirement.id}\u0000${provider.id}\u0000${requirement.capability}`;
-      expected.add(key);
-      if (!resolutions.has(key)) {
-        throw new Error(
-          `Compilation is missing capability resolution ${requirement.id} for provider ${provider.id}.`,
-        );
-      }
-    }
-  }
-  for (const key of resolutions) {
-    if (!expected.has(key)) {
-      throw new Error("Compilation contains an unexpected capability resolution.");
-    }
-  }
-}
-
 interface PrivateRenderRequestSource {
   readonly compilerDigest: string;
   readonly providers: readonly RendererProvider[];
@@ -201,42 +158,34 @@ function renderRequestFromSource(
   };
 }
 
-/** Internal bridge from compiler evidence to the replaceable renderer contract. */
-export function renderRequestFromCompilation(
-  compilation: CandidateCompilation,
-  options: CompilationRenderRequestOptions,
-): RenderRequest {
-  validateCapabilityCoverage(compilation);
-  const providers = [
-    ...new Set(
-      compilation.workflow.providers.map(
-        (provider): RendererProvider => provider.product,
-      ),
-    ),
-  ].sort(compareText);
-  const capabilities = [
-    ...new Set(
-      compilation.capabilityResolutions.map((resolution) =>
-        rendererCapability(resolution.capability),
-      ),
-    ),
-  ].sort(compareText);
-  return renderRequestFromSource(
-    { compilerDigest: compilation.compilerDigest, providers, capabilities },
-    options,
-  );
-}
-
 export function renderRequestFromPrivateDomainProjectMaterialization(
   project: PrivateResolvedDomainProject,
   materialization: PrivateRendererSourceMaterialization,
   options: MaterializedCompilationRenderRequestOptions = {},
 ): RenderRequest {
   validatePrivateRendererSourceMaterialization(materialization);
-  const expectedMaterialization = materializePrivateDomainProject(project);
+  const expectedProviders = [
+    ...new Set(
+      project.normalizedIntent.providers.map(
+        (provider): RendererProvider => provider.product,
+      ),
+    ),
+  ].sort(compareText);
+  const materializedProviders = materialization.files
+    .map((file) => file.provider)
+    .sort(compareText);
+  const requiredProjectReference =
+    `domain-project-resolution:sha256:${project.resolutionDigest}`;
   if (
-    materialization.digest !== expectedMaterialization.digest ||
-    materialization.compilerDigest !== expectedMaterialization.compilerDigest
+    materialization.compilerDigest !==
+      project.workflowCompilation.compilationDigest ||
+    expectedProviders.length !== materializedProviders.length ||
+    expectedProviders.some(
+      (provider, index) => provider !== materializedProviders[index],
+    ) ||
+    materialization.files.some(
+      (file) => !file.sourceRefs.includes(requiredProjectReference),
+    )
   ) {
     throw new Error(
       "Private renderer source materialization belongs to a different domain project compilation.",
@@ -256,22 +205,4 @@ export function renderRequestFromPrivateDomainProjectMaterialization(
       sourceFiles: materialization.files.map((file) => file.path),
     },
   );
-}
-
-export function renderRequestFromMaterialization(
-  compilation: CandidateCompilation,
-  materialization: PrivateRendererSourceMaterialization,
-  options: MaterializedCompilationRenderRequestOptions = {},
-): RenderRequest {
-  validatePrivateRendererSourceMaterialization(materialization);
-  if (materialization.compilerDigest !== compilation.compilerDigest) {
-    throw new Error(
-      "Private renderer source materialization belongs to a different compilation.",
-    );
-  }
-  return renderRequestFromCompilation(compilation, {
-    ...options,
-    materializedInputDigest: materialization.digest,
-    sourceFiles: materialization.files.map((file) => file.path),
-  });
 }

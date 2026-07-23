@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     await readFile(fixturePath, "utf8"),
   ) as WorkerFixture;
   const workspace =
-    await PrivateFilesystemWorkspace.openForProcessTermination(repositoryRoot);
+    await PrivateFilesystemWorkspace.open(repositoryRoot);
   let reached = false;
   await executePrivateRenderCommand({
     materialization: fixture.materialization,

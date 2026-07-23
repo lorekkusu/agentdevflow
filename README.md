@@ -1,110 +1,218 @@
 # agentdevflow
 
-Turn one local development policy into reviewable project instructions for Codex, Claude Code, and Cursor.
+Configure how coding agents plan, implement, review, and hand work off—then
+generate native, responsibility-specific instructions for Codex, Claude Code,
+and Cursor.
 
-`agentdevflow` lets a project name provider-neutral Steward, Developer, and Reviewer responsibilities, choose a policy preset, preview the exact generated files, approve one digest-bound plan, and detect later ownership drift. It is a local-first Node.js and TypeScript CLI.
+`agentdevflow` is a local-first Node.js and TypeScript CLI. A project selects
+Steward, Developer, and Reviewer responsibilities; chooses either a local
+reviewed-change flow or an issue-to-reviewed-pull-request flow; adds optional
+project rules under `.agentdevflow/rules/`; and reviews the exact generated
+files before approving them.
 
-The current beta generates instructions; it does **not** run coding agents or automate trackers, pull requests, CI, reviews, or merges.
+It generates and checks project instructions. It does **not** run agents,
+connect to Linear or GitHub, poll CI, manage credentials, or merge pull
+requests. The generated procedure tells each configured agent what it owns,
+where it must hand off, and when it must stop because a required tool or
+permission is unavailable.
 
-> **Version notice:** use `0.1.0-beta.2`. npm `latest` and `next` both resolve
-> to it. `0.1.0-beta.1` is deprecated because its published tarball does not
-> preserve executable mode.
+> **Repository status:** this README describes the current unreleased
+> working-tree candidate. The published `0.1.0-beta.2` package is an earlier
+> local-only snapshot and does not include the workflow and custom-guidance
+> surface below. Do not use that published version to evaluate this candidate.
 
-## What the beta does today
-
-- Configures one CLI-supported workflow model: `local-reviewed-change`.
-- Supports `fast` and `balanced` policy presets.
-- Binds Steward, Developer, and Reviewer responsibilities to one or more Codex, Claude Code, or Cursor provider instances.
-- Generates native project instructions at `AGENTS.md`, `CLAUDE.md`, and `.cursor/rules/agentdevflow.mdc` for the configured products.
-- Shows the complete recognized target before mutation and requires its exact plan digest for `render`.
-- Records generated-file ownership in `.agentdevflow/lock.json` and fails closed on unsupported existing content or later drift.
-- Provides deterministic human output and bounded versioned JSON output.
-
-GitHub Issues, Linear, issue-to-pull-request automation, live CI observation, auxiliary review services, and merge execution are product directions, not executable beta integrations. Strict and Custom presets are not available.
-
-## Quick start
-
-Requirements: Node.js 22 or 24 and npm.
-
-Start in an empty directory or a repository without an existing `AGENTS.md`:
+To evaluate a clean clone of the current working tree:
 
 ```bash
-mkdir agentdevflow-demo
-cd agentdevflow-demo
+npm install
+npm run build
+node dist/src/cli/private-local-cli.js --help
+```
 
-npx --yes agentdevflow@0.1.0-beta.2 init \
+Replace the `npx agentdevflow` prefix in the examples below with
+`node dist/src/cli/private-local-cli.js`. The repository version is not a
+registry release and must not be published again as `0.1.0-beta.2`.
+
+## What it can configure
+
+### Local reviewed change
+
+Use this when work does not require an issue, pull request, CI gate, or merge
+procedure. The Steward plans, the Developer implements and verifies, and the
+Reviewer independently accepts the current change or returns it for rework.
+
+```bash
+npx agentdevflow init \
   --workflow local-reviewed-change \
-  --preset fast \
+  --preset balanced \
   --tracker none \
-  --provider codex-main,codex,cli \
+  --provider codex-main,codex \
+  --provider cursor-main,cursor \
+  --provider claude-main,claude-code \
   --steward codex-main \
-  --developer codex-main \
+  --developer cursor-main \
+  --reviewer claude-main
+```
+
+### Issue to reviewed pull request
+
+Use this when an agent should follow a tracker-backed procedure. This example
+expresses a common setup: Codex plans and coordinates through Linear, Cursor
+implements, Codex reviews from a clean context, the pull request starts ready,
+and squash merge is allowed only after current CI and review evidence.
+
+```bash
+npx agentdevflow init \
+  --workflow issue-to-reviewed-pull-request \
+  --preset balanced \
+  --tracker linear \
+  --pull-request-state ready \
+  --pull-request-host github \
+  --ci github-actions \
+  --provider codex-main,codex \
+  --provider cursor-main,cursor \
+  --steward codex-main \
+  --developer cursor-main \
   --reviewer codex-main
 ```
 
-`init` creates only `agentdevflow.config.jsonc`. It reports what would happen to provider files but does not write them or the lock.
+Use `--tracker github-issues` instead of `linear` for GitHub Issues. Use
+`--pull-request-state draft` when the Steward should mark the pull request
+ready only after required CI succeeds. The current CLI fixes auxiliary review
+to `disabled` and merge method to `squash`; neither is silently selected by a
+preset.
 
-Review the exact target:
+The tracker, pull-request host, and CI values compile into advisory
+instructions. `agentdevflow` does not verify that the selected agent can access
+them. If a required integration, tool, or permission is unavailable, generated
+instructions require the active agent to stop and report the missing
+capability instead of simulating success or skipping the gate.
 
-```bash
-npx --yes agentdevflow@0.1.0-beta.2 diff
+## Add project rules
+
+All four files are optional user-owned Markdown:
+
+```text
+.agentdevflow/rules/shared.md
+.agentdevflow/rules/steward.md
+.agentdevflow/rules/developer.md
+.agentdevflow/rules/reviewer.md
 ```
 
-When changes are required, `diff` intentionally exits with status `1`. Read every change and copy the printed `exact-plan-digest`, then approve that exact plan:
+For example:
 
 ```bash
-npx --yes agentdevflow@0.1.0-beta.2 render \
-  --approve-plan <exact-plan-digest>
+mkdir -p .agentdevflow/rules
 
-npx --yes agentdevflow@0.1.0-beta.2 check
+cat > .agentdevflow/rules/shared.md <<'EOF'
+Run the repository's documented verification before every handoff.
+Do not include credentials or private issue content in generated artifacts.
+EOF
+
+cat > .agentdevflow/rules/developer.md <<'EOF'
+Keep changes within the accepted issue scope.
+Report the exact verification commands and results to the Steward.
+EOF
 ```
 
-For the example above, render creates `AGENTS.md` and `.agentdevflow/lock.json`. A final clean `check` exits with status `0`.
+Shared guidance appears in every configured provider output. A responsibility
+file appears only in outputs assigned that responsibility. Editing canonical
+guidance produces a new reviewable diff; directly editing a generated provider
+file produces ownership drift.
 
-See [Getting started](docs/getting-started.md) for multi-provider setup, every current option, existing-file behavior, JSON output, exit statuses, and the caller-supplied `doctor` observation format.
+## Review and render
+
+`init` creates only `agentdevflow.config.jsonc`. It reports provider-file
+dispositions but does not write provider files or the ownership lock.
+
+```bash
+npx agentdevflow diff
+```
+
+When changes are required, `diff` intentionally exits with status `1`. Review
+the complete numbered before and after content and copy the printed
+`exact-plan-digest`:
+
+```bash
+npx agentdevflow render --approve-plan <exact-plan-digest>
+npx agentdevflow check
+```
+
+A clean `check` exits with status `0`. The resulting targets are:
+
+| Product | Generated target |
+| --- | --- |
+| Codex | `AGENTS.md` |
+| Claude Code | `CLAUDE.md` |
+| Cursor | `.cursor/rules/agentdevflow.mdc` |
+
+Each target contains only the responsibilities assigned to that provider id,
+plus shared protocol and shared user guidance. One provider id may hold
+multiple responsibilities; the output keeps them in separate sections. The
+current project-wide native paths cannot isolate two different ids of the same
+provider product, so that ambiguous configuration is rejected.
+
+See [Getting started](docs/getting-started.md) for complete option behavior,
+draft and ready examples, guidance scope, existing-file adoption, JSON output,
+and exit statuses.
 
 ## Commands
 
 | Command | Behavior |
 | --- | --- |
-| `init` | Validates explicit local choices and creates only an absent configuration. |
+| `init` | Validates explicit project choices and creates only an absent configuration. |
 | `diff` | Reads the project and prints the complete recognized plan without mutation. |
 | `render` | Applies only a currently matching plan approved by exact digest. |
 | `check` | Reports clean, changes-required, or blocked state without mutation. |
-| `doctor` | Validates caller-supplied observations; it does not probe commands, credentials, or the network. |
 
 Run global or command-specific help:
 
 ```bash
-npx --yes agentdevflow@0.1.0-beta.2 --help
-npx --yes agentdevflow@0.1.0-beta.2 init --help
+npx agentdevflow --help
+npx agentdevflow init --help
 ```
 
-## Safety and existing files
+## Ownership boundary
 
-Generated paths have one owner. The beta can create an absent target, exactly adopt matching generated content, or perform a narrow lossless import when the existing logical instructions are equivalent. Adopt and import transfer ownership of the **whole file**, not a managed section; lossless import replaces the whole file with canonical generated bytes. Different existing instructions block the plan, and the beta never silently overwrites them.
+Generated paths are whole-file, single-owner projections. The planner can
+create an absent target, adopt exact generated bytes, perform the currently
+supported lossless import, or abort. It never merges arbitrary foreign
+instructions or silently overwrites them.
 
-Removing a configured provider product can plan deletion of its formerly managed file. That deletion is allowed only when the current bytes exactly match the lock and the user approves the complete new diff. Any foreign edit blocks mutation.
+The ownership lock is `.agentdevflow/lock.json`. A stale approval, unsupported
+existing content, or later direct edit blocks mutation. `render` does not use
+Git cleanliness as authorization and never resets, cleans, stashes, commits,
+branches, or rolls back user work.
 
-`render` does not use Git cleanliness as authorization and does not run reset, clean, stash, commit, or branch operations. A stale approval or any unrecognized before-state fails before mutation.
+## Current limits
 
-## Status and limits
+- Only `fast` and `balanced` presets are available.
+- The issue workflow compiles procedures; it does not provide live Linear,
+  GitHub, CI, delegation, review-service, or merge adapters.
+- Auxiliary automated review is not configurable in the current CLI.
+- Squash is the only current issue-workflow merge method.
+- There is no arbitrary workflow language, scheduler, agent runtime, rule CRUD
+  command, GUI, marketplace, or SaaS control plane.
+- Advisory instructions cannot prove that an external action occurred or that
+  evidence is truthful.
 
-`agentdevflow@0.1.0-beta.2` is the current published prerelease; npm `latest` and `next` resolve to it, so `npx agentdevflow` is usable. The exact version remains recommended for beta reproducibility. The immutable `0.1.0-beta.1` release is deprecated because its tarball has a known executable-mode defect, although npm 11.16 was observed normalizing the mode during installation. Beta configuration fields, lock bytes, diagnostics, and JSON report fields may change through documented migration before 1.0.
-
-Node.js 22 and 24 are the accepted beta release lines. The selected Ubuntu, macOS, and Windows CI matrix is qualification evidence, not a promise covering every operating-system, architecture, shell, filesystem, or agent-product version.
-
-For exact behavior and compatibility boundaries, see the [beta CLI contract](docs/development/beta-cli-contract.md) and [initial beta decision](docs/decisions/0004-initial-beta-public-surface.md). For future product direction, see [Product direction](docs/product-direction.md).
+Beta configuration, lock, diagnostic, and JSON report fields may change with
+documented migration before 1.0.
 
 ## Development
 
-Contributors should read [Repository guidance](AGENTS.md), [Contributing](CONTRIBUTING.md), the [development roadmap](docs/development/roadmap.md), and the [public information policy](docs/development/public-information-policy.md).
+Contributors should read [Repository guidance](AGENTS.md),
+[Contributing](CONTRIBUTING.md), the
+[development roadmap](docs/development/roadmap.md), and the
+[engineering boundary](docs/development/engineering-boundary.md).
 
 ```bash
 npm install
 npm run check
 ```
 
-`npm run check` audits repository publication hygiene, type-checks, builds, and runs the automated tests. The project currently uses no CLI framework, linter, formatter, or bundler.
+`npm run check` audits repository publication hygiene, type-checks, builds, and
+runs the automated tests. The project currently uses no CLI framework, linter,
+formatter, or bundler.
 
-`agentdevflow` is licensed under Apache-2.0. The repaired beta was published with provenance through the protected, manually triggered OIDC workflow.
+`agentdevflow` is licensed under Apache-2.0.

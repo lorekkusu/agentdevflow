@@ -31,9 +31,9 @@ function localIntent(): PrivateDomainProjectIntent {
     revision: 1,
     preset: "balanced",
     providers: [
-      { id: "codex-steward", product: "codex", surface: "cli" },
-      { id: "cursor-developer", product: "cursor", surface: "ide" },
-      { id: "claude-reviewer", product: "claude-code", surface: "cli" },
+      { id: "codex-steward", product: "codex" },
+      { id: "cursor-developer", product: "cursor" },
+      { id: "claude-reviewer", product: "claude-code" },
     ],
     roles: {
       steward: "codex-steward",
@@ -137,9 +137,68 @@ test("creates a deterministic exact plan from revision-1 configuration bytes", a
   assert.equal(await workspace.read(lockPath), null);
 });
 
+test("rereads user-owned guidance and binds it into provider-specific plans", async (t) => {
+  const repository = await temporaryRepository(t);
+  await mkdir(join(repository, ".agentdevflow/rules"), { recursive: true });
+  await writeFile(
+    join(repository, ".agentdevflow/rules/shared.md"),
+    "Report verification before handoff.\n",
+    "utf8",
+  );
+  await writeFile(
+    join(repository, ".agentdevflow/rules/developer.md"),
+    "Keep changes within the accepted plan.\n",
+    "utf8",
+  );
+  const workspace = await PrivateFilesystemWorkspace.openReadOnly(repository);
+  const content = document(localIntent());
+  const first = await preparePrivateDomainProjectPlan({
+    content,
+    lockPath,
+    workspace,
+  });
+  expectPrepared(first);
+
+  const firstCodex =
+    first.plan.files.find((file) => file.path === "AGENTS.md")
+      ?.expectedContent ?? "";
+  const firstCursor =
+    first.plan.files.find(
+      (file) => file.path === ".cursor/rules/agentdevflow.mdc",
+    )?.expectedContent ?? "";
+  const firstClaude =
+    first.plan.files.find((file) => file.path === "CLAUDE.md")
+      ?.expectedContent ?? "";
+  assert.match(firstCodex, /Report verification before handoff/u);
+  assert.doesNotMatch(firstCodex, /Keep changes within the accepted plan/u);
+  assert.match(firstCursor, /Keep changes within the accepted plan/u);
+  assert.doesNotMatch(firstClaude, /Keep changes within the accepted plan/u);
+
+  await writeFile(
+    join(repository, ".agentdevflow/rules/developer.md"),
+    "Run the complete verification command before handoff.\n",
+    "utf8",
+  );
+  const second = await preparePrivateDomainProjectPlan({
+    content,
+    lockPath,
+    workspace,
+  });
+  expectPrepared(second);
+  const secondCursor =
+    second.plan.files.find(
+      (file) => file.path === ".cursor/rules/agentdevflow.mdc",
+    )?.expectedContent ?? "";
+
+  assert.match(secondCursor, /Run the complete verification command/u);
+  assert.notEqual(second.materialization.digest, first.materialization.digest);
+  assert.notEqual(second.plan.planDigest, first.plan.planDigest);
+  assert.notEqual(second.snapshot.digest, first.snapshot.digest);
+});
+
 test("feeds the exact plan into check, diff, render, and clean recheck", async (t) => {
   const repository = await temporaryRepository(t);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     repository,
   );
   const content = document(localIntent());
@@ -210,7 +269,7 @@ test("feeds the exact plan into check, diff, render, and clean recheck", async (
 
 test("reconstructs the approved base plan after a partial owned update", async (t) => {
   const repository = await temporaryRepository(t);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     repository,
   );
   const balanced = await preparePrivateDomainProjectPlan({
@@ -273,7 +332,7 @@ test("reconstructs the approved base plan after a partial owned update", async (
 
 test("does not reconstruct foreign bytes as an approved after-state", async (t) => {
   const repository = await temporaryRepository(t);
-  const workspace = await PrivateFilesystemWorkspace.openForProcessTermination(
+  const workspace = await PrivateFilesystemWorkspace.open(
     repository,
   );
   const original = await preparePrivateDomainProjectPlan({
@@ -327,7 +386,7 @@ test("retains a foreign project-instructions file as an exact conflict", async (
   assert.equal(await workspace.read("AGENTS.md"), "manual instructions\n");
 });
 
-test("does not invent unavailable issue, pull-request, CI, or merge adapters", async (t) => {
+test("plans role-specific issue-to-reviewed-pull-request procedures", async (t) => {
   const repository = await temporaryRepository(t);
   const workspace = await PrivateFilesystemWorkspace.openReadOnly(repository);
   const result = await preparePrivateDomainProjectPlan({
@@ -336,29 +395,31 @@ test("does not invent unavailable issue, pull-request, CI, or merge adapters", a
     workspace,
   });
 
-  assert.equal(result.ok, false);
-  if (result.ok) {
-    assert.fail("Expected unavailable external capabilities to block planning.");
-  }
-  const resolutionFailure = result.diagnostics.find(
-    (diagnostic) =>
-      diagnostic.stage === "resolution" &&
-      diagnostic.cause?.code === "WORKFLOW_COMPILATION_FAILED",
-  );
-  assert.equal(resolutionFailure?.stage, "resolution");
-  if (
-    resolutionFailure?.stage !== "resolution" ||
-    resolutionFailure.cause?.code !== "WORKFLOW_COMPILATION_FAILED"
-  ) {
-    assert.fail("Expected a workflow compilation diagnostic.");
-  }
-  assert.equal(resolutionFailure.cause.causes.length > 0, true);
-  assert.equal(
-    resolutionFailure.cause.causes.every(
-      (cause) => cause.code === "CAPABILITY_UNAVAILABLE",
-    ),
-    true,
-  );
+  expectPrepared(result);
+  const codex =
+    result.plan.files.find((file) => file.path === "AGENTS.md")
+      ?.expectedContent ?? "";
+  const cursor =
+    result.plan.files.find(
+      (file) => file.path === ".cursor/rules/agentdevflow.mdc",
+    )?.expectedContent ?? "";
+  const claude =
+    result.plan.files.find((file) => file.path === "CLAUDE.md")
+      ?.expectedContent ?? "";
+
+  assert.match(codex, /create the corresponding work item in Linear/u);
+  assert.match(codex, /Delegate the accepted plan/u);
+  assert.match(codex, /Auxiliary review is disabled/u);
+  assert.match(codex, /perform a `squash` merge/u);
+  assert.doesNotMatch(codex, /create a `ready` pull request/u);
+
+  assert.match(cursor, /create a `ready` pull request/u);
+  assert.match(cursor, /Do not approve, authorize, or merge your own work/u);
+  assert.doesNotMatch(cursor, /create the corresponding work item in Linear/u);
+
+  assert.match(claude, /clean execution context distinct from the Developer/u);
+  assert.match(claude, /Treat a verdict as stale/u);
+  assert.doesNotMatch(claude, /Delegate the accepted plan/u);
 });
 
 test("rejects an invalid base lock before repository planning", async (t) => {
@@ -389,6 +450,9 @@ test("reports a lock observation failure without requesting mutation access", as
     workspace: {
       async read() {
         throw new Error("fixture read failure");
+      },
+      async readBounded() {
+        throw new Error("fixture bounded read failure");
       },
     },
   });

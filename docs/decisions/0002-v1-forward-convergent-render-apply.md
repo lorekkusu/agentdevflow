@@ -24,7 +24,11 @@ Deletes converge from the planned before digest to absence. The operation provid
 
 A clean overall Git worktree is not required. Git status may be used as an optional diagnostic or operator policy, but `agentdevflow` must not automatically execute destructive reset or clean commands. Ownership and digest checks, not repository-wide cleanliness, authorize managed-path mutation.
 
-The existing write-ahead transaction implementation remains private experimental evidence and is not the V1 default. New Windows directory-durability and power-loss work is paused until a concrete requirement justifies the stronger contract.
+The write-ahead transaction prototype is not retained as executable code. Its
+durable conclusion is this decision: stronger rollback, journals, writer
+records, receipts, leases, and directory durability are outside the current
+product requirement. Git history preserves the experiment if a concrete need
+reopens it.
 
 ## Consequences
 
@@ -44,9 +48,8 @@ A hostile concurrent writer remains out of scope. Path rechecks narrow cooperati
 
 ## Evidence
 
-- [Workspace recovery strategy comparison](../evidence/workspace-recovery-strategy-comparison.md)
-- [Private transaction subprocess evidence](../evidence/private-transaction-subprocess.md)
-- [Candidate platform qualification](../evidence/candidate-platform-qualification.md)
+- [V1 recovery contract](../development/v1-recovery-contract.md)
+- [Forward-convergent apply evidence](../evidence/private-convergent-apply.md)
 - Automated coverage in `test/renderer/private-convergent-apply.test.ts`
 - Subprocess coverage in `test/renderer/private-convergent-subprocess.test.ts`
 
@@ -65,8 +68,10 @@ No private prompt, transcript, machine path, or user identity is part of the pla
 - A durable commit anchor is required across generated files and lock state.
 - Power-loss durability becomes a supported product requirement.
 - Hostile concurrent writers must be detected or excluded mechanically.
-- The smaller implementation grows comparable to the retained write-ahead transaction system.
+- The forward-convergent implementation grows a second writer, durable journal,
+  lease, receipt, or rollback lifecycle.
 
 ## Supersedes
 
-None. This decision selects the V1 default while retaining the stronger private transaction prototype as non-default evidence.
+None. This decision selects the V1 default and records why the stronger
+prototype was removed from the executable tree.

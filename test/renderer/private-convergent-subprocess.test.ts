@@ -6,19 +6,15 @@ import { join } from "node:path";
 import test, { type TestContext } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { compileCandidateProjectConfig } from "../../src/compiler/compile-candidate.js";
 import {
   applyPrivateConvergentRenderPlan,
   type PrivateConvergentApplyEvent,
 } from "../../src/renderer/private-convergent-apply.js";
 import type { RenderPlan } from "../../src/renderer/contract.js";
-import { renderRequestFromMaterialization } from "../../src/renderer/from-compilation.js";
-import { materializeCompilation } from "../../src/renderer/materialize-compilation.js";
 import { NativeProjectInstructionsRenderer } from "../../src/renderer/native/staging-renderer.js";
 import { StagedRendererAdapter } from "../../src/renderer/staged-adapter.js";
 import { PrivateFilesystemWorkspace } from "../../src/workspace/private-filesystem-workspace.js";
-import { initialCompilerOptions } from "../fixtures/compiler/capabilities.js";
-import { balancedCandidateConfig } from "../fixtures/config/specimens.js";
+import { createPrivateDomainProjectFixture } from "../fixtures/project/private-domain-project.js";
 
 const workerPath = fileURLToPath(
   new URL("../fixtures/renderer/private-convergent-subprocess-worker.js", import.meta.url),
@@ -36,23 +32,12 @@ async function fixture(t: TestContext): Promise<{
   const repository = join(container, "repository");
   const planPath = join(container, "plan.json");
   await mkdir(repository);
-  const result = compileCandidateProjectConfig(
-    balancedCandidateConfig,
-    initialCompilerOptions,
-  );
-  assert.equal(result.ok, true);
-  if (!result.ok) {
-    assert.fail("Expected candidate compilation to succeed.");
-  }
-  const materialization = materializeCompilation(result.compilation);
+  const { materialization, request } = createPrivateDomainProjectFixture();
   const renderer = new NativeProjectInstructionsRenderer(materialization);
   const adapter = new StagedRendererAdapter(renderer);
   const workspace =
-    await PrivateFilesystemWorkspace.openForProcessTermination(repository);
-  const plan = await adapter.plan(
-    renderRequestFromMaterialization(result.compilation, materialization),
-    workspace,
-  );
+    await PrivateFilesystemWorkspace.open(repository);
+  const plan = await adapter.plan(request, workspace);
   await writeFile(planPath, `${JSON.stringify(plan)}\n`, "utf8");
   return { repository, planPath, plan };
 }
@@ -139,7 +124,7 @@ test("converges after real process termination at every write boundary", async (
         await waitForExit(child);
 
         const workspace =
-          await PrivateFilesystemWorkspace.openForProcessTermination(
+          await PrivateFilesystemWorkspace.open(
             current.repository,
           );
         await applyPrivateConvergentRenderPlan(current.plan, workspace);

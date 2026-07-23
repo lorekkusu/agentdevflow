@@ -28,9 +28,9 @@ function readyLinearIntent(): PrivateDomainProjectIntent {
     revision: 1,
     preset: "balanced",
     providers: [
-      { id: "codex-steward", product: "codex", surface: "cli" },
-      { id: "cursor-developer", product: "cursor", surface: "ide" },
-      { id: "codex-reviewer", product: "codex", surface: "cli" },
+      { id: "codex-steward", product: "codex" },
+      { id: "cursor-developer", product: "cursor" },
+      { id: "codex-reviewer", product: "codex" },
     ],
     roles: {
       steward: "codex-steward",
@@ -69,44 +69,13 @@ function readyLinearIntent(): PrivateDomainProjectIntent {
   };
 }
 
-function draftAuxiliaryIntent(): PrivateDomainProjectIntent {
-  const base = readyLinearIntent();
-  return {
-    ...base,
-    providers: [
-      { id: "claude-steward", product: "claude-code", surface: "cli" },
-      { id: "cursor-developer", product: "cursor", surface: "ide" },
-      { id: "claude-reviewer", product: "claude-code", surface: "cli" },
-    ],
-    roles: {
-      steward: "claude-steward",
-      developer: "cursor-developer",
-      reviewer: "claude-reviewer",
-    },
-    tracker: { mode: "github-issues" },
-    workflow: {
-      family: "issue-to-reviewed-pull-request",
-      initialState: "draft",
-      auxiliaryReview: "enabled",
-      mergeMethod: "squash",
-    },
-    capabilityBindings: [
-      ...base.capabilityBindings,
-      {
-        binding: "auxiliary-reviewer",
-        target: { kind: "external", id: "automated-review-service" },
-      },
-    ],
-  };
-}
-
 function localIntent(): PrivateDomainProjectIntent {
   return {
     revision: 1,
     preset: "balanced",
     providers: [
-      { id: "codex-primary", product: "codex", surface: "cli" },
-      { id: "claude-reviewer", product: "claude-code", surface: "cli" },
+      { id: "codex-primary", product: "codex" },
+      { id: "claude-reviewer", product: "claude-code" },
     ],
     roles: {
       steward: "codex-primary",
@@ -174,32 +143,6 @@ test("resolves the Codex, Cursor, Linear, and immediately ready workflow specime
       ["reviewer", "responsibility"],
       ["tracker", "tracker"],
     ],
-  );
-});
-
-test("resolves a draft workflow with auxiliary review without provider data in the workflow compilation", () => {
-  const result = resolveIssue(draftAuxiliaryIntent());
-
-  expectSuccess(result);
-  assert.equal(result.resolution.tracker.mode, "github-issues");
-  assert.equal(result.workflowCompilation.definition.transitions.length, 14);
-  assert.equal(result.workflowCompilation.capabilityResolutions.length, 7);
-  assert.equal(
-    JSON.stringify(result.workflowCompilation).includes("claude-code"),
-    false,
-  );
-  assert.equal(
-    JSON.stringify(result.workflowCompilation).includes("cursor"),
-    false,
-  );
-  assert.equal(
-    result.resolution.capabilityTargets.some(
-      (item) =>
-        item.binding === "auxiliary-reviewer" &&
-        item.kind === "external" &&
-        item.id === "automated-review-service",
-    ),
-    true,
   );
 });
 

@@ -1,5 +1,10 @@
 # Phase 0
 
+> **Historical gate record:** Phase 0 is complete. Its exclusions describe the
+> experiment boundary at that time, not the current product surface. Use the
+> [roadmap](roadmap.md), [current beta CLI contract](beta-cli-contract.md), and
+> [project health](project-health.md) for current work.
+
 ## Objective
 
 Determine whether `agentdevflow` has an independently useful and maintainable policy-compiler layer. Phase 0 produces executable evidence and explicit recommendations, not a production CLI.

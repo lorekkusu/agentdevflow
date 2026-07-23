@@ -10,10 +10,15 @@ import {
   type PrivateDomainProjectDocumentLimits,
 } from "../interface/private-domain-project-document.js";
 import {
+  composePrivateProviderInstructionViews,
+  readPrivateProjectGuidance,
+} from "../guidance/private-project-guidance.js";
+import {
   analyzePrivateProjectInstructionsImport,
 } from "../import/private-project-instructions-analyzer.js";
 import {
   parsePrivateRenderLock,
+  privateRenderLockDefaultMaxBytes,
   type PrivateRenderLock,
 } from "../lock/private-render-lock.js";
 import type {
@@ -36,18 +41,26 @@ import {
   createRenderPlanDigest,
   StagedRendererAdapter,
 } from "../renderer/staged-adapter.js";
+import { nativeProjectInstructionPaths } from "../renderer/native/common.js";
+import type { PrivateFilesystemReadWorkspace } from "../workspace/private-filesystem-workspace.js";
 import { privateLocalReviewedChangeCapabilityObservations } from "../workflows/private-local-reviewed-change.js";
+import { privateIssueToPullRequestCapabilityObservations } from "../workflows/private-issue-to-reviewed-pull-request.js";
 
 export interface PreparePrivateDomainProjectPlanOptions
   extends PrivateDomainProjectDocumentLimits {
   readonly content: string;
   readonly lockPath: string;
-  readonly workspace: RenderReadWorkspace;
+  readonly workspace: RenderReadWorkspace &
+    Pick<PrivateFilesystemReadWorkspace, "readBounded">;
 }
 
 export interface PrivateDomainProjectPlanDiagnostic {
   readonly stage: "planning";
-  readonly code: "BASE_LOCK_INVALID" | "LOCK_READ_FAILED";
+  readonly code:
+    | "BASE_LOCK_INVALID"
+    | "LOCK_READ_FAILED"
+    | "PROJECT_GUIDANCE_READ_FAILED"
+    | "PROVIDER_PRODUCT_TARGET_AMBIGUOUS";
   readonly path: string;
   readonly message: string;
 }
@@ -152,7 +165,7 @@ function nativeCapabilityObservations(
 ) {
   return family === "local-reviewed-change"
     ? privateLocalReviewedChangeCapabilityObservations
-    : [];
+    : privateIssueToPullRequestCapabilityObservations;
 }
 
 function ownershipFromLock(
@@ -165,12 +178,6 @@ function ownershipFromLock(
     ]),
   );
 }
-
-const nativeProviderPaths = {
-  "claude-code": "CLAUDE.md",
-  codex: "AGENTS.md",
-  cursor: ".cursor/rules/agentdevflow.mdc",
-} as const satisfies Readonly<Record<RendererProvider, string>>;
 
 function compareDiagnostics(
   left: RendererDiagnostic,
@@ -205,9 +212,9 @@ async function initialRenderRequest(options: {
   }
 
   const providerByPath = new Map<string, RendererProvider>(
-    Object.entries(nativeProviderPaths).map(([provider, path]) => [
+    Object.entries(nativeProjectInstructionPaths).map(([provider, path]) => [
       path,
-      provider as RendererProvider,
+      provider as keyof typeof nativeProjectInstructionPaths,
     ]),
   );
   const adoptPaths: string[] = [];
@@ -302,7 +309,10 @@ export async function preparePrivateDomainProjectPlan(
   let baseLock: PrivateRenderLock | null = null;
   let lockContent: string | null;
   try {
-    lockContent = await options.workspace.read(options.lockPath);
+    lockContent = await options.workspace.readBounded(
+      options.lockPath,
+      privateRenderLockDefaultMaxBytes,
+    );
   } catch (error) {
     return {
       ok: false,
@@ -333,7 +343,21 @@ export async function preparePrivateDomainProjectPlan(
   }
 
   const project = compiled.project;
-  const materialization = materializePrivateDomainProject(project);
+  const guidanceResult = await readPrivateProjectGuidance(options.workspace);
+  if (!guidanceResult.ok) {
+    return { ok: false, diagnostics: guidanceResult.diagnostics };
+  }
+  const composed = composePrivateProviderInstructionViews(
+    project,
+    guidanceResult.guidance,
+  );
+  if (!composed.ok) {
+    return { ok: false, diagnostics: composed.diagnostics };
+  }
+  const materialization = materializePrivateDomainProject(
+    project,
+    guidanceResult.guidance,
+  );
   const initialization =
     baseLock === null
       ? await initialRenderRequest({ project, materialization, workspace: options.workspace })

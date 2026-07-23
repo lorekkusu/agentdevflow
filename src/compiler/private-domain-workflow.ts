@@ -10,7 +10,6 @@ import type {
   WorkflowTransition,
 } from "../policy/model.js";
 import { validatePolicySafety } from "../policy/validator.js";
-import type { PrivateEnforcementStrength } from "./private-model.js";
 
 export interface PrivateDomainTransition {
   readonly id: string;
@@ -27,13 +26,11 @@ export interface PrivateDomainCapabilityRequirement {
   readonly id: string;
   readonly binding: string;
   readonly capability: string;
-  readonly requiredStrength: PrivateEnforcementStrength;
 }
 
 export interface PrivateDomainCapabilityObservation {
   readonly binding: string;
   readonly capability: string;
-  readonly strength: PrivateEnforcementStrength;
   readonly mechanism: string;
 }
 
@@ -41,33 +38,7 @@ export interface PrivateDomainCapabilityResolution {
   readonly requirementId: string;
   readonly binding: string;
   readonly capability: string;
-  readonly requiredStrength: PrivateEnforcementStrength;
-  readonly observedStrength: PrivateEnforcementStrength;
   readonly mechanism: string;
-}
-
-export const privateDomainEvidenceSchemas = [
-  "ci-result@2",
-  "merge-authorization@1",
-  "review-verdict@1",
-  "reviewer-isolation@1",
-] as const;
-export type PrivateDomainEvidenceSchema =
-  (typeof privateDomainEvidenceSchemas)[number];
-export const privateDomainEvidenceArtifactBySchema: Readonly<
-  Record<PrivateDomainEvidenceSchema, ArtifactType>
-> = {
-  "ci-result@2": "CiResult",
-  "merge-authorization@1": "MergeAuthorization",
-  "review-verdict@1": "ReviewVerdict",
-  "reviewer-isolation@1": "ReviewerIsolationEvidence",
-};
-
-export interface PrivateDomainEvidenceRequirement {
-  readonly id: string;
-  readonly artifact: ArtifactType;
-  readonly schema: PrivateDomainEvidenceSchema;
-  readonly referenceArtifact?: ArtifactType;
 }
 
 /** Internal domain fixture. This is not a public workflow definition format. */
@@ -80,7 +51,6 @@ export interface PrivateDomainWorkflowDefinition {
   readonly transitions: readonly PrivateDomainTransition[];
   readonly policies: readonly SafetyPolicy[];
   readonly capabilityRequirements: readonly PrivateDomainCapabilityRequirement[];
-  readonly evidenceRequirements?: readonly PrivateDomainEvidenceRequirement[];
 }
 
 export interface PrivateDomainWorkflowBudget {
@@ -102,7 +72,6 @@ export type PrivateDomainWorkflowDiagnostic =
       readonly code:
         | "CAPABILITY_OBSERVATION_INVALID"
         | "CAPABILITY_OBSERVATION_DUPLICATED"
-        | "CAPABILITY_STRENGTH_INSUFFICIENT"
         | "CAPABILITY_UNAVAILABLE";
       readonly path: string;
       readonly message: string;
@@ -146,17 +115,6 @@ export interface PrivateDomainWorkflowCompilerOptions {
 }
 
 const defaultMaxAbstractStates = 32_768;
-
-const strengthRank: Readonly<Record<PrivateEnforcementStrength, number>> = {
-  advisory: 0,
-  guarded: 1,
-  enforced: 2,
-};
-const enforcementStrengths = new Set<unknown>([
-  "advisory",
-  "guarded",
-  "enforced",
-]);
 
 function compareText(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -219,14 +177,13 @@ function isCapabilityObservation(
 ): value is PrivateDomainCapabilityObservation {
   if (
     !isRecord(value) ||
-    !hasExactKeys(value, ["binding", "capability", "mechanism", "strength"])
+    !hasExactKeys(value, ["binding", "capability", "mechanism"])
   ) {
     return false;
   }
   return (
     boundedNonEmptyText(value.binding, 128) &&
     boundedNonEmptyText(value.capability, 128) &&
-    enforcementStrengths.has(value.strength) &&
     boundedNonEmptyText(value.mechanism, 512)
   );
 }
@@ -259,14 +216,6 @@ function validateDefinition(
     [
       "capability requirement id",
       definition.capabilityRequirements.map((item) => item.id),
-    ],
-    [
-      "evidence requirement id",
-      (definition.evidenceRequirements ?? []).map((item) => item.id),
-    ],
-    [
-      "evidence requirement artifact",
-      (definition.evidenceRequirements ?? []).map((item) => item.artifact),
     ],
   ];
   for (const [description, values] of duplicateChecks) {
@@ -333,50 +282,6 @@ function validateDefinition(
     if (!nonEmpty(requirement.capability)) {
       invalid(`Capability requirement ${requirement.id} has an empty capability.`);
     }
-    if (!enforcementStrengths.has(requirement.requiredStrength)) {
-      invalid(
-        `Capability requirement ${requirement.id} has an unsupported required strength.`,
-      );
-    }
-  }
-
-  for (const requirement of definition.evidenceRequirements ?? []) {
-    if (!artifacts.has(requirement.artifact)) {
-      invalid(
-        `Evidence requirement ${requirement.id} uses undeclared artifact type ${requirement.artifact}.`,
-      );
-    }
-    if (!privateDomainEvidenceSchemas.includes(requirement.schema)) {
-      invalid(
-        `Evidence requirement ${requirement.id} uses unsupported schema ${requirement.schema}.`,
-      );
-    }
-    if (
-      privateDomainEvidenceSchemas.includes(requirement.schema) &&
-      privateDomainEvidenceArtifactBySchema[requirement.schema] !==
-        requirement.artifact
-    ) {
-      invalid(
-        `Evidence requirement ${requirement.id} schema ${requirement.schema} does not apply to artifact ${requirement.artifact}.`,
-      );
-    }
-    if (
-      requirement.schema === "reviewer-isolation@1" &&
-      (requirement.referenceArtifact === undefined ||
-        !artifacts.has(requirement.referenceArtifact))
-    ) {
-      invalid(
-        `Evidence requirement ${requirement.id} requires a declared reference artifact for reviewer isolation.`,
-      );
-    }
-    if (
-      requirement.schema !== "reviewer-isolation@1" &&
-      requirement.referenceArtifact !== undefined
-    ) {
-      invalid(
-        `Evidence requirement ${requirement.id} has an unexpected reference artifact.`,
-      );
-    }
   }
 
   return diagnostics.sort((left, right) =>
@@ -427,13 +332,6 @@ function normalizeDefinition(
     capabilityRequirements: [...definition.capabilityRequirements].sort(
       (left, right) => compareText(left.id, right.id),
     ),
-    ...((definition.evidenceRequirements?.length ?? 0) > 0
-      ? {
-          evidenceRequirements: [...definition.evidenceRequirements!].sort(
-            (left, right) => compareText(left.id, right.id),
-          ),
-        }
-      : {}),
   };
 }
 
@@ -459,7 +357,7 @@ function resolveCapabilities(
         code: "CAPABILITY_OBSERVATION_INVALID",
         path: `$.capabilities[${index}]`,
         message:
-          "Capability observation must contain exact bounded binding, capability, strength, and mechanism values.",
+          "Capability observation must contain exact bounded binding, capability, and mechanism values.",
       });
       continue;
     }
@@ -491,24 +389,10 @@ function resolveCapabilities(
       });
       continue;
     }
-    if (
-      strengthRank[observation.strength] <
-      strengthRank[requirement.requiredStrength]
-    ) {
-      diagnostics.push({
-        stage: "capability",
-        code: "CAPABILITY_STRENGTH_INSUFFICIENT",
-        path,
-        message: `Binding ${requirement.binding} offers ${requirement.capability} at ${observation.strength} strength through ${observation.mechanism}, below required ${requirement.requiredStrength} strength.`,
-      });
-      continue;
-    }
     resolutions.push({
       requirementId: requirement.id,
       binding: requirement.binding,
       capability: requirement.capability,
-      requiredStrength: requirement.requiredStrength,
-      observedStrength: observation.strength,
       mechanism: observation.mechanism,
     });
   }

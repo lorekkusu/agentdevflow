@@ -291,9 +291,13 @@ export async function executePrivateRenderCommand(
   if (currentLockState === "target") {
     await workspace.discardConvergentTemporary(lockIntent);
   } else {
-    await workspace.writeConvergently(
+    const outcome = await workspace.writeConvergently(
       lockIntent,
       targetContent,
+      {
+        beforeDigest: baseContent === null ? null : digest(baseContent),
+        afterDigest: digest(targetContent),
+      },
       async (event) => {
         await faultInjector?.({
           kind: `lock-${event.kind}`,
@@ -301,7 +305,14 @@ export async function executePrivateRenderCommand(
         });
       },
     );
-    lockPublished = true;
+    if (outcome === "drift") {
+      throw new PrivateRenderCommandError(
+        "PRIVATE_RENDER_LOCK_STATE_DRIFT",
+        "Private render lock changed before publication.",
+        lockPath,
+      );
+    }
+    lockPublished = outcome === "applied";
   }
   if ((await workspace.read(lockPath)) !== targetContent) {
     throw new PrivateRenderCommandError(

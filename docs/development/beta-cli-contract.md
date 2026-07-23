@@ -1,69 +1,156 @@
-# Initial beta CLI contract
+# Current beta CLI contract
 
 ## Status
 
-This document defines the accepted boundary published in the first public beta. It does not authorize a later version, tag, release, or package-setting change and does not make beta configuration fields, lock bytes, or JSON report fields permanent 1.0 contracts.
+This document describes the current unreleased working-tree candidate. It does
+not claim that the candidate has been published or qualified through external
+dogfood. The published `0.1.0-beta.2` package is an earlier historical
+snapshot.
 
-## Repository and path selection
+Configuration, guidance filenames, lock bytes, diagnostics, and JSON fields
+remain beta surfaces and may change through documented migration before 1.0.
 
-Commands use the current working directory as the repository root unless `--repository <path>` is supplied. The selected path is opened as the exact root; the CLI does not walk into parent directories to find configuration.
+## Commands
 
-Defaults are:
+The current command set is:
+
+- `init`: validate explicit non-interactive choices and create only an absent
+  configuration;
+- `diff`: read the repository and show the complete recognized target;
+- `render`: apply only the current plan whose exact digest was reviewed;
+- `check`: report clean, changes-required, or blocked state without mutation.
+
+No command runs agents, calls external services, probes credentials, or manages
+Git.
+
+## Repository and paths
+
+Commands use the current working directory as the exact root unless
+`--repository <path>` is supplied. They do not search parents.
 
 | Purpose | Default | Override |
 | --- | --- | --- |
 | Project configuration | `agentdevflow.config.jsonc` | `--config <repository-relative-path>` |
-| Tool-owned lock | `.agentdevflow/lock.json` | `--lock <repository-relative-path>` |
+| Ownership lock | `.agentdevflow/lock.json` | `--lock <repository-relative-path>` |
 
-Configuration and lock paths must remain below the selected root. Absolute paths, path traversal, symbolic-link traversal, and non-regular files fail closed. Observation inputs for `doctor` are caller-supplied evidence and receive their own bounded read contract.
+Configuration and lock paths must remain below the selected root. Absolute
+paths, traversal, symlinks, and non-regular files fail closed.
 
-## Commands
+Canonical user guidance is read only from:
 
-- `init` validates explicit non-interactive project choices and creates only an absent configuration. It does not write provider files or a lock until a separately reviewed render.
-- `diff` is read-only and shows the complete recognized exact target needed for approval.
-- `render` mutates only after `--approve-plan <sha256>` matches the current exact plan before and after reopening the workspace.
-- `check` is read-only and reports clean, changes-required, or blocked state.
-- `doctor` is read-only and validates explicit observations. The initial beta does not run provider commands, inspect credentials, or perform network probes.
+- `.agentdevflow/rules/shared.md`;
+- `.agentdevflow/rules/steward.md`;
+- `.agentdevflow/rules/developer.md`;
+- `.agentdevflow/rules/reviewer.md`.
 
-## Exit status
+These paths are optional, user-owned, and not configurable in the current
+candidate.
+
+## Init choices
+
+Shared required choices are:
+
+- `--workflow`;
+- `--preset fast|balanced`;
+- one or more `--provider <id,product>`;
+- `--steward <provider-id>`;
+- `--developer <provider-id>`;
+- `--reviewer <provider-id>`;
+- `--tracker`.
+
+Products are `codex`, `claude-code`, and `cursor`.
+
+Fast requires a current review verdict. Balanced additionally requires
+reviewer-isolation evidence from a clean execution context and forbids
+completion while a blocking finding remains. These compiled policy differences
+appear in the generated responsibility procedures.
+
+`local-reviewed-change` accepts tracker `local` or `none` and rejects
+pull-request options.
+
+`issue-to-reviewed-pull-request` accepts tracker `linear` or `github-issues`
+and requires:
+
+- `--pull-request-state draft|ready`;
+- `--pull-request-host <external-id>`;
+- `--ci <external-id>`.
+
+The issue workflow fixes auxiliary review to `disabled` and merge method to
+`squash`. Its external capabilities are advisory compiled procedures.
+`agentdevflow` does not connect to the named systems.
+
+Each native provider product has one project-wide output path. One provider id
+may hold multiple roles, but multiple ids of the same product fail because the
+output cannot isolate them.
+
+## Generated targets and guidance scope
+
+| Product | Target |
+| --- | --- |
+| Codex | `AGENTS.md` |
+| Claude Code | `CLAUDE.md` |
+| Cursor | `.cursor/rules/agentdevflow.mdc` |
+
+Each target contains shared protocol, optional shared guidance, and only the
+role procedures and role guidance assigned to that provider id. Provider views
+are expected to differ when assignments differ.
+
+Generated targets are whole-file, single-owner projections. Existing targets
+must be absent, exact generated bytes, or supported lossless-import candidates.
+Unsupported content aborts without silent overwrite.
+
+## Approval and mutation
+
+`init` writes only an absent configuration. Provider files and the lock are
+written only by `render`.
+
+`diff` returns the exact plan and approval digest. `render` rereads
+configuration, canonical guidance, lock, and provider targets, replans through
+the mutable workspace, and requires the approved digest to match again.
+
+The mutation path publishes provider files before the ownership lock. Ordinary
+managed create, update, delete, and exact-adoption operations converge when the
+same approved operation is retried.
+
+Lossless initialization import is narrower. If interruption leaves generated
+provider bytes in place before lock publication, the next plan sees an exact
+target rather than the original import disposition. The prior approval must
+fail; the user must review a fresh `diff` and approve its new digest.
+
+The mutation path does not promise cross-file atomicity, rollback, or
+protection from a hostile local writer.
+
+Git cleanliness never authorizes replacement. The CLI never resets, cleans,
+stashes, commits, branches, or rolls back user work.
+
+## Exit status and output
 
 | Code | Meaning |
 | --- | --- |
-| `0` | The command succeeded and the inspected state is clean or acceptable. |
-| `1` | Reviewable changes are required, or observations are degraded but structurally valid. |
+| `0` | Success and clean or acceptable state. |
+| `1` | Reviewable changes are required. |
 | `2` | Input or state is invalid, blocked, unsafe, unsupported, or failed unexpectedly. |
 
-An exact diagnostic code provides the machine-level reason within one of these stable outcome classes. Human wording may improve during beta.
+Human-readable output is the default. `--json` emits one bounded UTF-8 object
+with numeric `schemaVersion`, command, outcome, exit code, sorted diagnostics,
+and command-specific fields.
 
-## Output
+Human `diff` renders complete recognized before and after content as numbered
+lines and marks final-newline state. JSON output retains exact string values.
+Blocked, foreign, or unowned content is represented by path, digest, and
+diagnostic, not by disclosing the foreign bytes.
 
-Human-readable output is the default. `--json` emits one UTF-8 JSON object with a numeric `schemaVersion`, command, outcome, exit code, sorted diagnostics, and command-specific report data.
+## Non-contracts
 
-The initial JSON schema version is `1`. Incompatible beta changes require a schema-version change and migration notes. Output is bounded; a command fails with exit code `2` instead of emitting an unbounded report.
+The finite-state compiler representation and arbitrary workflow topology are
+private. The CLI does not expose a plugin ABI, workflow language, orchestration
+runtime, external evidence protocol, rule CRUD surface, migration command,
+Strict or Custom preset, auxiliary-review setting, or non-squash merge option.
 
-`diff` may emit exact bytes only for recognized managed paths participating in the approved plan. Blocked state and foreign or unowned content expose paths, digests, and diagnostics as allowed by the command contract, never the foreign bytes themselves. No command intentionally emits credentials or tokens.
+## Historical release boundary
 
-## Configuration and workflows
-
-`ProjectConfig` is the user-facing configuration concept. The initial beta accepts versioned JSONC and exposes `local-reviewed-change` as its only executable workflow. Comments and trailing commas are syntax conveniences; parsing still rejects duplicate keys, unsafe keys, excessive size or nesting, and values outside the closed schema. Hosted tracker and issue-to-pull-request values remain unavailable through the public init path because their external capabilities do not exist.
-
-The finite-state compiler representation, arbitrary workflow topology, and `WorkflowDefinition` are private implementation details. They are not a plugin API or general scheduler contract.
-
-## Release boundary
-
-Version `0.1.0-beta.1` was published with provenance but its tarball records the POSIX bin as `0644`; some npm clients may normalize that mode during installation. Version `0.1.0-beta.2` is the installer-independent repaired public beta and is available through npm's `next` tag with OIDC provenance. Before every later publication, the release review must confirm:
-
-- package ownership and repository URL;
-- Apache-2.0 metadata and inclusion of `LICENSE`;
-- Node.js 22 and 24 qualification;
-- exact tarball contents and installed-bin behavior;
-- production dependency advisories and lifecycle scripts;
-- trusted publishing or an equivalently short-lived release credential;
-- exact packed installed-bin behavior through the shell-visible package entrypoint;
-- explicit authorization for that version and publication.
-
-Beta release work must not add provider integrations, a workflow runtime, a wizard, a framework, or a public arbitrary-workflow language merely to complete publication.
-
-## Decision
-
-See [ADR 0004](../decisions/0004-initial-beta-public-surface.md).
+[ADR 0004](../decisions/0004-initial-beta-public-surface.md) records the exact
+first-beta decision and remains historical evidence. Its five-command,
+local-only surface does not describe the current working tree. A later
+publication requires separate version authorization and installed-package
+qualification.
