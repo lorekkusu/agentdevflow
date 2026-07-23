@@ -38,9 +38,12 @@ Changing any candidate value requires an accepted decision and synchronized mani
 - Confirm the branch and release commit match the reviewed remote state.
 - Review the complete diff and public-disclosure classification before committing.
 - Before changing repository visibility, complete a separate public-disclosure review of the full reachable repository history and current settings, not only the candidate diff.
-- Confirm no handoff material, prompt, transcript, local absolute path,
-  credential, private key, embargoed vulnerability detail, or raw review
-  chronology is tracked.
+- Confirm no temporary handoff material, private development prompt, expanded
+  runtime request, provider transcript, local absolute path, credential,
+  private key, embargoed vulnerability detail, or raw review chronology is
+  tracked. Reviewed product-owned runtime instruction templates required by
+  accepted features are allowed source and must be inspected like other
+  user-facing behavior.
 - Do not use reset, clean, stash, commit, tag, push, or branch mutation automatically to manufacture a clean state.
 
 Run:

@@ -464,7 +464,12 @@ async function inspectPackageBoundary() {
 }
 
 async function inspectRequiredRootFiles() {
-  const requiredFiles = [".github/workflows/publish.yml", "SECURITY.md"];
+  const requiredFiles = [
+    ".github/workflows/publish.yml",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "SECURITY.md",
+  ];
   const diagnostics = [];
 
   for (const requiredFile of requiredFiles) {
@@ -481,6 +486,44 @@ async function inspectRequiredRootFiles() {
         message: `Keep ${requiredFile} as a regular file at the repository root.`,
       });
     }
+  }
+
+  return diagnostics;
+}
+
+async function inspectRoadmapBoundary() {
+  const diagnostics = [];
+  const formerRoadmap = "docs/development/roadmap.md";
+
+  try {
+    await stat(join(root, formerRoadmap));
+    diagnostics.push({
+      path: formerRoadmap,
+      line: 1,
+      code: "FORMER_ROADMAP_PATH_FORBIDDEN",
+      message:
+        "Remove the former duplicate roadmap path and keep ROADMAP.md authoritative.",
+    });
+  } catch {
+    // The former roadmap must remain absent.
+  }
+
+  try {
+    const agents = await readFile(join(root, "AGENTS.md"), "utf8");
+    if (
+      !agents.includes("ROADMAP.md") ||
+      !agents.includes("## Roadmap governance")
+    ) {
+      diagnostics.push({
+        path: "AGENTS.md",
+        line: 1,
+        code: "ROADMAP_GOVERNANCE_MISSING",
+        message:
+          "Route durable requirement tracking and completion evidence through ROADMAP.md.",
+      });
+    }
+  } catch {
+    // The required-root-file diagnostic reports a missing AGENTS.md.
   }
 
   return diagnostics;
@@ -551,6 +594,7 @@ const files = await collectTextFiles();
 
 diagnostics.push(...(await inspectPackageBoundary()));
 diagnostics.push(...(await inspectRequiredRootFiles()));
+diagnostics.push(...(await inspectRoadmapBoundary()));
 
 for (const absolutePath of files) {
   const relativePath = relative(root, absolutePath).replaceAll("\\", "/");

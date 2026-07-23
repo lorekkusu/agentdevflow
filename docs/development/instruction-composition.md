@@ -5,7 +5,9 @@
 This document defines the current unreleased canonical-guidance slice. The
 filenames and limits remain beta surfaces until a qualified release, but the
 implementation is part of the installed CLI path rather than a separate
-experiment.
+experiment. The root [product roadmap](../../ROADMAP.md) accepts a bounded
+replacement for this aggregate-file surface; this document remains accurate
+for the current implementation until that milestone lands.
 
 ## Purpose
 
@@ -98,11 +100,11 @@ Planning stops with a bounded diagnostic when:
 
 The planner does not disclose or overwrite unsupported foreign content.
 
-## Explicit non-features
+## Current absences
 
-This slice does not provide:
+The current implementation does not yet provide:
 
-- `rule list`, `rule add`, `rule update`, or `rule remove`;
+- `rule list`, `rule show`, `rule add`, `rule update`, or `rule remove`;
 - a rule index, rule-level provenance format, or public rule DSL;
 - provider-instance-specific or nested guidance;
 - canonical-source mutation planning;
@@ -113,9 +115,34 @@ This slice does not provide:
   classification;
 - automatic import of arbitrary legacy provider instructions.
 
-If repeated user behavior later justifies structured rule editing, begin with
-one concrete command and failure model. Do not pre-authorize a CRUD subsystem
-or a second ownership protocol.
+These absences describe the current candidate, not an indefinite product
+decision.
+
+## Accepted outcome and decision gates
+
+The roadmap accepts:
+
+- one Markdown file per stable rule id;
+- fixed shared, Steward, Developer, and Reviewer scope directories;
+- bounded human and JSON `rule list/show/add/update/remove` commands;
+- generated instructions that route agents back to those commands;
+- manual existing-project onboarding; and
+- optional operation by one user-selected external coding-agent CLI.
+
+Rule commands will mutate only canonical rule files. The external agent may
+propose rule organization and operate the exact current `agentdevflow`
+executable, including rule, diff, render, and check commands. Provider outputs
+and the ownership lock remain under the existing render command.
+
+The current aggregate inputs remain authoritative until the roadmap's migration
+and mixed-layout decision is accepted and implemented. No implementation may
+silently ignore or delete them. The external-agent proposal mode stops before
+mutation; apply mode requires explicit one-operation delegation by the user.
+
+The accepted outcome does not revive the removed index, per-rule authorization
+ledger, source/provider composite transaction, second approval model, managed
+regions, backup system, semantic merge authority, or Git manager. See
+`ROADMAP.md` for sequence and acceptance criteria.
 
 ## Qualification requirements
 

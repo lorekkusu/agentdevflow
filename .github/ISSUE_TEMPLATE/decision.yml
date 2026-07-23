@@ -49,6 +49,13 @@ body:
     validations:
       required: true
   - type: textarea
+    id: roadmap
+    attributes:
+      label: Roadmap impact if accepted
+      description: Identify the ROADMAP.md item that would be added, changed, deferred, superseded, or completed.
+    validations:
+      required: true
+  - type: textarea
     id: revisit
     attributes:
       label: Revisit triggers
@@ -62,5 +69,5 @@ body:
       options:
         - label: I understand that this proposal remains a candidate until explicitly accepted.
           required: true
-        - label: I removed private discussion, prompts, credentials, personal data, and machine-specific paths.
+        - label: I removed private discussion, private development prompts, expanded runtime requests, provider transcripts, credentials, personal data, and machine-specific paths.
           required: true

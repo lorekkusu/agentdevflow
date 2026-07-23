@@ -31,8 +31,8 @@ rework, and acceptance without issue, pull-request, CI, or merge artifacts.
 The issue definition accepts draft or ready initial state. Draft mode includes
 an idempotent `07-ensure-pull-request-ready` transition after CI passes. It
 marks the pull request ready only when it is still a draft, so review-repair
-cycles may safely traverse it again. Ready mode enters independent review
-after CI without that transition.
+cycles may safely traverse it again. Ready mode enters the Reviewer stage after
+CI without that transition.
 
 The workflow proceeds from current CI to the Reviewer responsibility.
 Auxiliary review is not part of the current definition. Squash is the only

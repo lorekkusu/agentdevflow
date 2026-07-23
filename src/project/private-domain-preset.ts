@@ -14,7 +14,6 @@ export interface PrivateDomainPresetProfile {
   readonly reviewVerdictRequired: true;
   readonly blockingFindingsForbiddenAtCompletion: boolean;
   readonly reviewerIsolationEvidenceRequired: boolean;
-  readonly highRiskEvidenceRequired: boolean;
 }
 
 export interface PrivateDomainPresetExpansion {
@@ -48,14 +47,12 @@ const fastProfile: PrivateDomainPresetProfile = {
   reviewVerdictRequired: true,
   blockingFindingsForbiddenAtCompletion: false,
   reviewerIsolationEvidenceRequired: false,
-  highRiskEvidenceRequired: false,
 };
 
 const balancedProfile: PrivateDomainPresetProfile = {
   reviewVerdictRequired: true,
   blockingFindingsForbiddenAtCompletion: true,
   reviewerIsolationEvidenceRequired: true,
-  highRiskEvidenceRequired: false,
 };
 
 function compareText(left: string, right: string): number {
@@ -236,7 +233,7 @@ export function expandPrivateDomainPreset(
           code: "PRESET_UNAVAILABLE",
           path: "$.preset",
           message:
-            "Strict is unavailable until high-risk evidence and stronger completion gates have executable semantics.",
+            "Strict is unavailable until a safety-property set is accepted and has executable semantics.",
         },
       ],
     };

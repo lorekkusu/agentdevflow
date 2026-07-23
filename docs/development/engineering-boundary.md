@@ -30,10 +30,20 @@ project intent plus canonical custom guidance
 -> read-only check
 ```
 
-Code is core only when it directly supports this operation, the four current
-beta commands, or the finite policy compiler. A component that cannot identify
-a current or explicitly accepted near-term caller is not production
-infrastructure merely because it is technically reusable.
+The accepted onboarding path may place a selected local coding-agent CLI in the
+operator role:
+
+```text
+existing project instructions
+-> selected external agent proposes canonical rules
+-> the agent operates agentdevflow rule, diff, render, and check
+-> the same canonical and generated-state invariants decide success
+```
+
+Code is core only when it directly supports the primary operation, the current
+commands, an accepted near-term command in `../../ROADMAP.md`, or the finite
+policy compiler. A component that cannot identify such a caller is not
+production infrastructure merely because it is technically reusable.
 
 ## Operating and threat model
 
@@ -71,8 +81,8 @@ The normal write path may use only the following baseline unless a concrete
 accepted requirement proves more is necessary:
 
 - a complete deterministic plan and user-visible diff;
-- explicit create, exact-adopt, supported lossless-import, or abort behavior
-  for existing files;
+- explicit create, exact-adopt, bounded equivalent-content import, or abort
+  behavior for existing files;
 - one existing plan approval rather than an additional approval store;
 - exact before-or-after digest checks immediately before mutation;
 - repository-root path validation and symbolic-link refusal;
@@ -81,11 +91,16 @@ accepted requirement proves more is necessary:
 - publication of the ownership lock after provider files; and
 - clear diagnostics when the current state no longer matches the plan.
 
-Existing-file onboarding must stay inside that path: the normal diff shows an
-exact adopt, supported lossless import, or abort, and the normal render approval
-authorizes the complete current plan. A changed target invalidates the plan.
+Existing-file onboarding must stay inside that path. The current implementation
+shows exact adopt, bounded equivalent import, or abort. The accepted next
+milestone may also show an explicit whole-file replacement after the operator
+has represented selected existing content in canonical rules. The normal diff
+must show the complete replacement, and the normal render approval authorizes
+the complete current plan. A changed source or target invalidates the plan.
+The exact per-target replacement disposition must be a reproducible input to
+both diff and render; its public representation remains a roadmap decision.
 Do not add a durable approval record, per-section authorization ledger, backup
-service, Git transaction, or second writer.
+service, Git transaction, or second provider writer.
 
 ## Responsibility boundaries
 
@@ -108,11 +123,25 @@ caller are removal candidates.
 
 ### Agent assistance
 
-An agent may propose configuration or custom-guidance edits after explicit
-content disclosure. It is an operator convenience, not an authority. Agent
-analysis must not require a second storage model, approval protocol, writer, or
-trust system. The complete deterministic diff and normal render approval remain
+After explicit content and cost disclosure, a user-selected external coding
+agent may propose configuration or custom-guidance edits and operate the same
+`agentdevflow` commands that the user could operate manually. This is a
+foreground operator convenience. The launcher may inherit the user's existing
+CLI authentication, but it must not inspect, copy, store, refresh, or print
+credentials.
+
+The external agent may use rule commands for canonical sources and may invoke
+the normal diff, render, and check sequence. It is not a second provider writer,
+trusted evidence producer, scheduler, or authority outside the selected
+operation. Agent analysis must not require a second storage model, approval
+protocol, transaction, or trust system. The accepted canonical state, complete
+deterministic render plan, ownership lock, and final check remain
 authoritative.
+
+Proposal mode stops before mutation. Explicit apply selection delegates
+canonical-rule decisions and exact render approval to the selected agent for
+one operation. This initial user grant is the semantic authorization; the
+existing digest remains a staleness binding and does not replace that grant.
 
 ### External services
 
@@ -120,6 +149,12 @@ Provider, tracker, CI, and hosting adapters translate explicit observations or
 perform separately authorized external operations. The compiler does not own
 credentials, polling, delegation, scheduling, retry loops, merge, release, or
 remote workflow state.
+
+A one-shot local coding-agent process adapter is not a live tracker or workflow
+runtime. It may map a bounded onboarding task to one installed executable,
+argv, stdin, working directory, and exit result. It must not become a
+background process manager, provider SDK, login flow, retry queue, or general
+agent chain.
 
 ## Complexity admission test
 

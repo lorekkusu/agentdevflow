@@ -189,7 +189,7 @@ test("keeps pull-request readiness explicit while issue profiles remain distinct
   );
 });
 
-test("fails Strict closed until executable high-risk evidence exists", () => {
+test("fails Strict closed until safety properties are accepted and executable", () => {
   const result = expandPrivateDomainPreset(
     "strict",
     "local-reviewed-change",
@@ -203,7 +203,7 @@ test("fails Strict closed until executable high-risk evidence exists", () => {
       code: "PRESET_UNAVAILABLE",
       path: "$.preset",
       message:
-        "Strict is unavailable until high-risk evidence and stronger completion gates have executable semantics.",
+        "Strict is unavailable until a safety-property set is accepted and has executable semantics.",
     },
   ]);
 });

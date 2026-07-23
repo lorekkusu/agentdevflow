@@ -120,7 +120,7 @@ test("compiles parsed intent into the previously captured exact project resoluti
   );
   assert.equal(
     result.project.resolutionDigest,
-    "86a3a8d82a7df1e5eacffe08c70a45ef9d8a9ad52c5406f6cea57015f04f68a3",
+    "e6340950ccf2ea01343bef163265ab5be7ae818a5ccabf8e251981eeb7b56f86",
   );
 });
 

@@ -27,7 +27,12 @@ The first revision recognizes only logical content already representable by the 
 | Claude Code | Plain project Markdown or canonical agentdevflow-generated Markdown. |
 | Cursor | The exact validated project-wide `alwaysApply: true` frontmatter followed by plain or canonical agentdevflow-generated Markdown. |
 
-Existing line endings are normalized to LF and terminal whitespace is normalized in the same way as the native emitter. This is treated as lossless instruction intent because those bytes do not survive deterministic native rendering. The observed digest still binds the original exact bytes.
+Existing line endings are normalized to LF and terminal whitespace is
+normalized in the same way as the native emitter. This is treated internally
+as lossless instruction intent because those bytes do not survive deterministic
+native rendering. Public documentation calls the behavior equivalent-content
+import to distinguish it from the accepted existing-project onboarding flow.
+The observed digest still binds the original exact bytes.
 
 The proposed target remains strict canonical LF output. Cursor frontmatter with different values, fields, formatting, or scope is unsupported. The analyzer does not embed a general YAML parser or infer whether another Cursor rule form is equivalent.
 
@@ -41,9 +46,14 @@ If bodies differ, the analyzer returns `unsupported`. It does not concatenate, m
 
 ## Relationship to private init
 
-The returned shape is the assessment consumed by the private init proposal service. A lossless assessment allows that service to propose `import`; an unsupported assessment produces `abort` with the retained explanation.
+The returned shape is the assessment consumed by the private init proposal
+service. A lossless assessment allows that service to propose `import`; an
+unsupported assessment produces `abort` with the retained explanation.
 
-This analyzer does not grant apply authority. Even a lossless result requires the private init proposal, explicit approval, exact reread, and a future digest-bound bridge into the existing render plan.
+This analyzer does not grant apply authority. Its digest-bound assessment is
+already incorporated into the normal complete render plan. Even a lossless
+result requires the private init proposal, explicit approval of that exact
+plan, and an exact reread before the existing render path may apply it.
 
 ## Determinism and disclosure
 
@@ -65,3 +75,7 @@ The analyzer does not support:
 - ownership claims, filesystem mutation, lock publication, or recovery.
 
 Broader import support requires a separately evidenced representation and must preserve every unsupported or lossy construct explicitly.
+
+The accepted next onboarding milestone is tracked in the root `ROADMAP.md`. It
+does not broaden this pure analyzer or reinterpret the current `lossless`
+classification as semantic proof.
