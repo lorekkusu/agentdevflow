@@ -93,35 +93,42 @@ capability instead of simulating success or skipping the gate.
 
 ## Add project rules
 
-All four files are optional user-owned Markdown:
+Each project rule is one user-owned Markdown file under a fixed scope:
 
 ```text
-.agentdevflow/rules/shared.md
-.agentdevflow/rules/steward.md
-.agentdevflow/rules/developer.md
-.agentdevflow/rules/reviewer.md
+.agentdevflow/rules/shared/<rule-id>.md
+.agentdevflow/rules/steward/<rule-id>.md
+.agentdevflow/rules/developer/<rule-id>.md
+.agentdevflow/rules/reviewer/<rule-id>.md
 ```
 
-For example:
+Rule ids are globally unique lowercase ASCII slugs of at most 64 characters.
+Windows reserved basenames such as `con`, `nul`, `com1`, and `lpt1` are
+rejected. Manage rules directly or through bounded CLI commands:
 
 ```bash
-mkdir -p .agentdevflow/rules
-
-cat > .agentdevflow/rules/shared.md <<'EOF'
+npx agentdevflow rule add verification --scope shared --stdin <<'EOF'
 Run the repository's documented verification before every handoff.
 Do not include credentials or private issue content in generated artifacts.
 EOF
 
-cat > .agentdevflow/rules/developer.md <<'EOF'
+npx agentdevflow rule add developer-handoff --scope developer --stdin <<'EOF'
 Keep changes within the accepted issue scope.
 Report the exact verification commands and results to the Steward.
 EOF
+
+npx agentdevflow rule list
+npx agentdevflow rule show verification
 ```
 
 Shared guidance appears in every configured provider output. A responsibility
-file appears only in outputs assigned that responsibility. Editing canonical
-guidance produces a new reviewable diff; directly editing a generated provider
-file produces ownership drift.
+rule appears only in outputs assigned that responsibility. Rules are ordered by
+id inside their scope. Editing canonical guidance produces a new reviewable
+diff; directly editing a generated provider file produces ownership drift.
+
+The unreleased aggregate paths such as `.agentdevflow/rules/shared.md` are not
+read as a second format. Their presence blocks with an exact suggested manual
+move; no command silently migrates, ignores, or deletes them.
 
 ## Review and render
 
@@ -167,6 +174,7 @@ and exit statuses.
 | `diff` | Reads the project and prints the complete recognized plan without mutation. |
 | `render` | Applies only a currently matching plan approved by exact digest. |
 | `check` | Reports clean, changes-required, or blocked state without mutation. |
+| `rule list/show/add/update/remove` | Reads or mutates only canonical project-rule files. |
 
 Run global or command-specific help:
 
@@ -195,23 +203,21 @@ branches, or rolls back user work.
   GitHub, CI, delegation, review-service, or merge adapters.
 - Auxiliary automated review is not configurable in the current CLI.
 - Squash is the only current issue-workflow merge method.
-- There is no arbitrary workflow language, scheduler, agent runtime, rule CRUD
-  command, GUI, marketplace, or SaaS control plane.
+- There is no arbitrary workflow language, scheduler, agent runtime, GUI,
+  marketplace, or SaaS control plane.
 - Advisory instructions cannot prove that an external action occurred or that
   evidence is truthful.
 
 Beta configuration, lock, diagnostic, and JSON report fields may change with
 documented migration before 1.0.
 
-## Accepted next milestone
+## Accepted next milestones
 
 The current limitations are not all indefinite deferrals. This is a
 non-normative orientation summary; the [product roadmap](ROADMAP.md) alone owns
 current status, order, decisions, and acceptance criteria. Its accepted product
 outcomes include:
 
-- bounded `rule list/show/add/update/remove` commands over one Markdown file
-  per shared or responsibility-scoped rule;
 - manual onboarding for projects that already contain `AGENTS.md`,
   `CLAUDE.md`, or supported Cursor guidance;
 - optional onboarding operated by a user-selected, already authenticated local

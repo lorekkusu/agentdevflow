@@ -8,6 +8,8 @@ import type { PrivateRenderCommandResult } from "../commands/private-render-comm
 import type {
   PrivateCliDiagnostic,
   PrivateCliOutputFormat,
+  PrivateRuleOperation,
+  PrivateRuleScope,
 } from "../interface/private-cli-arguments.js";
 import type { PrivateDomainProjectDocumentDiagnostic } from "../interface/private-domain-project-document.js";
 
@@ -31,7 +33,48 @@ export type PrivateLocalCliCommand =
   | "check"
   | "diff"
   | "init"
-  | "render";
+  | "render"
+  | "rule";
+type PrivatePlanningCliCommand = Exclude<PrivateLocalCliCommand, "rule">;
+
+export interface PrivateRuleSummary {
+  readonly id: string;
+  readonly scope: PrivateRuleScope;
+  readonly path: string;
+}
+
+export interface PrivateRuleRecord extends PrivateRuleSummary {
+  readonly content: string;
+}
+
+export type PrivateRuleCommandResult =
+  | {
+      readonly operation: "list";
+      readonly outcome: "success";
+      readonly exitCode: 0;
+      readonly diagnostics: readonly DisplayDiagnostic[];
+      readonly rules: readonly PrivateRuleSummary[];
+    }
+  | {
+      readonly operation: "show";
+      readonly outcome: "success";
+      readonly exitCode: 0;
+      readonly diagnostics: readonly DisplayDiagnostic[];
+      readonly rule: PrivateRuleRecord;
+    }
+  | {
+      readonly operation: "add" | "remove" | "update";
+      readonly outcome: "success";
+      readonly exitCode: 0;
+      readonly diagnostics: readonly DisplayDiagnostic[];
+      readonly rule: PrivateRuleSummary;
+    }
+  | {
+      readonly operation: PrivateRuleOperation;
+      readonly outcome: "blocked";
+      readonly exitCode: 2;
+      readonly diagnostics: readonly DisplayDiagnostic[];
+    };
 
 export const privateCliJsonSchemaVersion = 1;
 export const privateCliOutputByteLimit = 1_048_576;
@@ -131,7 +174,7 @@ export function planningDiagnostics(
 }
 
 export function resultHeader(options: {
-  readonly command: PrivateLocalCliCommand;
+  readonly command: PrivatePlanningCliCommand;
   readonly outcome: string;
   readonly planDigest: string | null;
   readonly snapshotDigest: string | null;
@@ -195,6 +238,126 @@ function humanContent(label: "before" | "after", value: string | null): string[]
     ),
     `  ${label}-final-newline: ${hasFinalNewline ? "yes" : "no"}`,
   ];
+}
+
+function compareRuleSummary(
+  left: PrivateRuleSummary,
+  right: PrivateRuleSummary,
+): number {
+  return (
+    compareText(left.id, right.id) ||
+    compareText(left.scope, right.scope) ||
+    compareText(left.path, right.path)
+  );
+}
+
+function normalizedRuleSummary(
+  rule: PrivateRuleSummary,
+): PrivateRuleSummary {
+  return {
+    id: rule.id,
+    scope: rule.scope,
+    path: rule.path,
+  };
+}
+
+function normalizedRuleRecord(
+  rule: PrivateRuleRecord,
+): PrivateRuleRecord {
+  return {
+    ...normalizedRuleSummary(rule),
+    content: rule.content,
+  };
+}
+
+function ruleSummaryLines(
+  rule: PrivateRuleSummary,
+  indentation = "",
+): string[] {
+  return [
+    `${indentation}id: ${rule.id}`,
+    `${indentation}scope: ${rule.scope}`,
+    `${indentation}path: ${rule.path}`,
+  ];
+}
+
+function ruleContentLines(content: string): string[] {
+  const hasFinalNewline = content.endsWith("\n");
+  const contentLines = content.split("\n");
+  if (hasFinalNewline) {
+    contentLines.pop();
+  }
+  const width = String(Math.max(1, contentLines.length)).length;
+  return [
+    "  content:",
+    ...contentLines.map(
+      (line, index) =>
+        `    ${String(index + 1).padStart(width)} | ${safeHumanContentLine(line)}`,
+    ),
+    `  content-final-newline: ${hasFinalNewline ? "yes" : "no"}`,
+  ];
+}
+
+export function formatRuleResult(
+  result: PrivateRuleCommandResult,
+  format: PrivateCliOutputFormat = "human",
+): string {
+  const diagnostics = [...result.diagnostics].sort(compareDisplayDiagnostics);
+  const lines = [
+    `agentdevflow rule ${result.operation}: ${result.outcome}`,
+    ...formatDiagnostics(diagnostics),
+  ];
+  if (result.outcome === "blocked") {
+    lines.push(result.operation === "list" ? "rules: unavailable" : "rule: unavailable");
+    return selectedOutput(format, lines.join("\n"), {
+      command: "rule",
+      operation: result.operation,
+      outcome: result.outcome,
+      exitCode: result.exitCode,
+      diagnostics,
+      ...(result.operation === "list" ? { rules: null } : { rule: null }),
+    });
+  }
+  if (result.operation === "list") {
+    const rules = result.rules
+      .map(normalizedRuleSummary)
+      .sort(compareRuleSummary);
+    lines.push(`rules: ${rules.length === 0 ? "none" : rules.length}`);
+    for (const [index, rule] of rules.entries()) {
+      lines.push(`rule ${index + 1}:`, ...ruleSummaryLines(rule, "  "));
+    }
+    return selectedOutput(format, lines.join("\n"), {
+      command: "rule",
+      operation: result.operation,
+      outcome: result.outcome,
+      exitCode: result.exitCode,
+      diagnostics,
+      rules,
+    });
+  }
+  if (result.operation === "show") {
+    const rule = normalizedRuleRecord(result.rule);
+    lines.push("rule:", ...ruleSummaryLines(rule, "  "));
+    lines.push(...ruleContentLines(rule.content));
+    return selectedOutput(format, lines.join("\n"), {
+      command: "rule",
+      operation: result.operation,
+      outcome: result.outcome,
+      exitCode: result.exitCode,
+      diagnostics,
+      rule,
+    });
+  }
+  const rule = normalizedRuleSummary(result.rule);
+  lines.push("rule:", ...ruleSummaryLines(rule, "  "));
+  return selectedOutput(format, lines.join("\n"), {
+    command: "rule",
+    operation: result.operation,
+    outcome: result.outcome,
+    exitCode: result.exitCode,
+    diagnostics,
+    rule,
+  });
 }
 
 export function formatDiff(
@@ -375,7 +538,7 @@ export function formatInit(options: {
 }
 
 export function blockedBeforePlanning(
-  command: PrivateLocalCliCommand,
+  command: PrivatePlanningCliCommand,
   diagnostic: DisplayDiagnostic,
   format: PrivateCliOutputFormat = "human",
 ): string {
@@ -383,7 +546,7 @@ export function blockedBeforePlanning(
 }
 
 export function blockedWithoutPlan(
-  command: PrivateLocalCliCommand,
+  command: PrivatePlanningCliCommand,
   inputDiagnostics: readonly DisplayDiagnostic[],
   format: PrivateCliOutputFormat = "human",
 ): string {
@@ -410,7 +573,7 @@ export function blockedWithoutPlan(
 }
 
 export function blockedWithPlan(
-  command: PrivateLocalCliCommand,
+  command: PrivatePlanningCliCommand,
   options: {
     readonly planDigest: string;
     readonly snapshotDigest: string;
@@ -449,7 +612,7 @@ export function formatArgumentFailure(
 }
 
 export function formatOutputLimitFailure(
-  command: PrivateLocalCliCommand,
+  command: PrivatePlanningCliCommand,
   format: PrivateCliOutputFormat,
 ): string {
   return blockedBeforePlanning(
@@ -465,7 +628,7 @@ export function formatOutputLimitFailure(
 
 export function writeBoundedOutput(
   stream: PrivateLocalCliIo["stdout"] | PrivateLocalCliIo["stderr"],
-  command: PrivateLocalCliCommand,
+  command: PrivatePlanningCliCommand,
   format: PrivateCliOutputFormat,
   content: string,
 ): boolean {
@@ -474,6 +637,41 @@ export function writeBoundedOutput(
     return true;
   }
   writeLine(stream, formatOutputLimitFailure(command, format));
+  return false;
+}
+
+export function formatRuleOutputLimitFailure(
+  operation: PrivateRuleOperation,
+  format: PrivateCliOutputFormat,
+): string {
+  return formatRuleResult(
+    {
+      operation,
+      outcome: "blocked",
+      exitCode: 2,
+      diagnostics: [
+        {
+          code: "CLI_OUTPUT_TOO_LARGE",
+          level: "error",
+          message: `The command output exceeds ${privateCliOutputByteLimit} UTF-8 bytes. Narrow the managed input before retrying.`,
+        },
+      ],
+    },
+    format,
+  );
+}
+
+export function writeBoundedRuleOutput(
+  stream: PrivateLocalCliIo["stdout"] | PrivateLocalCliIo["stderr"],
+  operation: PrivateRuleOperation,
+  format: PrivateCliOutputFormat,
+  content: string,
+): boolean {
+  if (Buffer.byteLength(content, "utf8") <= privateCliOutputByteLimit) {
+    writeLine(stream, content);
+    return true;
+  }
+  writeLine(stream, formatRuleOutputLimitFailure(operation, format));
   return false;
 }
 

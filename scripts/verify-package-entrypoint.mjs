@@ -9,7 +9,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const root = process.cwd();
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
@@ -19,9 +19,10 @@ const installRoot = join(temporaryRoot, "install");
 const projectRoot = join(temporaryRoot, "project");
 const issueProjectRoot = join(temporaryRoot, "issue-project");
 const draftIssueProjectRoot = join(temporaryRoot, "draft-issue-project");
+const aggregateProjectRoot = join(temporaryRoot, "aggregate-project");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
-function run(command, args, cwd, expectedStatuses = [0]) {
+function run(command, args, cwd, expectedStatuses = [0], input) {
   const usesWindowsCommandScript =
     process.platform === "win32" && command.toLowerCase().endsWith(".cmd");
   const executable = usesWindowsCommandScript
@@ -33,6 +34,7 @@ function run(command, args, cwd, expectedStatuses = [0]) {
   const result = spawnSync(executable, executableArgs, {
     cwd,
     encoding: "utf8",
+    ...(input === undefined ? {} : { input }),
   });
   if (
     result.error !== undefined ||
@@ -109,6 +111,7 @@ try {
     ["check", ["read-only", "exit 1"]],
     ["diff", ["exact-plan-digest", "Exit 1"]],
     ["render", ["exact-plan-digest", "stale or foreign state fails closed"]],
+    ["rule", ["rule list", "rule add", "globally unique lowercase ASCII slugs"]],
   ];
   for (const [command, expectedText] of helpAssertions) {
     const commandHelp = run(binPath, [command, "--help"], installRoot);
@@ -116,6 +119,16 @@ try {
       if (!commandHelp.stdout.includes(text)) {
         throw new Error(`Installed ${command} help omitted ${text}.`);
       }
+    }
+  }
+  for (const operation of ["list", "show", "add", "update", "remove"]) {
+    const operationHelp = run(
+      binPath,
+      ["rule", operation, "--help"],
+      installRoot,
+    );
+    if (!operationHelp.stdout.includes(`agentdevflow rule ${operation}`)) {
+      throw new Error(`Installed rule ${operation} help was unavailable.`);
     }
   }
   await mkdir(projectRoot);
@@ -144,30 +157,126 @@ try {
     ],
     projectRoot,
   );
-  const rulesRoot = join(projectRoot, ".agentdevflow", "rules");
-  await mkdir(rulesRoot, { recursive: true });
-  await Promise.all([
-    writeFile(
-      join(rulesRoot, "shared.md"),
-      "Always report the exact handoff target.\n",
-      "utf8",
-    ),
-    writeFile(
-      join(rulesRoot, "steward.md"),
-      "Keep acceptance criteria visible.\n",
-      "utf8",
-    ),
-    writeFile(
-      join(rulesRoot, "developer.md"),
-      "Run the repository verification command before handoff.\n",
-      "utf8",
-    ),
-    writeFile(
-      join(rulesRoot, "reviewer.md"),
-      "Review only the current revision.\n",
-      "utf8",
-    ),
-  ]);
+  const emptyRules = JSON.parse(
+    run(binPath, ["rule", "list", "--json"], projectRoot).stdout,
+  );
+  if (
+    emptyRules.schemaVersion !== 1 ||
+    emptyRules.operation !== "list" ||
+    emptyRules.rules.length !== 0
+  ) {
+    throw new Error("Packed agentdevflow did not report an empty rule catalog.");
+  }
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "handoff-target",
+      "--scope",
+      "shared",
+      "--stdin",
+    ],
+    projectRoot,
+    [0],
+    "Always report the exact handoff target.\n",
+  );
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "acceptance-criteria",
+      "--scope",
+      "steward",
+      "--stdin",
+    ],
+    projectRoot,
+    [0],
+    "Keep acceptance criteria visible.\n",
+  );
+  const developerInputPath = join(projectRoot, "developer-rule-input.md");
+  await writeFile(
+    developerInputPath,
+    "Run the repository verification command before handoff.\n",
+    "utf8",
+  );
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "repository-verification",
+      "--scope",
+      "developer",
+      "--file",
+      "developer-rule-input.md",
+    ],
+    projectRoot,
+  );
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "current-revision",
+      "--scope",
+      "reviewer",
+      "--stdin",
+    ],
+    projectRoot,
+    [0],
+    "Review only the current revision.\n",
+  );
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "temporary-rule",
+      "--scope",
+      "shared",
+      "--stdin",
+    ],
+    projectRoot,
+    [0],
+    "Temporary content.\n",
+  );
+  run(
+    binPath,
+    ["rule", "update", "temporary-rule", "--stdin"],
+    projectRoot,
+    [0],
+    "Updated temporary content.\n",
+  );
+  const shownRule = JSON.parse(
+    run(
+      binPath,
+      ["rule", "show", "temporary-rule", "--json"],
+      projectRoot,
+    ).stdout,
+  );
+  if (
+    shownRule.rule?.scope !== "shared" ||
+    shownRule.rule?.content !== "Updated temporary content.\n"
+  ) {
+    throw new Error("Packed agentdevflow did not preserve an updated rule.");
+  }
+  run(
+    binPath,
+    ["rule", "remove", "temporary-rule"],
+    projectRoot,
+  );
+  const listedRules = JSON.parse(
+    run(binPath, ["rule", "list", "--json"], projectRoot).stdout,
+  );
+  if (
+    listedRules.rules.length !== 4 ||
+    listedRules.rules.map((rule) => rule.id).join(",") !==
+      "acceptance-criteria,current-revision,handoff-target,repository-verification"
+  ) {
+    throw new Error("Packed agentdevflow did not return the expected sorted rules.");
+  }
   const diff = run(binPath, ["diff", "--json"], projectRoot, [1]);
   const diffReport = JSON.parse(diff.stdout);
   const digest = diffReport.exactPlanDigest;
@@ -226,6 +335,109 @@ try {
     throw new Error("Packed agentdevflow check did not return a clean versioned report.");
   }
   run(binPath, ["diff"], projectRoot);
+  await mkdir(aggregateProjectRoot);
+  run(
+    binPath,
+    [
+      "init",
+      "--workflow",
+      "local-reviewed-change",
+      "--preset",
+      "fast",
+      "--tracker",
+      "none",
+      "--provider",
+      "codex-main,codex",
+      "--steward",
+      "codex-main",
+      "--developer",
+      "codex-main",
+      "--reviewer",
+      "codex-main",
+    ],
+    aggregateProjectRoot,
+  );
+  await mkdir(
+    join(aggregateProjectRoot, ".agentdevflow", "rules"),
+    { recursive: true },
+  );
+  const aggregateEntries = [
+    ["shared", "shared-guidance"],
+    ["steward", "steward-guidance"],
+    ["developer", "developer-guidance"],
+    ["reviewer", "reviewer-guidance"],
+  ];
+  for (const [scope] of aggregateEntries) {
+    await writeFile(
+      join(
+        aggregateProjectRoot,
+        ".agentdevflow",
+        "rules",
+        `${scope}.md`,
+      ),
+      `Legacy ${scope} aggregate guidance.\n`,
+      "utf8",
+    );
+  }
+  const partiallyMovedPath = join(
+    aggregateProjectRoot,
+    ".agentdevflow",
+    "rules",
+    "shared",
+    "shared-guidance.md",
+  );
+  await mkdir(dirname(partiallyMovedPath), { recursive: true });
+  await writeFile(
+    partiallyMovedPath,
+    "Partially moved shared guidance.\n",
+    "utf8",
+  );
+  for (const args of [
+    ["rule", "list", "--json"],
+    ["diff", "--json"],
+  ]) {
+    const blockedAggregate = run(
+      binPath,
+      args,
+      aggregateProjectRoot,
+      [2],
+    );
+    const blockedAggregateReport = JSON.parse(blockedAggregate.stdout);
+    if (
+      blockedAggregateReport.outcome !== "blocked" ||
+      blockedAggregateReport.diagnostics.length !== aggregateEntries.length
+    ) {
+      throw new Error(
+        "Packed agentdevflow did not fail closed on aggregate rule guidance.",
+      );
+    }
+    for (const [scope, targetId] of aggregateEntries) {
+      const sourcePath = `.agentdevflow/rules/${scope}.md`;
+      const targetPath = `.agentdevflow/rules/${scope}/${targetId}.md`;
+      if (
+        !blockedAggregateReport.diagnostics.some(
+          (diagnostic) =>
+            diagnostic.code === "RULE_AGGREGATE_LAYOUT_UNSUPPORTED" &&
+            diagnostic.path === sourcePath &&
+            diagnostic.message.includes(targetPath),
+        ) ||
+        (await readFile(join(aggregateProjectRoot, sourcePath), "utf8")) !==
+          `Legacy ${scope} aggregate guidance.\n`
+      ) {
+        throw new Error(
+          `Packed agentdevflow did not preserve aggregate rule guidance at ${sourcePath}.`,
+        );
+      }
+    }
+    if (
+      (await readFile(partiallyMovedPath, "utf8")) !==
+      "Partially moved shared guidance.\n"
+    ) {
+      throw new Error(
+        "Packed agentdevflow modified a partially moved per-rule target.",
+      );
+    }
+  }
   await mkdir(issueProjectRoot);
   run(
     binPath,

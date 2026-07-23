@@ -172,51 +172,71 @@ accepted near-term work; Custom remains later direction. See the
 
 ## Add canonical project guidance
 
-Create any of these optional user-owned Markdown files:
+Each canonical rule is one user-owned Markdown file under a fixed scope:
 
-| Source | Scope |
+| Source pattern | Scope |
 | --- | --- |
-| `.agentdevflow/rules/shared.md` | Every configured provider output |
-| `.agentdevflow/rules/steward.md` | Outputs assigned the Steward responsibility |
-| `.agentdevflow/rules/developer.md` | Outputs assigned the Developer responsibility |
-| `.agentdevflow/rules/reviewer.md` | Outputs assigned the Reviewer responsibility |
+| `.agentdevflow/rules/shared/<rule-id>.md` | Every configured provider output |
+| `.agentdevflow/rules/steward/<rule-id>.md` | Outputs assigned the Steward responsibility |
+| `.agentdevflow/rules/developer/<rule-id>.md` | Outputs assigned the Developer responsibility |
+| `.agentdevflow/rules/reviewer/<rule-id>.md` | Outputs assigned the Reviewer responsibility |
 
-Each file is read as bounded UTF-8 text with a current maximum of 65,536 bytes.
-The current aggregate-file implementation has no index, rule identifier
-format, provider-instance rule file, nested discovery, rule command, or
-semantic merge. The accepted product outcome replaces the aggregate files with
-one Markdown file per stable shared or responsibility-scoped rule and adds
-bounded `rule list/show/add/update/remove` commands. The current aggregate
-files remain authoritative until the roadmap's explicit migration and
-mixed-layout decision is accepted and implemented.
+Rule ids must match `[a-z0-9]+(?:-[a-z0-9]+)*`, contain at most 64 ASCII
+characters, avoid Windows reserved basenames such as `con`, `nul`, `com1`, and
+`lpt1`, and remain globally unique across all scopes. Each file is bounded
+UTF-8 text with a maximum of 65,536 bytes. Immediate `*.md` files are
+discovered deterministically by id; nested content and unrelated files are not
+rules.
 
 Example:
 
 ```bash
-mkdir -p .agentdevflow/rules
-
-cat > .agentdevflow/rules/shared.md <<'EOF'
+npx agentdevflow rule add verification --scope shared --stdin <<'EOF'
 Run the repository's documented verification before every handoff.
 Never place credentials in source, generated instructions, or diagnostics.
 EOF
 
-cat > .agentdevflow/rules/steward.md <<'EOF'
+npx agentdevflow rule add tracker-scope --scope steward --stdin <<'EOF'
 Keep the tracker work item synchronized with accepted scope changes.
 EOF
 
-cat > .agentdevflow/rules/developer.md <<'EOF'
+npx agentdevflow rule add verification-report --scope developer --stdin <<'EOF'
 Report the exact commands and results used to verify the implementation.
 EOF
 
-cat > .agentdevflow/rules/reviewer.md <<'EOF'
+npx agentdevflow rule add current-revision-review --scope reviewer --stdin <<'EOF'
 Review the current revision from a clean context and report only reproducible findings.
 EOF
 ```
 
-Canonical guidance is normal project content owned by the user. Edit it
-directly or explicitly ask a coding agent to edit it. Then run `diff`, review
-the resulting provider changes, and render them. `render` never writes these
-source files.
+The rule command family is:
+
+```text
+agentdevflow rule list [--repository <path>] [--json]
+agentdevflow rule show <id> [--repository <path>] [--json]
+agentdevflow rule add <id> --scope <scope> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+agentdevflow rule remove <id> [--repository <path>] [--json]
+```
+
+`add` fails when the id already exists. `show`, `update`, and `remove` fail when
+it does not. `update` changes content without changing scope; move a rule by
+removing it and adding the same id in the new scope. `--file` is relative to the
+selected repository. Exactly one of `--file` or `--stdin` is required for
+`add` and `update`.
+
+Canonical guidance remains normal project content owned by the user. Edit it
+directly or explicitly ask a coding agent to operate the rule commands. Then
+run `diff`, review the resulting provider changes, and render them. Rule
+commands never write provider outputs or the ownership lock; `render` never
+writes canonical rule sources.
+
+The four aggregate paths from an unreleased working-tree candidate are not a
+second accepted layout. If, for example,
+`.agentdevflow/rules/shared.md` exists, commands block and suggest moving its
+exact content to `.agentdevflow/rules/shared/shared-guidance.md` or another
+valid globally unique rule id. Complete every manual move and rerun the command.
+There is no automatic migration, dual reader, backup, or Git operation.
 
 Provider files are generated views, not a second rule store. Direct edits to
 `AGENTS.md`, `CLAUDE.md`, or `.cursor/rules/agentdevflow.mdc` are drift and are
@@ -398,7 +418,6 @@ The candidate does not:
 - configure auxiliary automated review or a non-squash merge method;
 - expose a public arbitrary-workflow language;
 - provide Strict or Custom preset behavior;
-- provide rule list, add, update, or remove commands;
 - merge arbitrary existing provider instructions;
 - claim that advisory instructions mechanically enforce agent behavior.
 

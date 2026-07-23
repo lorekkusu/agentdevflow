@@ -72,14 +72,14 @@ external action occurred.
 
 ## Canonical guidance and composition
 
-`src/guidance/private-project-guidance.ts` reads exactly four optional
-user-owned Markdown inputs:
+The accepted rule boundary reads immediate user-owned Markdown rules from four
+fixed scope directories:
 
 ```text
-.agentdevflow/rules/shared.md
-.agentdevflow/rules/steward.md
-.agentdevflow/rules/developer.md
-.agentdevflow/rules/reviewer.md
+.agentdevflow/rules/shared/<rule-id>.md
+.agentdevflow/rules/steward/<rule-id>.md
+.agentdevflow/rules/developer/<rule-id>.md
+.agentdevflow/rules/reviewer/<rule-id>.md
 ```
 
 Composition creates one provider view per configured product. Each view
@@ -88,16 +88,16 @@ provider id. Multiple roles may share one id and remain separate sections.
 Multiple ids for the same product are rejected because the single native target
 cannot isolate them.
 
-The source files are read-only inputs. They are not indexed, mutated,
-transactionally coordinated, or managed by rule CRUD. See
+Rule commands are the only product commands that mutate those canonical
+sources. They do not mutate provider outputs or the ownership lock; those remain
+under the existing renderer writer. Composition has no index, database,
+provider-instance scope, or semantic merge authority. See
 [instruction composition](development/instruction-composition.md).
 
-The next accepted rule boundary replaces the four aggregate inputs with one
-Markdown file per stable rule id under fixed shared and responsibility scope
-directories. Rule commands mutate only those canonical sources. Provider
-outputs and the ownership lock remain under the existing renderer writer. The
-transition from the aggregate layout is decision-required: current bytes must
-not be silently ignored, and an indefinite dual reader is not assumed.
+The former four aggregate paths existed only in an unreleased working-tree
+candidate. Any remaining aggregate path blocks planning and rule commands with
+exact manual-move guidance. The implementation never reads both layouts,
+silently ignores old content, or performs automatic migration.
 
 ## Accepted onboarding path
 

@@ -93,23 +93,22 @@ repository evidence. Follow `docs/development/public-information-policy.md`.
 
 Follow `docs/development/instruction-composition.md`.
 
-The current candidate reads the optional aggregate Markdown files
-`.agentdevflow/rules/shared.md`, `steward.md`, `developer.md`, and
-`reviewer.md`. `ROADMAP.md` accepts their replacement with one Markdown file
-per stable rule id under fixed shared and responsibility scope directories,
-plus the bounded `rule list/show/add/update/remove` command family.
+The current candidate stores one Markdown file per globally unique rule id
+under fixed shared, Steward, Developer, and Reviewer scope directories. The
+bounded `rule list/show/add/update/remove` command family may mutate one
+canonical rule file per invocation. Provider outputs and the ownership lock
+still change only through `diff` and exact-approved `render`.
 
-Implement that accepted milestone without an index, database, public rule DSL,
+Keep rule management without an index, database, public rule DSL,
 provider-instance or nested scope, source/provider composite transaction,
-second approval model, backup system, lease, or Git manager. External-agent
-onboarding may supply semantic judgment and operate the public CLI, but final
-managed state must still pass canonical rule validation, the complete render
-plan, and `check`.
+second approval model, backup system, lease, or Git manager. The four
+unreleased aggregate paths must fail closed with exact manual-move guidance;
+never silently ignore, delete, or automatically migrate them.
 
-Do not implement the rule-storage replacement until the aggregate migration
-decision in `ROADMAP.md` is accepted. Never silently ignore or delete aggregate
-guidance. Do not implement manual onboarding until its reproducible
-replacement-authorization input and output boundary are accepted.
+External-agent onboarding may supply semantic judgment and operate the public
+CLI, but final managed state must still pass canonical rule validation, the
+complete render plan, and `check`. Do not implement manual onboarding until its
+reproducible replacement-authorization input and output boundary are accepted.
 
 Generate only the roles assigned to each provider id. One provider id may hold
 multiple roles with separate sections. Reject multiple ids for one provider

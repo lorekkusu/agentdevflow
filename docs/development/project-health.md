@@ -14,11 +14,11 @@ matrix, private-repository dogfood, and focused independent review support a
 bounded conclusion: deterministic responsibility-specific instructions add
 value beyond copying one shared prompt.
 
-The current repository is still not the intended adoption beta. It lacks
-command-based rule management, practical onboarding for projects with existing
-provider instructions, an interactive first-use path, the accepted Strict
-preset, and qualified external-agent-operated onboarding. Those are product
-gaps, not optional research ideas.
+The current repository is still not the intended adoption beta. Minimal
+command-based rule management is complete, but practical onboarding for
+projects with existing provider instructions, an interactive first-use path,
+the accepted Strict preset, and qualified external-agent-operated onboarding
+remain product gaps rather than optional research ideas.
 
 ## Active implemented core
 
@@ -28,8 +28,10 @@ gaps, not optional research ideas.
 - `issue-to-reviewed-pull-request` with Linear or GitHub Issues, draft or
   ready state, auxiliary review disabled, and squash merge;
 - provider-neutral Steward, Developer, and Reviewer responsibilities;
-- aggregate canonical guidance from
-  `.agentdevflow/rules/{shared,steward,developer,reviewer}.md`;
+- globally unique, per-rule canonical guidance under fixed shared, Steward,
+  Developer, and Reviewer scope directories;
+- bounded human and JSON `rule list`, `show`, `add`, `update`, and `remove`
+  commands that mutate one canonical rule file at a time;
 - responsibility-specific Codex, Claude Code, and Cursor views;
 - whole-file create, exact adopt, bounded equivalent-content import, or abort;
 - complete `diff`, exact-approved `render`, ownership lock, and read-only
@@ -38,9 +40,8 @@ gaps, not optional research ideas.
   review bypass, stale evidence, deterministic counterexamples, and guard-blind
   diagnostics.
 
-The public working-tree CLI currently exposes only `init`, `diff`, `render`,
-and `check`. The accepted next commands and storage changes are roadmap
-commitments, not implemented claims.
+The public working-tree CLI exposes `init`, `diff`, `render`, `check`, and the
+bounded `rule` command family.
 
 ## Corrective simplification
 
@@ -56,11 +57,11 @@ Executable systems without a normal-user producer or consumer were removed:
 - the caller-supplied environment-observation command.
 
 The rule-management user outcome was not canceled by deleting its overbuilt
-implementation. The accepted replacement is one Markdown file per rule, a
-closed scope set, and small rule commands that reuse the existing provider
-diff, render, and check path. Its aggregate-file migration and mixed-layout
-behavior remain a decision gate; existing guidance must not be silently
-ignored.
+implementation. Its smaller replacement is now implemented: one Markdown file
+per globally unique rule id, a closed scope set, and small commands that reuse
+the existing provider diff, render, and check path. Unreleased aggregate paths
+fail closed with exact manual-move guidance; there is no migration subsystem or
+dual reader.
 
 The retained file executor provides exact before-or-after convergence and
 lock-last publication. Stronger machinery may return only after a reproduced
@@ -106,14 +107,30 @@ for the new onboarding milestone.
 
 ### Qualification
 
-The completed candidate passed:
+The earlier role-specific candidate passed:
 
-- local repository, type, build, and automated test checks;
-- installed-package entrypoint and tarball qualification;
 - the supported Ubuntu, macOS, and Windows matrix on Node.js 22 and 24;
 - dependency-advisory review; and
 - a focused independent closure review after whole-project findings were
   repaired.
+
+The current rule-management working tree passed repository audit, strict type
+checking, build, 230 automated tests, packed-installed entrypoint
+qualification, and tarball dry-run. The installed bin exercised all five rule
+operations and role-specific render convergence. Aggregate-layout evidence is
+layered deliberately: the shared reader has focused all-path tests, source CLI
+tests cover all five rule operations without mutation, and the installed bin
+smoke test covers all four aggregate paths in mixed and partially moved states
+through representative `rule list` and `diff` commands. Hosted platform
+qualification is supplied by pull-request checks rather than inferred from
+local checks.
+
+A bounded independent review found no second writer, transaction, approval
+store, backup system, Git manager, or other engineering-boundary regression.
+Its actionable findings were repaired by adding portable rule-id constraints,
+making generated rule-command guidance invocation-neutral, synchronizing root
+repository instructions, and narrowing qualification claims to the evidence
+actually executed.
 
 Every new roadmap milestone must rerun the current required checks and add
 focused installed-bin coverage for its new public behavior.
@@ -126,13 +143,6 @@ management, practical existing-project onboarding, wizard, Strict, or external
 agent launchers now described by the current repository and roadmap.
 
 ## Current product risks
-
-### Rule management is absent
-
-Users and agents must currently edit four aggregate Markdown files manually.
-The generated outputs cannot direct an agent to a real rule-management command.
-This prevents the canonical rule source from being a complete product
-experience.
 
 ### Existing projects remain blocked
 
@@ -177,9 +187,9 @@ root roadmap pass:
 
 | Criterion | Current status |
 | --- | --- |
-| Minimal rule commands and one-file-per-rule source | Migration decision required |
+| Minimal rule commands and one-file-per-rule source | Complete in the working tree |
 | Manual existing-project onboarding | Interface decision required |
-| External-agent-operated onboarding | Waiting on rule and manual contracts |
+| External-agent-operated onboarding | Waiting on the manual onboarding contract |
 | Interactive new/existing project wizard | Waiting on non-interactive contracts |
 | Strict policy difference accepted and executable | Decision required |
 | Exact final tarball dogfood and zero-context review | Waiting on implementation |
@@ -193,7 +203,6 @@ subsystem, transaction framework, or general automation platform.
 
 Run another independent project-health review when:
 
-- minimal rule management reaches its installed-bin acceptance criteria;
 - existing-project onboarding and one external-agent adapter complete their
   first end-to-end private-repository run;
 - the Strict property set is proposed for acceptance;

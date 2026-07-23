@@ -1,3 +1,4 @@
+import { isAbsolute, win32 } from "node:path";
 import { parseArgs } from "node:util";
 
 import {
@@ -6,6 +7,13 @@ import {
   type CandidateProviderProduct,
 } from "../config/candidate.js";
 import type { PrivateDomainCapabilityObservation } from "../compiler/private-domain-workflow.js";
+import {
+  isPrivateProjectGuidanceRuleId,
+  privateProjectGuidanceRuleIdMaxLength,
+  privateProjectGuidanceRuleIdPattern,
+  privateProjectGuidanceScopes,
+  type PrivateProjectGuidanceScope,
+} from "../guidance/private-project-guidance.js";
 import {
   resolvePrivateDomainProject,
   type PrivateDomainProjectIntent,
@@ -18,9 +26,29 @@ export const privateCliCommands = [
   "diff",
   "init",
   "render",
+  "rule",
 ] as const;
 export type PrivateCliCommand = (typeof privateCliCommands)[number];
 export type PrivateCliOutputFormat = "human" | "json";
+export const privateRuleOperations = [
+  "add",
+  "list",
+  "remove",
+  "show",
+  "update",
+] as const;
+export type PrivateRuleOperation = (typeof privateRuleOperations)[number];
+export const privateRuleScopes = privateProjectGuidanceScopes;
+export type PrivateRuleScope = PrivateProjectGuidanceScope;
+
+export type PrivateRuleContentInput =
+  | {
+      readonly kind: "file";
+      readonly path: string;
+    }
+  | {
+      readonly kind: "stdin";
+    };
 
 export const defaultProjectConfigPath = "agentdevflow.config.jsonc";
 export const defaultRenderLockPath = ".agentdevflow/lock.json";
@@ -31,8 +59,11 @@ export type PrivateCliDiagnosticCode =
   | "INVALID_ARGUMENTS"
   | "INVALID_CONFIGURATION"
   | "INVALID_OPTION_VALUE"
+  | "INVALID_RULE_ID"
   | "MISSING_COMMAND"
   | "MISSING_REQUIRED_OPTION"
+  | "MISSING_RULE_OPERATION"
+  | "UNKNOWN_RULE_OPERATION"
   | "UNKNOWN_COMMAND";
 
 export interface PrivateCliDiagnostic {
@@ -65,6 +96,43 @@ export type PrivateCliInvocation =
       readonly lockPath: string;
       readonly intent: PrivateDomainProjectIntent;
       readonly configurationContent: string;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "rule";
+      readonly operation: "list";
+      readonly repositoryPath: string;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "rule";
+      readonly operation: "show";
+      readonly repositoryPath: string;
+      readonly ruleId: string;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "rule";
+      readonly operation: "remove";
+      readonly repositoryPath: string;
+      readonly ruleId: string;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "rule";
+      readonly operation: "add";
+      readonly repositoryPath: string;
+      readonly ruleId: string;
+      readonly scope: PrivateRuleScope;
+      readonly input: PrivateRuleContentInput;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "rule";
+      readonly operation: "update";
+      readonly repositoryPath: string;
+      readonly ruleId: string;
+      readonly input: PrivateRuleContentInput;
       readonly outputFormat: PrivateCliOutputFormat;
     };
 
@@ -482,6 +550,224 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
   };
 }
 
+function invalidRuleId(ruleId: string): PrivateCliFailure {
+  return failure(
+    "INVALID_RULE_ID",
+    `Rule id ${JSON.stringify(ruleId)} must match ${privateProjectGuidanceRuleIdPattern.source}, contain at most ${privateProjectGuidanceRuleIdMaxLength} ASCII characters, and not be a reserved Windows filename.`,
+  );
+}
+
+function parseRuleId(
+  args: readonly string[],
+):
+  | {
+      readonly ok: true;
+      readonly ruleId: string;
+      readonly optionArgs: readonly string[];
+    }
+  | { readonly ok: false; readonly result: PrivateCliFailure } {
+  const [ruleId, ...optionArgs] = args;
+  if (ruleId === undefined || ruleId.startsWith("-")) {
+    return {
+      ok: false,
+      result: failure(
+        "INVALID_ARGUMENTS",
+        "A rule id positional argument is required.",
+      ),
+    };
+  }
+  if (!isPrivateProjectGuidanceRuleId(ruleId)) {
+    return { ok: false, result: invalidRuleId(ruleId) };
+  }
+  return { ok: true, ruleId, optionArgs };
+}
+
+function parseRuleContentInput(
+  values: Record<string, ParsedValue>,
+): PrivateRuleContentInput | PrivateCliFailure {
+  const fileValue = values.file;
+  const fileSelected = typeof fileValue === "string";
+  const stdin = values.stdin === true;
+  if (fileSelected === stdin) {
+    return failure(
+      "INVALID_ARGUMENTS",
+      "Exactly one of --file or --stdin is required.",
+    );
+  }
+  if (fileSelected && fileValue.length === 0) {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Option --file must not be empty.",
+      "--file",
+    );
+  }
+  if (
+    fileSelected &&
+    (isAbsolute(fileValue) || win32.isAbsolute(fileValue))
+  ) {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Option --file must be a repository-relative path.",
+      "--file",
+    );
+  }
+  return !fileSelected
+    ? { kind: "stdin" }
+    : { kind: "file", path: fileValue };
+}
+
+function parseRuleListArguments(
+  args: readonly string[],
+): PrivateCliArgumentResult {
+  const parsed = parseCommandOptions(args, {
+    json: booleanOption,
+    repository: stringOption,
+  });
+  if (!parsed.ok) return parsed.result;
+  return {
+    ok: true,
+    invocation: {
+      command: "rule",
+      operation: "list",
+      repositoryPath:
+        stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
+      outputFormat: outputFormat(parsed.values),
+    },
+  };
+}
+
+function parseRuleShowOrRemoveArguments(
+  operation: "show" | "remove",
+  args: readonly string[],
+): PrivateCliArgumentResult {
+  const id = parseRuleId(args);
+  if (!id.ok) return id.result;
+  const parsed = parseCommandOptions(id.optionArgs, {
+    json: booleanOption,
+    repository: stringOption,
+  });
+  if (!parsed.ok) return parsed.result;
+  const repositoryPath =
+    stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
+  const selectedOutputFormat = outputFormat(parsed.values);
+  if (operation === "show") {
+    return {
+      ok: true,
+      invocation: {
+        command: "rule",
+        operation: "show",
+        repositoryPath,
+        ruleId: id.ruleId,
+        outputFormat: selectedOutputFormat,
+      },
+    };
+  }
+  return {
+    ok: true,
+    invocation: {
+      command: "rule",
+      operation: "remove",
+      repositoryPath,
+      ruleId: id.ruleId,
+      outputFormat: selectedOutputFormat,
+    },
+  };
+}
+
+function parseRuleAddArguments(
+  args: readonly string[],
+): PrivateCliArgumentResult {
+  const id = parseRuleId(args);
+  if (!id.ok) return id.result;
+  const parsed = parseCommandOptions(id.optionArgs, {
+    file: stringOption,
+    json: booleanOption,
+    repository: stringOption,
+    scope: stringOption,
+    stdin: booleanOption,
+  });
+  if (!parsed.ok) return parsed.result;
+  const scopeValue = requireStringOption(parsed.values, "scope");
+  if (isFailure(scopeValue)) return scopeValue;
+  const scope = parseClosedValue(
+    scopeValue,
+    privateRuleScopes,
+    "scope",
+  );
+  if (isFailure(scope)) return scope;
+  const input = parseRuleContentInput(parsed.values);
+  if ("ok" in input) return input;
+  return {
+    ok: true,
+    invocation: {
+      command: "rule",
+      operation: "add",
+      repositoryPath:
+        stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
+      ruleId: id.ruleId,
+      scope,
+      input,
+      outputFormat: outputFormat(parsed.values),
+    },
+  };
+}
+
+function parseRuleUpdateArguments(
+  args: readonly string[],
+): PrivateCliArgumentResult {
+  const id = parseRuleId(args);
+  if (!id.ok) return id.result;
+  const parsed = parseCommandOptions(id.optionArgs, {
+    file: stringOption,
+    json: booleanOption,
+    repository: stringOption,
+    stdin: booleanOption,
+  });
+  if (!parsed.ok) return parsed.result;
+  const input = parseRuleContentInput(parsed.values);
+  if ("ok" in input) return input;
+  return {
+    ok: true,
+    invocation: {
+      command: "rule",
+      operation: "update",
+      repositoryPath:
+        stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
+      ruleId: id.ruleId,
+      input,
+      outputFormat: outputFormat(parsed.values),
+    },
+  };
+}
+
+function parseRuleArguments(args: readonly string[]): PrivateCliArgumentResult {
+  const [operationValue, ...operationArgs] = args;
+  if (operationValue === undefined) {
+    return failure(
+      "MISSING_RULE_OPERATION",
+      "A rule operation is required.",
+    );
+  }
+  if (!privateRuleOperations.includes(operationValue as PrivateRuleOperation)) {
+    return failure(
+      "UNKNOWN_RULE_OPERATION",
+      `Unknown rule operation: ${operationValue}.`,
+    );
+  }
+  const operation = operationValue as PrivateRuleOperation;
+  switch (operation) {
+    case "add":
+      return parseRuleAddArguments(operationArgs);
+    case "list":
+      return parseRuleListArguments(operationArgs);
+    case "remove":
+    case "show":
+      return parseRuleShowOrRemoveArguments(operation, operationArgs);
+    case "update":
+      return parseRuleUpdateArguments(operationArgs);
+  }
+}
+
 /** Parses an experimental, pure argument representation with no filesystem I/O. */
 export function parsePrivateCliArguments(
   args: readonly string[],
@@ -505,5 +791,7 @@ export function parsePrivateCliArguments(
       return parseInitArguments(commandArgs);
     case "render":
       return parseRenderArguments(commandArgs);
+    case "rule":
+      return parseRuleArguments(commandArgs);
   }
 }

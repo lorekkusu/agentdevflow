@@ -2,12 +2,9 @@
 
 ## Status
 
-This document defines the current unreleased canonical-guidance slice. The
-filenames and limits remain beta surfaces until a qualified release, but the
-implementation is part of the installed CLI path rather than a separate
-experiment. The root [product roadmap](../../ROADMAP.md) accepts a bounded
-replacement for this aggregate-file surface; this document remains accurate
-for the current implementation until that milestone lands.
+This document defines the current canonical-guidance and rule-management
+slice. Filenames, diagnostics, and JSON fields remain beta surfaces until a
+qualified release.
 
 ## Purpose
 
@@ -30,22 +27,32 @@ Provider outputs are projections. They are not another source of truth.
 
 ## Canonical inputs
 
-Exactly four optional Markdown paths are recognized:
+Rules are immediate Markdown files under four fixed scope directories:
 
-| Path | Applies to |
+| Path pattern | Applies to |
 | --- | --- |
-| `.agentdevflow/rules/shared.md` | Every configured provider product |
-| `.agentdevflow/rules/steward.md` | A provider assigned Steward |
-| `.agentdevflow/rules/developer.md` | A provider assigned Developer |
-| `.agentdevflow/rules/reviewer.md` | A provider assigned Reviewer |
+| `.agentdevflow/rules/shared/<rule-id>.md` | Every configured provider product |
+| `.agentdevflow/rules/steward/<rule-id>.md` | A provider assigned Steward |
+| `.agentdevflow/rules/developer/<rule-id>.md` | A provider assigned Developer |
+| `.agentdevflow/rules/reviewer/<rule-id>.md` | A provider assigned Reviewer |
 
-There is no index file, rule id, ordering metadata, provider-instance source,
-or nested discovery. Each file is bounded to 65,536 bytes and read through the
-same repository-root and regular-file boundary used by the planner. Missing
-files mean no user guidance for that scope.
+Rule ids are lowercase ASCII slugs matching
+`[a-z0-9]+(?:-[a-z0-9]+)*`, contain at most 64 characters, exclude Windows
+reserved basenames, and are globally unique across scopes. There is no index
+file, ordering metadata, provider-instance source, or nested discovery. Each
+recognized file is bounded to 65,536 bytes and read through the same
+repository-root and regular-file boundary used by the planner. Rules are
+sorted by id within their scope.
 
-The user owns these source files. A user may edit them directly or explicitly
-direct a coding agent to edit them. `agentdevflow` reads but never writes them.
+The user owns these source files. A user may edit them directly, use the
+bounded `rule` commands, or explicitly direct a coding agent to operate those
+commands.
+
+The former aggregate paths
+`.agentdevflow/rules/{shared,steward,developer,reviewer}.md` were never
+published. Their presence blocks every planning and rule command with exact
+manual-move guidance. There is no public migration command, automatic move,
+dual reader, journal, backup, or Git operation.
 
 ## Composition
 
@@ -72,7 +79,7 @@ their identities. One id may still hold multiple roles.
 
 | Artifact | Owner | Mutation path |
 | --- | --- | --- |
-| Canonical guidance | User | Normal project edit |
+| Canonical guidance | User | Normal project edit or `rule` command |
 | `AGENTS.md` | agentdevflow | Exact-approved `render` |
 | `CLAUDE.md` | agentdevflow | Exact-approved `render` |
 | `.cursor/rules/agentdevflow.mdc` | agentdevflow | Exact-approved `render` |
@@ -100,14 +107,12 @@ Planning stops with a bounded diagnostic when:
 
 The planner does not disclose or overwrite unsupported foreign content.
 
-## Current absences
+## Deliberate absences
 
-The current implementation does not yet provide:
+The accepted slice does not provide:
 
-- `rule list`, `rule show`, `rule add`, `rule update`, or `rule remove`;
 - a rule index, rule-level provenance format, or public rule DSL;
 - provider-instance-specific or nested guidance;
-- canonical-source mutation planning;
 - a composite source/provider transaction;
 - a second digest, approval store, authorization ledger, backup, journal,
   lease, or Git manager;
@@ -115,29 +120,20 @@ The current implementation does not yet provide:
   classification;
 - automatic import of arbitrary legacy provider instructions.
 
-These absences describe the current candidate, not an indefinite product
-decision.
+These absences are intentional boundaries. Manual existing-project onboarding
+and optional operation by one user-selected external coding-agent CLI are later
+roadmap items built on this rule surface.
 
-## Accepted outcome and decision gates
+Rule commands mutate only canonical rule files. A later external-agent
+onboarding path may propose rule organization and operate the exact current
+`agentdevflow` executable, including rule, diff, render, and check commands.
+Provider outputs and the ownership lock remain under the existing render
+command.
 
-The roadmap accepts:
-
-- one Markdown file per stable rule id;
-- fixed shared, Steward, Developer, and Reviewer scope directories;
-- bounded human and JSON `rule list/show/add/update/remove` commands;
-- generated instructions that route agents back to those commands;
-- manual existing-project onboarding; and
-- optional operation by one user-selected external coding-agent CLI.
-
-Rule commands will mutate only canonical rule files. The external agent may
-propose rule organization and operate the exact current `agentdevflow`
-executable, including rule, diff, render, and check commands. Provider outputs
-and the ownership lock remain under the existing render command.
-
-The current aggregate inputs remain authoritative until the roadmap's migration
-and mixed-layout decision is accepted and implemented. No implementation may
-silently ignore or delete them. The external-agent proposal mode stops before
-mutation; apply mode requires explicit one-operation delegation by the user.
+Unreleased aggregate inputs are never silently ignored or deleted; they block
+with manual remediation. The later external-agent proposal mode stops before
+mutation, while apply mode requires explicit one-operation delegation by the
+user.
 
 The accepted outcome does not revive the removed index, per-rule authorization
 ledger, source/provider composite transaction, second approval model, managed

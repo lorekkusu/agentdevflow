@@ -6,21 +6,51 @@ import type { PrivateResolvedCapabilityTarget } from "../project/private-domain-
 import type { PrivateResolvedDomainProject } from "../renderer/materialize-domain-project.js";
 import type { PrivateFilesystemReadWorkspace } from "../workspace/private-filesystem-workspace.js";
 
-export const privateProjectGuidancePaths = {
+export const privateProjectGuidanceScopes = [
+  "shared",
+  "steward",
+  "developer",
+  "reviewer",
+] as const satisfies readonly ("shared" | CandidateRole)[];
+
+export type PrivateProjectGuidanceScope =
+  (typeof privateProjectGuidanceScopes)[number];
+
+export const privateProjectGuidanceRulesRoot = ".agentdevflow/rules";
+
+export const privateProjectGuidanceAggregatePaths = {
   shared: ".agentdevflow/rules/shared.md",
   steward: ".agentdevflow/rules/steward.md",
   developer: ".agentdevflow/rules/developer.md",
   reviewer: ".agentdevflow/rules/reviewer.md",
-} as const satisfies Readonly<Record<"shared" | CandidateRole, string>>;
+} as const satisfies Readonly<Record<PrivateProjectGuidanceScope, string>>;
+
+export const privateProjectGuidanceAggregateManualTargets = {
+  shared: ".agentdevflow/rules/shared/shared-guidance.md",
+  steward: ".agentdevflow/rules/steward/steward-guidance.md",
+  developer: ".agentdevflow/rules/developer/developer-guidance.md",
+  reviewer: ".agentdevflow/rules/reviewer/reviewer-guidance.md",
+} as const satisfies Readonly<Record<PrivateProjectGuidanceScope, string>>;
 
 export const privateProjectGuidanceFileMaxBytes = 65_536;
+export const privateProjectGuidanceDirectoryMaxEntries = 1_024;
+export const privateProjectGuidanceRuleIdPattern =
+  /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+export const privateProjectGuidanceRuleIdMaxLength = 64;
+const privateProjectGuidanceReservedRuleIdPattern =
+  /^(?:aux|com[1-9]|con|lpt[1-9]|nul|prn)$/u;
 
-export interface PrivateProjectGuidance {
-  readonly shared: string | null;
-  readonly steward: string | null;
-  readonly developer: string | null;
-  readonly reviewer: string | null;
+export interface PrivateProjectGuidanceRule {
+  readonly id: string;
+  readonly scope: PrivateProjectGuidanceScope;
+  readonly path: string;
+  readonly content: string;
 }
+
+export type PrivateProjectGuidance = {
+  readonly [Scope in PrivateProjectGuidanceScope]:
+    readonly PrivateProjectGuidanceRule[];
+};
 
 export interface PrivateProviderInstructionView {
   readonly product: CandidateProviderProduct;
@@ -34,7 +64,10 @@ export interface PrivateProjectGuidanceDiagnostic {
   readonly stage: "planning";
   readonly code:
     | "PROJECT_GUIDANCE_READ_FAILED"
-    | "PROVIDER_PRODUCT_TARGET_AMBIGUOUS";
+    | "PROVIDER_PRODUCT_TARGET_AMBIGUOUS"
+    | "RULE_AGGREGATE_LAYOUT_UNSUPPORTED"
+    | "RULE_ID_DUPLICATE"
+    | "RULE_ID_INVALID";
   readonly path: string;
   readonly message: string;
 }
@@ -60,10 +93,10 @@ export type PrivateProviderInstructionCompositionResult =
     };
 
 export const emptyPrivateProjectGuidance: PrivateProjectGuidance = {
-  shared: null,
-  steward: null,
-  developer: null,
-  reviewer: null,
+  shared: [],
+  steward: [],
+  developer: [],
+  reviewer: [],
 };
 
 const roleOrder: readonly CandidateRole[] = [
@@ -88,22 +121,110 @@ function errorCode(error: unknown): string {
     : "UNKNOWN";
 }
 
+function errorPath(error: unknown, fallback: string): string {
+  return error instanceof Error &&
+    "path" in error &&
+    typeof error.path === "string"
+    ? error.path
+    : fallback;
+}
+
+function compareDiagnostics(
+  left: PrivateProjectGuidanceDiagnostic,
+  right: PrivateProjectGuidanceDiagnostic,
+): number {
+  return (
+    compareText(left.path, right.path) ||
+    compareText(left.code, right.code) ||
+    compareText(left.message, right.message)
+  );
+}
+
+export function isPrivateProjectGuidanceRuleId(value: string): boolean {
+  return (
+    value.length <= privateProjectGuidanceRuleIdMaxLength &&
+    privateProjectGuidanceRuleIdPattern.test(value) &&
+    !privateProjectGuidanceReservedRuleIdPattern.test(value)
+  );
+}
+
+export function privateProjectGuidanceRulePath(
+  scope: PrivateProjectGuidanceScope,
+  id: string,
+): string {
+  return `${privateProjectGuidanceRulesRoot}/${scope}/${id}.md`;
+}
+
+export function flattenPrivateProjectGuidanceRules(
+  guidance: PrivateProjectGuidance,
+): readonly PrivateProjectGuidanceRule[] {
+  return privateProjectGuidanceScopes
+    .flatMap((scope) => guidance[scope])
+    .sort(
+      (left, right) =>
+        compareText(left.id, right.id) ||
+        compareText(left.scope, right.scope),
+    );
+}
+
 export async function readPrivateProjectGuidance(
-  workspace: Pick<PrivateFilesystemReadWorkspace, "readBounded">,
+  workspace: Pick<
+    PrivateFilesystemReadWorkspace,
+    "listDirectoryBounded" | "readBounded"
+  >,
 ): Promise<PrivateProjectGuidanceReadResult> {
-  const entries = Object.entries(privateProjectGuidancePaths) as readonly [
-    keyof PrivateProjectGuidance,
-    string,
-  ][];
-  const observed = await Promise.all(
-    entries.map(async ([name, path]) => {
+  let rootEntries;
+  try {
+    rootEntries = await workspace.listDirectoryBounded(
+      privateProjectGuidanceRulesRoot,
+      privateProjectGuidanceDirectoryMaxEntries,
+    );
+  } catch (error) {
+    const path = errorPath(error, privateProjectGuidanceRulesRoot);
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          stage: "planning",
+          code: "PROJECT_GUIDANCE_READ_FAILED",
+          path,
+          message: `Canonical rule directory could not be read (${errorCode(error)}).`,
+        },
+      ],
+    };
+  }
+  if (rootEntries === null) {
+    return { ok: true, guidance: emptyPrivateProjectGuidance };
+  }
+
+  const rootNames = new Set(rootEntries.map((entry) => entry.name));
+  const aggregateDiagnostics = privateProjectGuidanceScopes
+    .filter((scope) => rootNames.has(`${scope}.md`))
+    .map((scope): PrivateProjectGuidanceDiagnostic => {
+      const path = privateProjectGuidanceAggregatePaths[scope];
+      const target = privateProjectGuidanceAggregateManualTargets[scope];
+      return {
+        stage: "planning",
+        code: "RULE_AGGREGATE_LAYOUT_UNSUPPORTED",
+        path,
+        message: `Aggregate rule guidance is unsupported. Suggested manual target: ${target}. Move its exact intended content without overwriting an existing rule, remove ${path}, and rerun the command.`,
+      };
+    })
+    .sort(compareDiagnostics);
+  if (aggregateDiagnostics.length > 0) {
+    return { ok: false, diagnostics: aggregateDiagnostics };
+  }
+
+  const scopeListings = await Promise.all(
+    privateProjectGuidanceScopes.map(async (scope) => {
+      const path = `${privateProjectGuidanceRulesRoot}/${scope}`;
       try {
         return {
           ok: true as const,
-          name,
-          content: await workspace.readBounded(
+          scope,
+          entries: await workspace.listDirectoryBounded(
             path,
-            privateProjectGuidanceFileMaxBytes,
+            privateProjectGuidanceDirectoryMaxEntries,
           ),
         };
       } catch (error) {
@@ -112,31 +233,151 @@ export async function readPrivateProjectGuidance(
           diagnostic: {
             stage: "planning" as const,
             code: "PROJECT_GUIDANCE_READ_FAILED" as const,
-            path,
-            message: `User-owned project guidance could not be read (${errorCode(error)}).`,
+            path: errorPath(error, path),
+            message: `Canonical rule scope could not be read (${errorCode(error)}).`,
           },
         };
       }
     }),
   );
-  const diagnostics = observed
+  const listingDiagnostics = scopeListings
     .filter((entry) => !entry.ok)
     .map((entry) => entry.diagnostic)
-    .sort(
-      (left, right) =>
-        compareText(left.path, right.path) ||
-        compareText(left.code, right.code),
-    );
-  if (diagnostics.length > 0) {
-    return { ok: false, diagnostics };
+    .sort(compareDiagnostics);
+  if (listingDiagnostics.length > 0) {
+    return { ok: false, diagnostics: listingDiagnostics };
   }
 
-  const values = Object.fromEntries(
-    observed
-      .filter((entry) => entry.ok)
-      .map((entry) => [entry.name, entry.content]),
-  ) as unknown as PrivateProjectGuidance;
-  return { ok: true, guidance: values };
+  const candidates: {
+    readonly id: string;
+    readonly path: string;
+    readonly scope: PrivateProjectGuidanceScope;
+  }[] = [];
+  const entryDiagnostics: PrivateProjectGuidanceDiagnostic[] = [];
+  for (const listing of scopeListings) {
+    if (!listing.ok || listing.entries === null) {
+      continue;
+    }
+    for (const entry of listing.entries) {
+      if (!entry.name.endsWith(".md")) {
+        continue;
+      }
+      const id = entry.name.slice(0, -3);
+      const path = privateProjectGuidanceRulePath(listing.scope, id);
+      if (!isPrivateProjectGuidanceRuleId(id)) {
+        entryDiagnostics.push({
+          stage: "planning",
+          code: "RULE_ID_INVALID",
+          path,
+          message: `Rule filename must be <rule-id>.md where the id matches ${privateProjectGuidanceRuleIdPattern.source}, is at most ${privateProjectGuidanceRuleIdMaxLength} ASCII characters, and is not a reserved Windows filename.`,
+        });
+        continue;
+      }
+      if (entry.kind !== "file") {
+        entryDiagnostics.push({
+          stage: "planning",
+          code: "PROJECT_GUIDANCE_READ_FAILED",
+          path,
+          message:
+            entry.kind === "symbolic-link"
+              ? "Canonical rule source must not be a symbolic link (WORKSPACE_PATH_SYMLINK)."
+              : "Canonical rule source must be a regular file (WORKSPACE_PATH_NOT_FILE).",
+        });
+        continue;
+      }
+      candidates.push({ id, path, scope: listing.scope });
+    }
+  }
+
+  const candidatesById = new Map<string, typeof candidates>();
+  for (const candidate of candidates) {
+    const matching = candidatesById.get(candidate.id) ?? [];
+    matching.push(candidate);
+    candidatesById.set(candidate.id, matching);
+  }
+  for (const [id, matching] of candidatesById) {
+    if (matching.length < 2) {
+      continue;
+    }
+    const paths = matching.map((candidate) => candidate.path).sort(compareText);
+    for (const candidate of matching) {
+      entryDiagnostics.push({
+        stage: "planning",
+        code: "RULE_ID_DUPLICATE",
+        path: candidate.path,
+        message: `Rule id ${id} is duplicated across canonical rule paths: ${paths.join(", ")}.`,
+      });
+    }
+  }
+  if (entryDiagnostics.length > 0) {
+    return {
+      ok: false,
+      diagnostics: entryDiagnostics.sort(compareDiagnostics),
+    };
+  }
+
+  const observed = await Promise.all(
+    candidates
+      .sort(
+        (left, right) =>
+          compareText(left.id, right.id) ||
+          compareText(left.scope, right.scope),
+      )
+      .map(async (candidate) => {
+        try {
+          const content = await workspace.readBounded(
+            candidate.path,
+            privateProjectGuidanceFileMaxBytes,
+          );
+          if (content === null) {
+            return {
+              ok: false as const,
+              diagnostic: {
+                stage: "planning" as const,
+                code: "PROJECT_GUIDANCE_READ_FAILED" as const,
+                path: candidate.path,
+                message:
+                  "Canonical rule source disappeared during reading (ENOENT).",
+              },
+            };
+          }
+          return {
+            ok: true as const,
+            rule: { ...candidate, content },
+          };
+        } catch (error) {
+          return {
+            ok: false as const,
+            diagnostic: {
+              stage: "planning" as const,
+              code: "PROJECT_GUIDANCE_READ_FAILED" as const,
+              path: errorPath(error, candidate.path),
+              message: `Canonical rule source could not be read (${errorCode(error)}).`,
+            },
+          };
+        }
+      }),
+  );
+  const readDiagnostics = observed
+    .filter((entry) => !entry.ok)
+    .map((entry) => entry.diagnostic)
+    .sort(compareDiagnostics);
+  if (readDiagnostics.length > 0) {
+    return { ok: false, diagnostics: readDiagnostics };
+  }
+
+  const rules = observed
+    .filter((entry) => entry.ok)
+    .map((entry) => entry.rule);
+  return {
+    ok: true,
+    guidance: {
+      shared: rules.filter((rule) => rule.scope === "shared"),
+      steward: rules.filter((rule) => rule.scope === "steward"),
+      developer: rules.filter((rule) => rule.scope === "developer"),
+      reviewer: rules.filter((rule) => rule.scope === "reviewer"),
+    },
+  };
 }
 
 function targetText(target: PrivateResolvedCapabilityTarget): string {
@@ -176,12 +417,19 @@ function activeTargets(
 function appendGuidance(
   lines: string[],
   heading: string,
-  content: string | null,
+  ruleHeading: string,
+  rules: readonly PrivateProjectGuidanceRule[],
 ): void {
-  if (content === null) {
+  if (rules.length === 0) {
     return;
   }
-  lines.push("", heading, "", content);
+  lines.push("", heading);
+  for (const rule of [...rules].sort(
+    (left, right) =>
+      compareText(left.id, right.id) || compareText(left.path, right.path),
+  )) {
+    lines.push("", `${ruleHeading} Rule \`${rule.id}\``, "", rule.content);
+  }
 }
 
 function providerForRole(
@@ -375,8 +623,9 @@ function providerContent(
     "- If a required tool, integration, permission, or configured capability is unavailable, stop at that step and report the exact missing capability. Do not simulate success.",
     "- Pull request readiness is not merge authorization.",
     "- Do not silently substitute a weaker provider mechanism for a configured requirement.",
+    "- Manage canonical project rules through the active project executable using `agentdevflow rule list`, `agentdevflow rule show`, `agentdevflow rule add`, `agentdevflow rule update`, and `agentdevflow rule remove`. Do not edit generated provider instruction files directly.",
   );
-  appendGuidance(lines, "## Shared user guidance", guidance.shared);
+  appendGuidance(lines, "## Shared user guidance", "###", guidance.shared);
 
   lines.push("", "## Active responsibilities", "");
   if (roles.length === 0) {
@@ -399,6 +648,7 @@ function providerContent(
     appendGuidance(
       lines,
       `#### ${title(role)} user guidance`,
+      "#####",
       guidance[role],
     );
   }
@@ -413,10 +663,8 @@ function providerContent(
 
   lines.push("");
   const sourcePaths = [
-    ...(guidance.shared === null ? [] : [privateProjectGuidancePaths.shared]),
-    ...roles.flatMap((role) =>
-      guidance[role] === null ? [] : [privateProjectGuidancePaths[role]],
-    ),
+    ...guidance.shared.map((rule) => rule.path),
+    ...roles.flatMap((role) => guidance[role].map((rule) => rule.path)),
   ].sort(compareText);
   return { content: lines.join("\n"), sourcePaths };
 }
