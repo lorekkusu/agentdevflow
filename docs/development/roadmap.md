@@ -70,8 +70,9 @@ An installed candidate must:
 
 ## Step 2: qualify the installed package
 
-Status: **Passed locally on the converged working tree. Exact-commit hosted CI
-remains a delivery gate after the changes are committed.**
+Status: **Passed locally and for the exact committed implementation in the
+six-cell hosted matrix. Every subsequent pull-request commit remains gated by
+the same qualification.**
 
 Run:
 
@@ -89,7 +90,7 @@ sufficient.
 The package review must confirm that the guidance runtime is included and
 tests, fixtures, experiments, and external-provider clients are excluded.
 
-The current local snapshot passed all 203 discovered tests, installed-package
+The current local snapshot passed all 205 discovered tests, installed-package
 entrypoint qualification, package-content review, and the dependency advisory
 check.
 
@@ -123,10 +124,12 @@ private customer data.
 - only sanitized outcomes and reproducible boundaries are retained in the
   [maintainer observation](maintainer-dogfood.md).
 
-The draft-state mark-ready branch remains deterministic workflow and automated
-test coverage. Repeating the complete remote lifecycle solely to change the
-initial pull-request state is not required unless qualification or user
-evidence exposes a distinct failure.
+The draft-state idempotent ensure-ready branch remains deterministic workflow
+and automated test coverage. It marks the pull request ready only when it is
+still a draft, so review-repair cycles may safely traverse it again. Repeating
+the complete remote lifecycle solely to change the initial pull-request state
+is not required unless qualification or user evidence exposes a distinct
+failure.
 
 `agentdevflow` did not invoke Linear, GitHub, or any provider. Existing
 authorized tools performed those actions under advisory compiled procedures.

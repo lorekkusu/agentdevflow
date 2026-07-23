@@ -118,12 +118,13 @@ The current issue-workflow CLI fixes auxiliary review to `disabled` and merge
 method to `squash`.
 
 The compiled Steward procedure plans, creates a tracker work item, delegates
-implementation, observes the pull request and current CI result, routes failed
-CI back to the Developer, marks a draft ready after CI succeeds, starts an
-independent review, and allows squash merge only after current evidence
-satisfies the policy. Balanced requires clean-context reviewer-isolation
-evidence; Fast does not. A ready pull request skips only the draft-to-ready
-step.
+implementation, observes the pull request and current CI result, and routes
+failed CI back to the Developer. For a draft-configured flow, it then ensures
+the pull request is ready after CI succeeds and marks it ready only when it is
+still a draft. It starts an independent review and allows squash merge only
+after current evidence satisfies the policy. Balanced requires clean-context
+reviewer-isolation evidence; Fast does not. A ready-configured flow skips only
+the ensure-ready step.
 
 These are advisory instructions. `agentdevflow` does not call Linear, GitHub,
 CI, or a coding-agent process. Each active agent uses tools already available

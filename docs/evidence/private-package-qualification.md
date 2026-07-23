@@ -34,8 +34,8 @@ npm run check
 npm run check:v1-qualification
 ```
 
-Both commands passed. The complete automated test set contained 203 tests with
-203 passes, zero failures, zero skips, and zero todos. The V1 qualification
+Both commands passed. The complete automated test set contained 205 tests with
+205 passes, zero failures, zero skips, and zero todos. The V1 qualification
 selector discovered the full current test set, required the retained recovery
 tests, and produced the same result.
 
@@ -49,10 +49,11 @@ the tarball into isolated temporary projects, and invoked the installed
 - the local reviewed-change workflow;
 - a Linear-backed ready-pull-request workflow;
 - a GitHub Issues-backed draft-pull-request workflow;
-- draft-to-ready procedure generation;
+- idempotent draft-to-ready procedure generation;
 - optional canonical guidance under `.agentdevflow/rules/`;
 - materially different Codex, Claude Code, and Cursor outputs;
-- generated-file drift and deletion diagnostics;
+- generated-file drift, deletion diagnostics, and ownership-only cleanup when
+  an obsolete output is already absent;
 - symbolic-link refusal; and
 - an empty diff after successful convergence.
 
@@ -65,11 +66,11 @@ trackers, GitHub, provider services, credentials, or a network.
 
 | Property | Observation |
 | --- | --- |
-| Compressed size | 107,961 bytes |
-| Unpacked size | 550,339 bytes |
+| Compressed size | 108,180 bytes |
+| Unpacked size | 551,090 bytes |
 | Entry count | 116 |
-| SHA-1 | `530b79ff1f07f2c50d73402b28a85bc3d14f9546` |
-| npm integrity | `sha512-XM8oVyWDUKwdIjB29n9YmdvbGEtNxSllxU6ANJscKaoHR91+GZh7gd9EGI6tvsyF+sWSfjelZ5PJHSy+D1785g==` |
+| SHA-1 | `b905a1ca6420cf8ad10db5a9da988e6e74ddf885` |
+| npm integrity | `sha512-yy9pI+QUh1y7XXX0kSJhX2cYJe80TA+rpGHWSNpCg90h5HlN94sahilHbDOPQeDFQbq7mAoaZ0fIVm0QiupK8w==` |
 | CLI target mode | `0755` |
 
 The package uses a manifest allowlist. It contains the runtime guidance,

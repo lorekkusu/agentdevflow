@@ -167,7 +167,10 @@ test("explains draft readiness, CI repair, review isolation, and squash directly
     result.views.find((view) => view.product === "claude-code")?.content ?? "";
   assert.match(codex, /create the corresponding work item in Linear/u);
   assert.match(codex, /When CI fails/u);
-  assert.match(codex, /mark the draft pull request ready/u);
+  assert.match(
+    codex,
+    /ensure the pull request is ready.*mark it ready only if it is still a draft/u,
+  );
   assert.match(codex, /Auxiliary review is disabled/u);
   assert.match(codex, /perform a `squash` merge/u);
   assert.match(cursor, /create a `draft` pull request/u);

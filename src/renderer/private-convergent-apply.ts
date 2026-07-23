@@ -31,10 +31,13 @@ export async function applyPrivateConvergentRenderPlan(
     );
   }
 
+  const fileMutations = plan.files.filter(
+    (file) => file.action !== "delete" || file.observedDigest !== null,
+  );
   const applied = await applyPrivateConvergentFilePlan(
     {
       approvalDigest: plan.planDigest,
-      files: plan.files.map((file) => ({
+      files: fileMutations.map((file) => ({
         path: file.path,
         beforeDigest: file.observedDigest,
         afterContent: file.expectedContent,

@@ -68,7 +68,7 @@ test("compiles the draft pull-request path", () => {
   assert.equal(result.compilation.capabilityResolutions.length, 7);
   assert.equal(
     result.compilation.definition.transitions.find(
-      (transition) => transition.id === "07-mark-pull-request-ready",
+      (transition) => transition.id === "07-ensure-pull-request-ready",
     )?.from,
     "ci-passed",
   );
@@ -118,6 +118,53 @@ test("accepts the unbounded CI repair and review rework cycles", () => {
     ),
     true,
   );
+});
+
+test("re-enters draft readiness idempotently after review repair", () => {
+  const definition = createPrivateIssueToReviewedPullRequestDefinition({
+    initialState: "draft",
+    auxiliaryReview: "disabled",
+    mergeMethod: "squash",
+  });
+  const transitions = new Map(
+    definition.transitions.map((transition) => [transition.id, transition]),
+  );
+  const path = [
+    "01-plan-work-item",
+    "02-work-item-delegated",
+    "03-create-draft-pull-request",
+    "04-ci-passed",
+    "07-ensure-pull-request-ready",
+    "08-start-independent-review",
+    "10-independent-changes-repair",
+    "06-repair-reobserve",
+    "04-ci-passed",
+    "07-ensure-pull-request-ready",
+    "08-start-independent-review",
+    "11-independent-approved",
+    "12-reviewed-authorize",
+    "13-external-merge",
+  ] as const;
+  let currentNode = definition.initialNode;
+
+  for (const transitionId of path) {
+    const transition = transitions.get(transitionId);
+    assert.ok(transition, `Missing transition: ${transitionId}`);
+    assert.equal(
+      transition.from,
+      currentNode,
+      `Transition ${transitionId} cannot follow ${currentNode}.`,
+    );
+    currentNode = transition.to;
+  }
+
+  assert.equal(
+    path.filter(
+      (transitionId) => transitionId === "07-ensure-pull-request-ready",
+    ).length,
+    2,
+  );
+  assert.equal(currentNode, "merged");
 });
 
 test("rejects a stale CI result after a revision-changing repair", () => {

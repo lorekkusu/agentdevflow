@@ -29,8 +29,10 @@ rework, and acceptance without issue, pull-request, CI, or merge artifacts.
 ### Issue to reviewed pull request
 
 The issue definition accepts draft or ready initial state. Draft mode includes
-an explicit `07-mark-pull-request-ready` transition after CI passes. Ready mode
-enters independent review after CI without that transition.
+an idempotent `07-ensure-pull-request-ready` transition after CI passes. It
+marks the pull request ready only when it is still a draft, so review-repair
+cycles may safely traverse it again. Ready mode enters independent review
+after CI without that transition.
 
 The workflow proceeds from current CI to the Reviewer responsibility.
 Auxiliary review is not part of the current definition. Squash is the only
@@ -65,7 +67,8 @@ CLI compiles instructions and performs no network or provider operation.
 
 The automated fixtures cover:
 
-- a draft path with explicit mark-ready after CI;
+- a draft path with idempotent ensure-ready after CI, including safe re-entry
+  after review repair;
 - an immediately ready path without draft promotion;
 - unbounded CI repair and review rework cycles;
 - stale CI after a revision-changing repair;

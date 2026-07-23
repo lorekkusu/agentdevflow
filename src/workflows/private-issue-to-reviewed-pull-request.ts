@@ -166,7 +166,7 @@ export function createPrivateIssueToReviewedPullRequestDefinition(
     options.initialState === "draft"
       ? [
           {
-            id: "07-mark-pull-request-ready",
+            id: "07-ensure-pull-request-ready",
             from: "ci-passed",
             to: "pull-request-ready",
             role: "steward",

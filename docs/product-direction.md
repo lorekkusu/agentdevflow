@@ -87,7 +87,8 @@ This workflow:
 2. delegates accepted scope to the Developer;
 3. creates a draft or ready pull request;
 4. observes current-revision CI and routes failures to repair;
-5. marks a draft ready after CI passes;
+5. for a draft-configured flow, ensures the pull request is ready after CI
+   passes and marks it ready only when it is still a draft;
 6. starts an independent review, with clean-context evidence required by the
    Balanced preset but not the Fast preset;
 7. invalidates stale evidence after repair;

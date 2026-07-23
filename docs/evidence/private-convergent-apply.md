@@ -40,7 +40,7 @@ npm install
 npm run check
 ```
 
-The complete local suite contains 203 tests at this snapshot.
+The complete local suite contains 205 tests at this snapshot.
 
 ## Observed boundaries
 

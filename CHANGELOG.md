@@ -14,7 +14,8 @@ All notable public changes will be recorded in this file. During beta, incompati
 - Read optional user-owned Markdown guidance from
   `.agentdevflow/rules/shared.md`, `steward.md`, `developer.md`, and
   `reviewer.md`.
-- Add an explicit draft-to-ready step after required CI succeeds.
+- Add an idempotent draft-to-ready procedure after required CI succeeds. It
+  marks the pull request ready only when it is still a draft.
 
 ### Changed
 
@@ -42,6 +43,10 @@ All notable public changes will be recorded in this file. During beta, incompati
   configuration documents. Update scripted init calls from
   `--provider <id,product,surface>` to `--provider <id,product>`; the legacy
   property and three-component CLI form now fail validation.
+- Consolidate multiple provider ids for the same provider product into one
+  provider entry. Update `roles.steward`, `roles.developer`, and
+  `roles.reviewer` to the retained id. Keep capability bindings targeted to
+  responsibilities or integration ids rather than provider ids.
 - Existing generated files remain subject to the complete diff, exact approval,
   whole-file ownership, and drift rules.
 

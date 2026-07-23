@@ -153,7 +153,7 @@ needs.
 | Exact candidate tarball completes the core command path | Passed in bounded dogfood |
 | Distinct provider outputs and fresh role comprehension | Passed in bounded dogfood |
 | Representative tracker-backed flow completes through repair and fresh review | Passed in bounded dogfood |
-| Full final-tree repository checks | Passed locally: 203/203 |
+| Full final-tree repository checks | Passed locally: 205/205 |
 | Installed-package and tarball qualification on the converged tree | Passed locally |
 | Exact committed implementation passes the hosted platform matrix | Passed |
 | Independent whole-project review and finding disposition | Passed |

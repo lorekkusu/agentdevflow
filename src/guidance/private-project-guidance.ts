@@ -253,7 +253,7 @@ function appendOperationalProcedure(
         );
         if (workflow.initialState === "draft") {
           lines.push(
-            "5. After required CI passes, mark the draft pull request ready for review.",
+            "5. After required CI passes, ensure the pull request is ready for review; mark it ready only if it is still a draft.",
           );
         } else {
           lines.push(

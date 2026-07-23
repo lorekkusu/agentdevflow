@@ -88,7 +88,9 @@ compilation is returned after failure.
 
 ## Provider neutrality
 
-Provider products appear in the project resolution because they are material bindings. They do not appear in the workflow compilation or optional execution manifest. Tracker products similarly resolve outside generic workflow topology.
+Provider products appear in the project resolution because they are material
+bindings. They do not appear in the workflow compilation. Tracker products
+similarly resolve outside generic workflow topology.
 
 Provider replacement should normally change the intent and project-resolution digests while retaining the same workflow-compilation digest. A capability gap may still prevent workflow compilation; provider neutrality does not imply capability equivalence or silent degradation.
 
@@ -114,7 +116,10 @@ permission is unavailable.
 - The resolver accepts typed in-memory data. The separate private project-document boundary validates untrusted serialized content before calling it.
 - Revision `1` is the current beta configuration revision, not a permanent 1.0
   compatibility promise.
-- Role bindings do not prove fresh reviewer context or distinct identity; execution evidence handles those observations separately.
+- Role bindings do not prove fresh reviewer context or distinct identity.
+  Balanced compiles a procedure that requires current reviewer-isolation
+  evidence, but the current CLI neither acquires nor authenticates that
+  evidence.
 - External identifiers do not select or initialize adapters.
 - No network access, credential access, provider invocation, tracking, scheduling, waiting, retry, merge, or filesystem mutation occurs.
 - Custom workflows, provider versions, execution-context selection, discovery,

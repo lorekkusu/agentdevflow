@@ -352,7 +352,7 @@ try {
       "create the corresponding work item in GitHub Issues",
     ) ||
     !draftIssueAgents.includes(
-      "mark the draft pull request ready for review",
+      "ensure the pull request is ready for review; mark it ready only if it is still a draft",
     ) ||
     !draftIssueCursor.includes("create a `draft` pull request")
   ) {
@@ -409,6 +409,80 @@ try {
   const deletionCheck = run(binPath, ["check", "--json"], projectRoot);
   if (JSON.parse(deletionCheck.stdout).outcome !== "clean") {
     throw new Error("Packed agentdevflow did not converge after managed deletion.");
+  }
+  configuration.roles.developer = "codex-main";
+  configuration.providers = configuration.providers.filter(
+    (provider) => provider.id !== "cursor-developer",
+  );
+  await writeFile(
+    configurationPath,
+    `${JSON.stringify(configuration, null, 2)}\n`,
+    "utf8",
+  );
+  const cursorPath = join(
+    projectRoot,
+    ".cursor",
+    "rules",
+    "agentdevflow.mdc",
+  );
+  await unlink(cursorPath);
+  const absentDeletionDiff = run(
+    binPath,
+    ["diff", "--json"],
+    projectRoot,
+    [1],
+  );
+  const absentDeletionReport = JSON.parse(absentDeletionDiff.stdout);
+  if (
+    absentDeletionReport.schemaVersion !== 1 ||
+    absentDeletionReport.outcome !== "changes-required" ||
+    absentDeletionReport.changes.some(
+      (change) =>
+        change.kind === "managed-output" &&
+        change.path === ".cursor/rules/agentdevflow.mdc",
+    ) ||
+    !absentDeletionReport.changes.some(
+      (change) =>
+        change.kind === "render-lock" && change.action === "update",
+    )
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not isolate already-absent output cleanup to ownership state.",
+    );
+  }
+  run(
+    binPath,
+    [
+      "render",
+      "--approve-plan",
+      absentDeletionReport.exactPlanDigest,
+    ],
+    projectRoot,
+  );
+  const absentDeletionCheck = run(
+    binPath,
+    ["check", "--json"],
+    projectRoot,
+  );
+  const contractedLock = JSON.parse(
+    await readFile(
+      join(projectRoot, ".agentdevflow", "lock.json"),
+      "utf8",
+    ),
+  );
+  if (
+    JSON.parse(absentDeletionCheck.stdout).outcome !== "clean" ||
+    contractedLock.files.some(
+      (file) =>
+        file.path === "CLAUDE.md" ||
+        file.path === ".cursor/rules/agentdevflow.mdc",
+    ) ||
+    contractedLock.files.length !== 1 ||
+    contractedLock.files[0]?.path !== "AGENTS.md"
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not converge ownership after an obsolete output was already absent.",
+    );
   }
   await Promise.all([
     readFile(join(projectRoot, "agentdevflow.config.jsonc"), "utf8"),

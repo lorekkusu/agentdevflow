@@ -41,9 +41,9 @@ flowchart TD
     CI -->|Failed| Route["Steward routes exact failure to Developer"]
     Route --> Repair["Developer repairs and publishes a new revision"]
     Repair --> Observe
-    CI -->|Passed, draft| MarkReady["Steward marks pull request ready"]
+    CI -->|Passed, draft flow| EnsureReady["Steward ensures pull request is ready, marking it only if still draft"]
     CI -->|Passed, ready| Review["Reviewer applies the compiled review requirements"]
-    MarkReady --> Review
+    EnsureReady --> Review
     Review -->|Changes requested| Repair
     Review -->|Approved| Authorize["Current evidence authorizes squash merge"]
     Authorize --> Merge["Steward performs external squash merge"]
@@ -62,8 +62,9 @@ The generated Steward procedure:
    Developer;
 3. observes the pull-request identity, current revision, and required CI;
 4. routes exact failed CI evidence back to the Developer;
-5. marks a draft ready after CI passes, or preserves a pull request that
-   started ready;
+5. for a draft-configured flow, ensures the pull request is ready after CI
+   passes and marks it ready only when it is still a draft; a ready-configured
+   flow proceeds without this step;
 6. starts the configured Reviewer under the selected preset's compiled review
    requirements;
 7. performs squash merge only when current-revision CI and the review verdict
