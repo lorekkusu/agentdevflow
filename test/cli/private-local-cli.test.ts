@@ -242,6 +242,33 @@ function invokeIssueInit(
   };
 }
 
+function invokeRule(
+  project: TestProject,
+  args: readonly string[],
+  input?: string | Uint8Array,
+): CommandResult {
+  const result = spawnSync(
+    process.execPath,
+    [
+      entryPoint,
+      "rule",
+      ...args,
+      "--repository",
+      project.repository,
+    ],
+    {
+      encoding: "utf8",
+      ...(input === undefined ? {} : { input }),
+    },
+  );
+  assert.equal(result.error, undefined);
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
 function exactPlanDigest(result: CommandResult): string {
   const match = /^exact-plan-digest: ([a-f0-9]{64})$/mu.exec(result.stdout);
   assert.notEqual(match, null);
@@ -861,6 +888,301 @@ test("rejects oversized and invalid UTF-8 configuration and lock files", async (
   }
 });
 
+test("manages per-rule files while leaving provider outputs for exact-approved render", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  const initialDiff = invoke("diff", project);
+  assert.equal(initialDiff.status, 1);
+  assert.equal(
+    invoke(
+      "render",
+      project,
+      lockPath,
+      exactPlanDigest(initialDiff),
+    ).status,
+    0,
+  );
+  const generatedPaths = [
+    ".cursor/rules/agentdevflow.mdc",
+    "AGENTS.md",
+    "CLAUDE.md",
+  ] as const;
+  const generatedBefore = Object.fromEntries(
+    await Promise.all(
+      generatedPaths.map(async (path) => [
+        path,
+        await readFile(join(project.repository, path), "utf8"),
+      ]),
+    ),
+  );
+
+  const empty = invokeRule(project, ["list", "--json"]);
+  assert.equal(empty.status, 0);
+  assert.deepEqual(JSON.parse(empty.stdout).rules, []);
+
+  const sharedContent = "Run the documented verification before handoff.\n";
+  const addedShared = invokeRule(
+    project,
+    [
+      "add",
+      "verification",
+      "--scope",
+      "shared",
+      "--stdin",
+      "--json",
+    ],
+    sharedContent,
+  );
+  assert.equal(addedShared.status, 0);
+  assert.deepEqual(JSON.parse(addedShared.stdout).rule, {
+    id: "verification",
+    scope: "shared",
+    path: ".agentdevflow/rules/shared/verification.md",
+  });
+
+  await mkdir(join(project.repository, "inputs"));
+  await writeFile(
+    join(project.repository, "inputs/developer.md"),
+    "Keep implementation within the accepted scope.\n",
+    "utf8",
+  );
+  const addedDeveloper = invokeRule(project, [
+    "add",
+    "implementation-scope",
+    "--scope",
+    "developer",
+    "--file",
+    "inputs/developer.md",
+  ]);
+  assert.equal(addedDeveloper.status, 0);
+
+  const listed = invokeRule(project, ["list", "--json"]);
+  assert.equal(listed.status, 0);
+  assert.deepEqual(
+    JSON.parse(listed.stdout).rules.map(
+      (rule: { readonly id: string }) => rule.id,
+    ),
+    ["implementation-scope", "verification"],
+  );
+  const shown = invokeRule(project, ["show", "verification", "--json"]);
+  assert.equal(shown.status, 0);
+  assert.equal(JSON.parse(shown.stdout).rule.content, sharedContent);
+  assert.equal(
+    await readFile(
+      join(
+        project.repository,
+        ".agentdevflow/rules/developer/implementation-scope.md",
+      ),
+      "utf8",
+    ),
+    "Keep implementation within the accepted scope.\n",
+  );
+
+  for (const path of generatedPaths) {
+    assert.equal(
+      await readFile(join(project.repository, path), "utf8"),
+      generatedBefore[path],
+      path,
+    );
+  }
+  const changed = invoke("diff", project);
+  assert.equal(changed.status, 1);
+  assert.match(changed.stdout, /Run the documented verification/u);
+  assert.match(changed.stdout, /Keep implementation within the accepted scope/u);
+
+  const updatedContent =
+    "Run the complete documented verification before handoff.\n";
+  const updated = invokeRule(
+    project,
+    ["update", "verification", "--stdin", "--json"],
+    updatedContent,
+  );
+  assert.equal(updated.status, 0);
+  assert.equal(
+    JSON.parse(
+      invokeRule(project, ["show", "verification", "--json"]).stdout,
+    ).rule.content,
+    updatedContent,
+  );
+  assert.equal(
+    invokeRule(project, [
+      "remove",
+      "implementation-scope",
+      "--json",
+    ]).status,
+    0,
+  );
+  assert.deepEqual(
+    JSON.parse(invokeRule(project, ["list", "--json"]).stdout).rules.map(
+      (rule: { readonly id: string }) => rule.id,
+    ),
+    ["verification"],
+  );
+
+  const finalDiff = invoke("diff", project);
+  assert.equal(finalDiff.status, 1);
+  assert.equal(
+    invoke(
+      "render",
+      project,
+      lockPath,
+      exactPlanDigest(finalDiff),
+    ).status,
+    0,
+  );
+  assert.equal(invoke("check", project).status, 0);
+  for (const path of generatedPaths) {
+    assert.match(
+      await readFile(join(project.repository, path), "utf8"),
+      /Run the complete documented verification before handoff/u,
+      path,
+    );
+  }
+});
+
+test("blocks duplicate, missing, and aggregate rule states without mutation", async (t) => {
+  const project = await testProject(t);
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "verification",
+        "--scope",
+        "shared",
+        "--stdin",
+      ],
+      "Run verification.\n",
+    ).status,
+    0,
+  );
+  const duplicate = invokeRule(
+    project,
+    [
+      "add",
+      "verification",
+      "--scope",
+      "developer",
+      "--stdin",
+      "--json",
+    ],
+    "Different content.\n",
+  );
+  assert.equal(duplicate.status, 2);
+  assert.equal(
+    JSON.parse(duplicate.stdout).diagnostics[0]?.code,
+    "RULE_ALREADY_EXISTS",
+  );
+  for (const [operation, args, input] of [
+    ["show", ["show", "missing", "--json"], undefined],
+    [
+      "update",
+      ["update", "missing", "--stdin", "--json"],
+      "Replacement.\n",
+    ],
+    ["remove", ["remove", "missing", "--json"], undefined],
+  ] as const) {
+    const result = invokeRule(project, args, input);
+    assert.equal(result.status, 2, operation);
+    assert.equal(
+      JSON.parse(result.stdout).diagnostics[0]?.code,
+      "RULE_NOT_FOUND",
+      operation,
+    );
+  }
+
+  const aggregate = await testProject(t);
+  await mkdir(join(aggregate.repository, ".agentdevflow/rules"), {
+    recursive: true,
+  });
+  await writeFile(
+    join(aggregate.repository, ".agentdevflow/rules/shared.md"),
+    "Legacy aggregate guidance.\n",
+    "utf8",
+  );
+  const before = await snapshotDirectory(aggregate.repository);
+  for (const [operation, args, input] of [
+    ["list", ["list", "--json"], undefined],
+    ["show", ["show", "legacy", "--json"], undefined],
+    [
+      "add",
+      ["add", "new-rule", "--scope", "shared", "--stdin", "--json"],
+      "New content.\n",
+    ],
+    [
+      "update",
+      ["update", "legacy", "--stdin", "--json"],
+      "Updated content.\n",
+    ],
+    ["remove", ["remove", "legacy", "--json"], undefined],
+  ] as const) {
+    const result = invokeRule(aggregate, args, input);
+    assert.equal(result.status, 2, operation);
+    const report = JSON.parse(result.stdout);
+    assert.equal(
+      report.diagnostics[0]?.code,
+      "RULE_AGGREGATE_LAYOUT_UNSUPPORTED",
+      operation,
+    );
+    assert.match(
+      report.diagnostics[0]?.message ?? "",
+      /\.agentdevflow\/rules\/shared\/shared-guidance\.md/u,
+      operation,
+    );
+    assert.deepEqual(
+      await snapshotDirectory(aggregate.repository),
+      before,
+      operation,
+    );
+  }
+});
+
+test("invalidates a reviewed render plan when canonical rules change", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  const reviewed = invoke("diff", project);
+  assert.equal(reviewed.status, 1);
+  const staleDigest = exactPlanDigest(reviewed);
+
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "verification",
+        "--scope",
+        "shared",
+        "--stdin",
+      ],
+      "Run verification before handoff.\n",
+    ).status,
+    0,
+  );
+  const staleRender = invoke("render", project, lockPath, staleDigest);
+  assert.equal(staleRender.status, 2);
+  assert.match(staleRender.stdout, /CLI_PLAN_APPROVAL_MISMATCH/u);
+  await assert.rejects(
+    () => readFile(join(project.repository, "AGENTS.md"), "utf8"),
+  );
+  await assert.rejects(
+    () => readFile(join(project.repository, lockPath), "utf8"),
+  );
+
+  const current = invoke("diff", project);
+  assert.equal(current.status, 1);
+  assert.notEqual(exactPlanDigest(current), staleDigest);
+  assert.equal(
+    invoke(
+      "render",
+      project,
+      lockPath,
+      exactPlanDigest(current),
+    ).status,
+    0,
+  );
+  assert.equal(invoke("check", project).status, 0);
+});
+
 test("prints bounded private help without requiring a CLI framework", () => {
   const result = spawnSync(process.execPath, [entryPoint, "--help"], {
     encoding: "utf8",
@@ -870,10 +1192,11 @@ test("prints bounded private help without requiring a CLI framework", () => {
   assert.match(result.stdout, /^Usage:\n/u);
   assert.match(result.stdout, /Check and diff are read-only\./u);
   assert.match(result.stdout, /Render requires an exact plan digest from diff\./u);
+  assert.match(result.stdout, /agentdevflow rule list/u);
 });
 
 test("prints focused help for every beta command", () => {
-  for (const command of ["init", "check", "diff", "render"]) {
+  for (const command of ["init", "check", "diff", "render", "rule"]) {
     const result = spawnSync(process.execPath, [entryPoint, command, "--help"], {
       encoding: "utf8",
     });
@@ -906,6 +1229,30 @@ test("prints focused help for every beta command", () => {
   });
   assert.match(render.stdout, /stale or foreign state fails closed/u);
   assert.match(render.stdout, /whole-file managed targets/u);
+
+  const rule = spawnSync(process.execPath, [entryPoint, "rule", "--help"], {
+    encoding: "utf8",
+  });
+  assert.match(rule.stdout, /rule list/u);
+  assert.match(rule.stdout, /globally unique lowercase ASCII slugs/u);
+  assert.match(rule.stdout, /Run diff and exact-approved render separately/u);
+
+  for (const operation of ["list", "show", "add", "update", "remove"]) {
+    const operationHelp = spawnSync(
+      process.execPath,
+      [entryPoint, "rule", operation, "--help"],
+      { encoding: "utf8" },
+    );
+    assert.equal(
+      operationHelp.status,
+      0,
+      `${operation}: ${operationHelp.stderr}`,
+    );
+    assert.match(
+      operationHelp.stdout,
+      new RegExp(`agentdevflow rule ${operation}`, "u"),
+    );
+  }
 });
 
 test("executes through an npm-style symbolic link", async (t) => {

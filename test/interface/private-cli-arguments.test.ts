@@ -5,6 +5,7 @@ import {
   parsePrivateCliArguments,
   type PrivateCliArgumentResult,
 } from "../../src/interface/private-cli-arguments.js";
+import { privateProjectGuidanceRuleIdMaxLength } from "../../src/guidance/private-project-guidance.js";
 import {
   balancedInitArguments,
   ownerIssueInitArguments,
@@ -23,7 +24,7 @@ function expectFailure(
   assert.equal(result.ok, false);
 }
 
-test("represents all four beta commands without filesystem discovery", () => {
+test("represents every supported top-level command without filesystem discovery", () => {
   const digest = "a".repeat(64);
   const cases = [
     [
@@ -56,6 +57,7 @@ test("represents all four beta commands without filesystem discovery", () => {
       digest,
     ],
     balancedInitArguments,
+    ["rule", "list"],
   ] as const;
 
   const commands = cases.map((args) => {
@@ -63,7 +65,7 @@ test("represents all four beta commands without filesystem discovery", () => {
     expectSuccess(result);
     return result.invocation.command;
   });
-  assert.deepEqual(commands, ["check", "diff", "render", "init"]);
+  assert.deepEqual(commands, ["check", "diff", "render", "init", "rule"]);
 });
 
 test("retains explicit repository, configuration, and lock paths", () => {
@@ -357,6 +359,272 @@ test("surfaces revision-1 project resolution failures from flag input", () => {
       code: "INVALID_CONFIGURATION",
       path: "$.roles.reviewer",
       message: "Responsibility reviewer references unknown provider missing-reviewer.",
+    },
+  ]);
+});
+
+test("parses the complete rule command family into typed invocations", () => {
+  const cases = [
+    {
+      args: ["rule", "list"],
+      invocation: {
+        command: "rule",
+        operation: "list",
+        repositoryPath: ".",
+        outputFormat: "human",
+      },
+    },
+    {
+      args: ["rule", "show", "review-required", "--json"],
+      invocation: {
+        command: "rule",
+        operation: "show",
+        repositoryPath: ".",
+        ruleId: "review-required",
+        outputFormat: "json",
+      },
+    },
+    {
+      args: [
+        "rule",
+        "add",
+        "run-tests",
+        "--scope",
+        "developer",
+        "--file",
+        "guidance/run-tests.md",
+        "--repository",
+        "project",
+        "--json",
+      ],
+      invocation: {
+        command: "rule",
+        operation: "add",
+        repositoryPath: "project",
+        ruleId: "run-tests",
+        scope: "developer",
+        input: { kind: "file", path: "guidance/run-tests.md" },
+        outputFormat: "json",
+      },
+    },
+    {
+      args: ["rule", "update", "run-tests", "--stdin"],
+      invocation: {
+        command: "rule",
+        operation: "update",
+        repositoryPath: ".",
+        ruleId: "run-tests",
+        input: { kind: "stdin" },
+        outputFormat: "human",
+      },
+    },
+    {
+      args: [
+        "rule",
+        "remove",
+        "run-tests",
+        "--repository",
+        "project",
+        "--json",
+      ],
+      invocation: {
+        command: "rule",
+        operation: "remove",
+        repositoryPath: "project",
+        ruleId: "run-tests",
+        outputFormat: "json",
+      },
+    },
+  ] as const;
+
+  for (const specimen of cases) {
+    const result = parsePrivateCliArguments(specimen.args);
+    expectSuccess(result);
+    assert.deepEqual(result.invocation, specimen.invocation);
+  }
+});
+
+test("accepts each closed rule scope", () => {
+  for (const scope of ["shared", "steward", "developer", "reviewer"] as const) {
+    const result = parsePrivateCliArguments([
+      "rule",
+      "add",
+      `${scope}-guidance`,
+      "--scope",
+      scope,
+      "--stdin",
+    ]);
+    expectSuccess(result);
+    assert.equal(result.invocation.command, "rule");
+    if (
+      result.invocation.command !== "rule" ||
+      result.invocation.operation !== "add"
+    ) {
+      return;
+    }
+    assert.equal(result.invocation.scope, scope);
+  }
+});
+
+test("requires exactly one rule content source", () => {
+  const cases = [
+    ["rule", "add", "run-tests", "--scope", "developer"],
+    [
+      "rule",
+      "add",
+      "run-tests",
+      "--scope",
+      "developer",
+      "--file",
+      "rule.md",
+      "--stdin",
+    ],
+    ["rule", "update", "run-tests"],
+    [
+      "rule",
+      "update",
+      "run-tests",
+      "--file",
+      "rule.md",
+      "--stdin",
+    ],
+  ] as const;
+
+  for (const args of cases) {
+    const result = parsePrivateCliArguments(args);
+    expectFailure(result);
+    assert.deepEqual(result.diagnostics, [
+      {
+        code: "INVALID_ARGUMENTS",
+        message: "Exactly one of --file or --stdin is required.",
+      },
+    ]);
+  }
+});
+
+test("rejects unsafe rule ids and absolute content paths", () => {
+  const unsafeIds = [
+    "../escape",
+    "Uppercase",
+    "two_words",
+    "two--words",
+    "trailing-",
+    ".hidden",
+    "rule-\u{1f4a5}",
+    "a".repeat(privateProjectGuidanceRuleIdMaxLength + 1),
+    "aux",
+    "com1",
+    "con",
+    "lpt9",
+    "nul",
+    "prn",
+  ];
+  for (const ruleId of unsafeIds) {
+    const result = parsePrivateCliArguments(["rule", "show", ruleId]);
+    expectFailure(result);
+    assert.equal(result.diagnostics[0]?.code, "INVALID_RULE_ID");
+  }
+  expectSuccess(
+    parsePrivateCliArguments([
+      "rule",
+      "show",
+      "a".repeat(privateProjectGuidanceRuleIdMaxLength),
+    ]),
+  );
+
+  for (const path of ["/tmp/rule.md", "C:\\temp\\rule.md"]) {
+    const result = parsePrivateCliArguments([
+      "rule",
+      "update",
+      "run-tests",
+      "--file",
+      path,
+    ]);
+    expectFailure(result);
+    assert.deepEqual(result.diagnostics, [
+      {
+        code: "INVALID_OPTION_VALUE",
+        option: "--file",
+        message: "Option --file must be a repository-relative path.",
+      },
+    ]);
+  }
+});
+
+test("rejects an empty rule content file option", () => {
+  const result = parsePrivateCliArguments([
+    "rule",
+    "update",
+    "run-tests",
+    "--file",
+    "",
+  ]);
+  expectFailure(result);
+  assert.deepEqual(result.diagnostics, [
+    {
+      code: "INVALID_OPTION_VALUE",
+      option: "--file",
+      message: "Option --file must not be empty.",
+    },
+  ]);
+});
+
+test("rejects missing, unknown, and extra rule command syntax", () => {
+  const cases = [
+    {
+      args: ["rule"],
+      code: "MISSING_RULE_OPERATION",
+    },
+    {
+      args: ["rule", "rename", "run-tests"],
+      code: "UNKNOWN_RULE_OPERATION",
+    },
+    {
+      args: ["rule", "show"],
+      code: "INVALID_ARGUMENTS",
+    },
+    {
+      args: ["rule", "list", "extra"],
+      code: "INVALID_ARGUMENTS",
+    },
+    {
+      args: ["rule", "remove", "run-tests", "extra"],
+      code: "INVALID_ARGUMENTS",
+    },
+    {
+      args: ["rule", "add", "run-tests", "--scope", "project", "--stdin"],
+      code: "INVALID_OPTION_VALUE",
+    },
+    {
+      args: ["rule", "show", "run-tests", "--unknown"],
+      code: "INVALID_ARGUMENTS",
+    },
+  ] as const;
+
+  for (const specimen of cases) {
+    const result = parsePrivateCliArguments(specimen.args);
+    expectFailure(result);
+    assert.equal(result.diagnostics[0]?.code, specimen.code);
+  }
+});
+
+test("rejects duplicate rule options deterministically", () => {
+  const result = parsePrivateCliArguments([
+    "rule",
+    "add",
+    "run-tests",
+    "--scope",
+    "developer",
+    "--scope",
+    "reviewer",
+    "--stdin",
+  ]);
+  expectFailure(result);
+  assert.deepEqual(result.diagnostics, [
+    {
+      code: "DUPLICATE_OPTION",
+      option: "--scope",
+      message: "Option --scope must not be repeated.",
     },
   ]);
 });

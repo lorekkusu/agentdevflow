@@ -51,7 +51,10 @@ export interface PreparePrivateDomainProjectPlanOptions
   readonly content: string;
   readonly lockPath: string;
   readonly workspace: RenderReadWorkspace &
-    Pick<PrivateFilesystemReadWorkspace, "readBounded">;
+    Pick<
+      PrivateFilesystemReadWorkspace,
+      "listDirectoryBounded" | "readBounded"
+    >;
 }
 
 export interface PrivateDomainProjectPlanDiagnostic {
@@ -60,7 +63,10 @@ export interface PrivateDomainProjectPlanDiagnostic {
     | "BASE_LOCK_INVALID"
     | "LOCK_READ_FAILED"
     | "PROJECT_GUIDANCE_READ_FAILED"
-    | "PROVIDER_PRODUCT_TARGET_AMBIGUOUS";
+    | "PROVIDER_PRODUCT_TARGET_AMBIGUOUS"
+    | "RULE_AGGREGATE_LAYOUT_UNSUPPORTED"
+    | "RULE_ID_DUPLICATE"
+    | "RULE_ID_INVALID";
   readonly path: string;
   readonly message: string;
 }

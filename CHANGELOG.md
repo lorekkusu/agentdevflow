@@ -11,9 +11,10 @@ All notable public changes will be recorded in this file. During beta, incompati
   state, pull-request-host id, and CI id.
 - Compile distinct Steward, Developer, and Reviewer procedures into the native
   Codex, Claude Code, and Cursor outputs.
-- Read optional user-owned Markdown guidance from
-  `.agentdevflow/rules/shared.md`, `steward.md`, `developer.md`, and
-  `reviewer.md`.
+- Add bounded human and JSON `rule list`, `rule show`, `rule add`, `rule
+  update`, and `rule remove` commands over globally unique rule ids.
+- Read optional user-owned Markdown rules from fixed shared, Steward,
+  Developer, and Reviewer scope directories.
 - Add an idempotent draft-to-ready procedure after required CI succeeds. It
   marks the pull request ready only when it is still a draft.
 
@@ -27,18 +28,25 @@ All notable public changes will be recorded in this file. During beta, incompati
 - Reject multiple configured ids for one provider product because its single
   project-wide instruction target cannot isolate them.
 - Establish the root `ROADMAP.md` as the durable requirement ledger and record
-  the accepted rule-management, existing-project onboarding,
-  external-agent-operated onboarding, interactive wizard, and Strict preset
-  sequence without claiming those capabilities are already implemented.
+  the rule-management, existing-project onboarding, external-agent-operated
+  onboarding, interactive wizard, and Strict preset sequence. Completion
+  evidence now distinguishes implemented rule management from later work.
 - Remove the unused high-risk-evidence placeholder from Fast and Balanced
   profiles and keep the unavailable Strict diagnostic neutral until its exact
   safety properties are accepted.
+- Keep rule mutations separate from provider rendering: rule commands change
+  one canonical source, while generated files and the ownership lock still
+  require `diff` and exact-approved `render`.
+- Fail closed with exact manual-move guidance when an unreleased aggregate rule
+  path is present. Do not add automatic migration or a dual reader.
+- Reject rule ids longer than 64 ASCII characters and Windows reserved
+  basenames so every accepted id remains a portable filename.
 
 ### Removed
 
 - Remove the low-value caller-supplied observation command from the current
-  CLI and runtime. The current command set is `init`, `diff`, `render`, and
-  `check`.
+  CLI and runtime. The current command set is `init`, `diff`, `render`,
+  `check`, and the bounded `rule` command family.
 - Remove obsolete research systems and detailed evidence whose conclusions are
   already represented by current architecture decisions or Git history.
 
@@ -56,6 +64,12 @@ All notable public changes will be recorded in this file. During beta, incompati
   responsibilities or integration ids rather than provider ids.
 - Existing generated files remain subject to the complete diff, exact approval,
   whole-file ownership, and drift rules.
+- Published `0.1.0-beta.2` projects require no aggregate-rule migration because
+  that package did not contain the unreleased guidance reader. A repository
+  that evaluated the intervening source tree must manually move any
+  `.agentdevflow/rules/<scope>.md` bytes to a non-conflicting
+  `.agentdevflow/rules/<scope>/<rule-id>.md` path before retrying; the CLI never
+  performs that move.
 
 The release sections below are historical snapshots. Their command and workflow
 lists do not describe the unreleased candidate above.

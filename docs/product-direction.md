@@ -45,16 +45,15 @@ The current unreleased candidate supports:
 - Fast and Balanced policy presets;
 - provider-neutral Steward, Developer, and Reviewer assignments;
 - Codex, Claude Code, and Cursor native outputs;
-- four optional canonical Markdown rule files under
-  `.agentdevflow/rules/`;
+- bounded `rule list`, `show`, `add`, `update`, and `remove` commands over
+  optional per-rule Markdown sources under `.agentdevflow/rules/`;
 - complete deterministic planning, exact digest approval, whole-file
   ownership, safe existing-file adoption, and drift checking.
 
 This is the current unreleased implementation, not the complete accepted
 adoption experience. The authoritative [product roadmap](../ROADMAP.md) adds
-minimal rule commands, existing-project onboarding, user-selected
-external-agent operation, an interactive wizard, and Strict before the next
-beta release.
+existing-project onboarding, user-selected external-agent operation, an
+interactive wizard, and Strict before the next beta release.
 
 The issue workflow produces advisory procedures. It does not call Linear,
 GitHub, CI, agent processes, or merge APIs. Agents use the tools available in
@@ -109,28 +108,28 @@ until multiple real product cases require a stable extension boundary.
 Projects may add:
 
 ```text
-.agentdevflow/rules/shared.md
-.agentdevflow/rules/steward.md
-.agentdevflow/rules/developer.md
-.agentdevflow/rules/reviewer.md
+.agentdevflow/rules/shared/<rule-id>.md
+.agentdevflow/rules/steward/<rule-id>.md
+.agentdevflow/rules/developer/<rule-id>.md
+.agentdevflow/rules/reviewer/<rule-id>.md
 ```
 
 These Markdown files are user-owned inputs. Provider files are
 responsibility-specific generated projections. Direct edits to generated files
 are drift; they are not a second rule store.
 
-The current candidate reads four aggregate files and has no rule commands. The
-accepted next rule surface replaces that aggregate representation with one
-Markdown file per stable rule id under fixed shared and responsibility scope
-directories. People, agents, and scripts will manage those files through
-`rule list`, `show`, `add`, `update`, and `remove`; generated outputs will still
-change only through the normal diff, render, and check path.
+The current rule surface uses one Markdown file per globally unique, stable
+rule id under fixed shared and responsibility scope directories. People,
+agents, and scripts manage those files through `rule list`, `show`, `add`,
+`update`, and `remove`; generated outputs still change only through the normal
+diff, render, and check path.
 
 This accepted outcome does not justify a rule index, database, public rule DSL,
 source/provider composite transaction, provider-instance scope, semantic merge,
-or second approval model. The current aggregate files remain user-owned input
-until the roadmap's explicit migration and mixed-layout contract is accepted
-and implemented; they must not be silently ignored or deleted.
+or second approval model. Four aggregate paths existed only in an unreleased
+working-tree candidate and were never part of the published beta. The accepted
+implementation detects and blocks those paths with exact manual-move guidance;
+it does not add a public migration command, dual reader, or automatic mutation.
 
 ## Presets
 

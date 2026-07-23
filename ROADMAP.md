@@ -61,112 +61,8 @@ render ownership, or final check.
 
 ## Current sequence
 
-### 1. Minimal project-rule management
-
-Status: **Decision required**
-
-The user outcome and command family are accepted. The aggregate-rule migration
-decision below must be accepted before implementation.
-
-#### User outcome
-
-People, coding agents, and scripts can list, inspect, add, update, and remove
-project-owned rules without editing generated provider files or reverse
-engineering an internal storage format.
-
-The accepted command family is:
-
-```text
-agentdevflow rule list [--json]
-agentdevflow rule show <id> [--json]
-agentdevflow rule add <id> --scope <scope> (--file <path> | --stdin)
-agentdevflow rule update <id> (--file <path> | --stdin)
-agentdevflow rule remove <id>
-```
-
-The initial closed scope set is:
-
-```text
-shared
-steward
-developer
-reviewer
-```
-
-Each rule is one user-owned Markdown file. Its safe filename is its stable rule
-id, and its parent scope directory determines where it applies:
-
-```text
-.agentdevflow/rules/shared/<rule-id>.md
-.agentdevflow/rules/steward/<rule-id>.md
-.agentdevflow/rules/developer/<rule-id>.md
-.agentdevflow/rules/reviewer/<rule-id>.md
-```
-
-Rule ids use lowercase ASCII slugs matching
-`[a-z0-9]+(?:-[a-z0-9]+)*` and are globally unique across every scope.
-`update` changes content without changing scope. Moving a rule between scopes
-requires an explicit remove and add. Composition is deterministic: shared rules
-are ordered by rule id, and assigned responsibility rules are ordered by rule id
-inside each fixed responsibility section.
-
-Rule commands mutate only canonical rule sources. Provider outputs continue
-through the existing `diff -> render -> check` path.
-
-#### Aggregate-rule migration decision
-
-The current beta reads four aggregate files at
-`.agentdevflow/rules/{shared,steward,developer,reviewer}.md`. They must never
-become silently ignored when per-rule directories are introduced.
-
-Before implementation, accept one bounded transition contract. The current
-recommendation is a one-shot, explicit migration that preserves the exact
-aggregate Markdown as named rules, refuses target collisions, and fails closed
-with exact paths when aggregate and per-rule layouts coexist. This avoids an
-indefinite dual reader and avoids automatic mutation during ordinary planning.
-The exact migration command and retry behavior remain a public-contract
-decision.
-
-#### Acceptance criteria
-
-- Human and JSON output are bounded, deterministic, and documented.
-- Rule ids reject traversal, ambiguous normalization, unsafe filenames, and
-  duplicates.
-- Directly created invalid rule entries fail with path-specific diagnostics;
-  unrelated files outside the recognized immediate `*.md` entries are not
-  discovered as rules.
-- `add` fails when the id already exists; `update`, `show`, and `remove` fail
-  when it does not.
-- `--file` and `--stdin` have explicit size and regular-file boundaries.
-- A shared rule reaches every configured provider output.
-- A role rule reaches only providers assigned that role.
-- A rule change creates a deterministic provider diff and invalidates an older
-  render approval.
-- Generated provider instructions explain that canonical rules are managed
-  with the `rule` commands and outputs must not be edited directly.
-- Installed-package tests cover the command family through the real npm bin.
-- Aggregate-only, per-rule-only, mixed-layout, collision, interruption, and
-  completed-migration cases have installed-bin regression coverage. No
-  aggregate guidance is silently ignored or deleted.
-
-#### Non-goals
-
-- No database, manifest, index, provenance ledger, public rule DSL, or rule
-  ordering language.
-- No provider-instance, nested, path-specific, conditional, inherited, or
-  dynamically evaluated scope in this milestone.
-- No source/provider composite transaction, second approval model, backup
-  system, lease, journal, or Git integration.
-- No semantic merge, automatic conflict resolution, or direct generated-file
-  editing.
-- No indefinite dual storage model or implicit migration during `diff`,
-  `render`, or `check`.
-
-#### Evidence
-
-Pending implementation. Current absence is evidenced by
-`src/interface/private-cli-arguments.ts:16` and
-`docs/development/instruction-composition.md`.
+Item 1 is complete and compressed in the completion summary. The remaining
+numbers preserve the accepted dependency order.
 
 ### 2. Existing-project onboarding
 
@@ -590,17 +486,15 @@ accepted milestone.
 
 Only the following current decisions remain open:
 
-1. the aggregate-rule migration command, mixed-layout behavior, and retry
-   contract described in item 1;
-2. the manual onboarding command, classification output, and reproducible
+1. the manual onboarding command, classification output, and reproducible
    per-target replacement authorization described in item 2;
-3. the exact additional finite safety properties that distinguish Strict from
+2. the exact additional finite safety properties that distinguish Strict from
    Balanced;
-4. the final interactive wizard questions and whether no-argument invocation or
+3. the final interactive wizard questions and whether no-argument invocation or
    an explicit command is the primary entry point;
-5. the final launcher command and mode flags, qualified version ranges, and
+4. the final launcher command and mode flags, qualified version ranges, and
    public support tier for each external-agent launcher; and
-6. the next beta version after the implemented public scope is fixed.
+5. the next beta version after the implemented public scope is fixed.
 
 These decisions must be resolved before their corresponding public contracts
 are finalized. They do not reopen the accepted outcomes or reorder the current
@@ -643,3 +537,4 @@ test, and evidence documents.
 | Bounded maintainer dogfood exercised distinct roles, Linear, Cursor delegation, CI failure repair, fresh review after rework, squash merge, issue closure, and branch cleanup | `docs/development/maintainer-dogfood.md` |
 | Overbuilt transaction, recovery, execution-transport, old-schema, second-writer, and indexed-rule mechanisms were removed while their useful conclusions were retained | `docs/development/engineering-boundary.md`; `docs/development/project-health.md`; Git history |
 | Root roadmap authority, update rules, completion evidence, and the known former duplicate-path check established | `ROADMAP.md`; `AGENTS.md`; `scripts/check-repository.mjs`; `test/repository/check-repository.test.ts` |
+| Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, role-specific composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |

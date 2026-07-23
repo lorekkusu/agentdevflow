@@ -2,9 +2,9 @@
 
 ## Scope
 
-This document maps the current four-command implementation to reproducible
-coverage. It does not claim that the unreleased working tree has passed
-external dogfood or has been published.
+This document maps the current CLI implementation to reproducible coverage. It
+does not claim that the unreleased working tree has passed external dogfood or
+has been published.
 
 Implementation:
 
@@ -14,16 +14,22 @@ Implementation:
 - `src/application/private-domain-project-plan.ts`;
 - `src/commands/private-check-command-service.ts`;
 - `src/commands/private-diff-command-service.ts`;
-- `src/commands/private-render-command-service.ts`.
+- `src/commands/private-render-command-service.ts`;
+- `src/commands/private-rule-command-service.ts`;
+- `src/cli/private-rule-input.ts`;
+- `src/guidance/private-project-guidance.ts`.
 
 Primary tests:
 
 - `test/interface/private-cli-arguments.test.ts`;
+- `test/cli/private-local-cli-output.test.ts`;
 - `test/cli/private-local-cli.test.ts`;
+- `test/cli/private-rule-input.test.ts`;
 - `test/commands/private-check-command-service.test.ts`;
 - `test/commands/private-diff-command-service.test.ts`;
 - `test/commands/private-render-command-service.test.ts`;
-- `test/commands/private-render-command-subprocess.test.ts`.
+- `test/commands/private-render-command-subprocess.test.ts`;
+- `test/guidance/private-project-guidance.test.ts`.
 
 ## Current command surface
 
@@ -32,6 +38,11 @@ agentdevflow init ...
 agentdevflow diff ...
 agentdevflow render --approve-plan <exact-plan-digest> ...
 agentdevflow check ...
+agentdevflow rule list ...
+agentdevflow rule show <id> ...
+agentdevflow rule add <id> --scope <scope> (--file <path> | --stdin) ...
+agentdevflow rule update <id> (--file <path> | --stdin) ...
+agentdevflow rule remove <id> ...
 ```
 
 `init` accepts:
@@ -55,12 +66,12 @@ Every plan is derived from:
 - current provider target bytes;
 - current ownership lock bytes.
 
-The four canonical guidance paths are:
+Canonical guidance is discovered from immediate `<rule-id>.md` files under:
 
-- `.agentdevflow/rules/shared.md`;
-- `.agentdevflow/rules/steward.md`;
-- `.agentdevflow/rules/developer.md`;
-- `.agentdevflow/rules/reviewer.md`.
+- `.agentdevflow/rules/shared/`;
+- `.agentdevflow/rules/steward/`;
+- `.agentdevflow/rules/developer/`;
+- `.agentdevflow/rules/reviewer/`.
 
 Source edits therefore change the exact plan. They do not require another
 command, approval store, or transaction boundary.
@@ -73,10 +84,13 @@ command, approval store, or transaction boundary.
 - `render` rereads and replans through the mutable workspace, rejects stale
   approval, writes provider files, and publishes the lock last.
 - `check` is read-only and reports clean, changes-required, or blocked state.
+- `rule list` and `rule show` read the deterministic canonical catalog.
+- `rule add`, `rule update`, and `rule remove` mutate one canonical rule file
+  without writing provider outputs or the ownership lock.
 
-All commands support bounded human or schema-version-1 JSON output. Exit `0`
-means clean or successful, `1` means reviewable changes, and `2` means blocked
-or invalid.
+All command families support bounded human or schema-version-1 JSON output.
+Exit `0` means clean or successful, `1` means reviewable changes, and `2`
+means blocked or invalid.
 
 ## External-system limit
 
@@ -96,7 +110,7 @@ npm run check:package-entrypoint
 npm pack --dry-run --json
 ```
 
-Installed-entrypoint qualification must cover both workflow families,
-canonical guidance routing, responsibility-specific outputs, exact-approved
-render, clean check, repeated clean diff, stale approval, and generated-file
-drift.
+Installed-entrypoint qualification must cover both workflow families, all five
+rule operations, canonical guidance routing, responsibility-specific outputs,
+exact-approved render, clean check, repeated clean diff, stale approval,
+generated-file drift, and fail-closed aggregate-layout diagnostics.

@@ -18,7 +18,10 @@ The current command set is:
   configuration;
 - `diff`: read the repository and show the complete recognized target;
 - `render`: apply only the current plan whose exact digest was reviewed;
-- `check`: report clean, changes-required, or blocked state without mutation.
+- `check`: report clean, changes-required, or blocked state without mutation;
+- `rule list` and `rule show`: inspect canonical project rules; and
+- `rule add`, `rule update`, and `rule remove`: mutate only one canonical
+  project-rule file per invocation.
 
 No command runs agents, calls external services, probes credentials, or manages
 Git.
@@ -36,15 +39,38 @@ Commands use the current working directory as the exact root unless
 Configuration and lock paths must remain below the selected root. Absolute
 paths, traversal, symlinks, and non-regular files fail closed.
 
-Canonical user guidance is read only from:
+Canonical user guidance is discovered from immediate Markdown files under:
 
-- `.agentdevflow/rules/shared.md`;
-- `.agentdevflow/rules/steward.md`;
-- `.agentdevflow/rules/developer.md`;
-- `.agentdevflow/rules/reviewer.md`.
+- `.agentdevflow/rules/shared/`;
+- `.agentdevflow/rules/steward/`;
+- `.agentdevflow/rules/developer/`;
+- `.agentdevflow/rules/reviewer/`.
 
-These paths are optional, user-owned, and not configurable in the current
+Each filename is `<rule-id>.md`; ids are globally unique lowercase ASCII slugs
+of at most 64 characters and may not use Windows reserved basenames. Rule files
+are optional, user-owned, bounded UTF-8, and not configurable in the current
 candidate.
+
+The former aggregate paths ending directly in `shared.md`, `steward.md`,
+`developer.md`, or `reviewer.md` were never published. Their presence blocks
+planning and rule commands with exact manual-move guidance. No command
+automatically migrates, ignores, or deletes them.
+
+## Rule commands
+
+`rule list` returns sorted id, scope, and path summaries. `rule show` also
+returns exact content. `add` requires a new globally unique id and a fixed
+scope. `update` preserves scope, and `remove` requires an existing id.
+
+`add` and `update` require exactly one of:
+
+- `--file <repository-relative-path>`; or
+- `--stdin`.
+
+Every rule operation accepts `--repository <path>` and `--json`. Input and
+output are bounded. A mutation invocation authorizes only its one canonical
+file; provider files and the ownership lock still change only through
+`diff -> render -> check`.
 
 ## Init choices
 
@@ -144,14 +170,14 @@ diagnostic, not by disclosing the foreign bytes.
 
 The finite-state compiler representation and arbitrary workflow topology are
 private. The CLI does not expose a plugin ABI, workflow language, orchestration
-runtime, external evidence protocol, rule CRUD surface, migration command,
-Strict or Custom preset, auxiliary-review setting, or non-squash merge option.
+runtime, external evidence protocol, aggregate migration command, rule index,
+public rule DSL, Strict or Custom preset, auxiliary-review setting, or
+non-squash merge option.
 
 This list describes the current executable contract. The root
-[product roadmap](../../ROADMAP.md) accepts a bounded replacement for the rule
-surface plus existing-project onboarding, external-agent operation, a wizard,
-and Strict. Those items are not current CLI claims until their acceptance
-criteria pass.
+[product roadmap](../../ROADMAP.md) accepts existing-project onboarding,
+external-agent operation, a wizard, and Strict. Those items are not current CLI
+claims until their acceptance criteria pass.
 
 ## Historical release boundary
 

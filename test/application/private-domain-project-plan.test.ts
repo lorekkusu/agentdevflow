@@ -139,14 +139,19 @@ test("creates a deterministic exact plan from revision-1 configuration bytes", a
 
 test("rereads user-owned guidance and binds it into provider-specific plans", async (t) => {
   const repository = await temporaryRepository(t);
-  await mkdir(join(repository, ".agentdevflow/rules"), { recursive: true });
+  await mkdir(join(repository, ".agentdevflow/rules/shared"), {
+    recursive: true,
+  });
+  await mkdir(join(repository, ".agentdevflow/rules/developer"), {
+    recursive: true,
+  });
   await writeFile(
-    join(repository, ".agentdevflow/rules/shared.md"),
+    join(repository, ".agentdevflow/rules/shared/verification.md"),
     "Report verification before handoff.\n",
     "utf8",
   );
   await writeFile(
-    join(repository, ".agentdevflow/rules/developer.md"),
+    join(repository, ".agentdevflow/rules/developer/implementation-scope.md"),
     "Keep changes within the accepted plan.\n",
     "utf8",
   );
@@ -175,7 +180,7 @@ test("rereads user-owned guidance and binds it into provider-specific plans", as
   assert.doesNotMatch(firstClaude, /Keep changes within the accepted plan/u);
 
   await writeFile(
-    join(repository, ".agentdevflow/rules/developer.md"),
+    join(repository, ".agentdevflow/rules/developer/implementation-scope.md"),
     "Run the complete verification command before handoff.\n",
     "utf8",
   );
@@ -453,6 +458,9 @@ test("reports a lock observation failure without requesting mutation access", as
       },
       async readBounded() {
         throw new Error("fixture bounded read failure");
+      },
+      async listDirectoryBounded() {
+        throw new Error("fixture directory read failure");
       },
     },
   });

@@ -3,9 +3,19 @@ import test from "node:test";
 
 import {
   composePrivateProviderInstructionViews,
+  emptyPrivateProjectGuidance,
+  flattenPrivateProjectGuidanceRules,
+  privateProjectGuidanceAggregateManualTargets,
+  privateProjectGuidanceAggregatePaths,
+  privateProjectGuidanceDirectoryMaxEntries,
   privateProjectGuidanceFileMaxBytes,
-  privateProjectGuidancePaths,
+  privateProjectGuidanceRuleIdMaxLength,
+  privateProjectGuidanceRulePath,
+  privateProjectGuidanceRulesRoot,
   readPrivateProjectGuidance,
+  type PrivateProjectGuidance,
+  type PrivateProjectGuidanceRule,
+  type PrivateProjectGuidanceScope,
 } from "../../src/guidance/private-project-guidance.js";
 import { compilePrivateDomainProjectDocument } from "../../src/interface/private-domain-project-document.js";
 import type {
@@ -35,44 +45,162 @@ function compile(
   return result.project;
 }
 
-test("reads exactly four optional bounded Markdown inputs", async () => {
-  const calls: [string, number][] = [];
+function rule(
+  scope: PrivateProjectGuidanceScope,
+  id: string,
+  content: string,
+): PrivateProjectGuidanceRule {
+  return {
+    id,
+    scope,
+    path: privateProjectGuidanceRulePath(scope, id),
+    content,
+  };
+}
+
+function guidance(
+  content: Partial<Record<PrivateProjectGuidanceScope, string>> = {},
+): PrivateProjectGuidance {
+  return {
+    shared:
+      content.shared === undefined
+        ? []
+        : [rule("shared", "shared-rule", content.shared)],
+    steward:
+      content.steward === undefined
+        ? []
+        : [rule("steward", "steward-rule", content.steward)],
+    developer:
+      content.developer === undefined
+        ? []
+        : [rule("developer", "developer-rule", content.developer)],
+    reviewer:
+      content.reviewer === undefined
+        ? []
+        : [rule("reviewer", "reviewer-rule", content.reviewer)],
+  };
+}
+
+test("reads per-rule Markdown in deterministic id order and ignores unrelated entries", async () => {
+  const listCalls: [string, number][] = [];
+  const readCalls: [string, number][] = [];
   const content = new Map<string, string>([
-    [privateProjectGuidancePaths.shared, "Shared exact bytes.\r\n"],
-    [privateProjectGuidancePaths.developer, "Developer only.\n"],
+    [
+      privateProjectGuidanceRulePath("shared", "zeta-rule"),
+      "Shared zeta bytes.\r\n",
+    ],
+    [
+      privateProjectGuidanceRulePath("shared", "alpha-rule"),
+      "Shared alpha bytes.\n",
+    ],
+    [
+      privateProjectGuidanceRulePath("developer", "developer-rule"),
+      "Developer only.\n",
+    ],
   ]);
   const result = await readPrivateProjectGuidance({
+    async listDirectoryBounded(path, maxEntries) {
+      listCalls.push([path, maxEntries]);
+      switch (path) {
+        case privateProjectGuidanceRulesRoot:
+          return [
+            { name: "shared", kind: "directory" },
+            { name: "developer", kind: "directory" },
+            { name: "README.txt", kind: "file" },
+          ];
+        case `${privateProjectGuidanceRulesRoot}/shared`:
+          return [
+            { name: "zeta-rule.md", kind: "file" },
+            { name: "notes.txt", kind: "file" },
+            { name: "archive", kind: "directory" },
+            { name: "alpha-rule.md", kind: "file" },
+          ];
+        case `${privateProjectGuidanceRulesRoot}/developer`:
+          return [{ name: "developer-rule.md", kind: "file" }];
+        default:
+          return null;
+      }
+    },
     async readBounded(path, maxBytes) {
-      calls.push([path, maxBytes]);
+      readCalls.push([path, maxBytes]);
       return content.get(path) ?? null;
     },
   });
 
   assert.equal(result.ok, true);
   if (!result.ok) return;
-  assert.deepEqual(calls, [
-    [privateProjectGuidancePaths.shared, privateProjectGuidanceFileMaxBytes],
-    [privateProjectGuidancePaths.steward, privateProjectGuidanceFileMaxBytes],
-    [privateProjectGuidancePaths.developer, privateProjectGuidanceFileMaxBytes],
-    [privateProjectGuidancePaths.reviewer, privateProjectGuidanceFileMaxBytes],
+  assert.deepEqual(listCalls, [
+    [privateProjectGuidanceRulesRoot, privateProjectGuidanceDirectoryMaxEntries],
+    [
+      `${privateProjectGuidanceRulesRoot}/shared`,
+      privateProjectGuidanceDirectoryMaxEntries,
+    ],
+    [
+      `${privateProjectGuidanceRulesRoot}/steward`,
+      privateProjectGuidanceDirectoryMaxEntries,
+    ],
+    [
+      `${privateProjectGuidanceRulesRoot}/developer`,
+      privateProjectGuidanceDirectoryMaxEntries,
+    ],
+    [
+      `${privateProjectGuidanceRulesRoot}/reviewer`,
+      privateProjectGuidanceDirectoryMaxEntries,
+    ],
   ]);
-  assert.deepEqual(result.guidance, {
-    shared: "Shared exact bytes.\r\n",
-    steward: null,
-    developer: "Developer only.\n",
-    reviewer: null,
-  });
+  assert.deepEqual(readCalls, [
+    [
+      privateProjectGuidanceRulePath("shared", "alpha-rule"),
+      privateProjectGuidanceFileMaxBytes,
+    ],
+    [
+      privateProjectGuidanceRulePath("developer", "developer-rule"),
+      privateProjectGuidanceFileMaxBytes,
+    ],
+    [
+      privateProjectGuidanceRulePath("shared", "zeta-rule"),
+      privateProjectGuidanceFileMaxBytes,
+    ],
+  ]);
+  assert.deepEqual(
+    flattenPrivateProjectGuidanceRules(result.guidance).map((item) => [
+      item.id,
+      item.scope,
+      item.path,
+      item.content,
+    ]),
+    [
+      [
+        "alpha-rule",
+        "shared",
+        privateProjectGuidanceRulePath("shared", "alpha-rule"),
+        "Shared alpha bytes.\n",
+      ],
+      [
+        "developer-rule",
+        "developer",
+        privateProjectGuidanceRulePath("developer", "developer-rule"),
+        "Developer only.\n",
+      ],
+      [
+        "zeta-rule",
+        "shared",
+        privateProjectGuidanceRulePath("shared", "zeta-rule"),
+        "Shared zeta bytes.\r\n",
+      ],
+    ],
+  );
 });
 
 test("composes distinct product views from shared and responsibility guidance", () => {
   const result = composePrivateProviderInstructionViews(
     compile(privateLocalProjectIntent()),
-    {
+    guidance({
       shared: "Always report the verification result.",
       steward: "Create the accepted plan before delegation.",
       developer: "Keep implementation within the accepted plan.",
       reviewer: "Start review from a clean context.",
-    },
+    }),
   );
 
   assert.equal(result.ok, true);
@@ -99,8 +227,18 @@ test("composes distinct product views from shared and responsibility guidance", 
 
   for (const view of result.views) {
     assert.match(view.content, /Always report the verification result/u);
+    assert.match(view.content, /### Rule `shared-rule`/u);
+    assert.match(
+      view.content,
+      /active project executable using `agentdevflow rule list`/u,
+    );
+    assert.match(
+      view.content,
+      /Do not edit generated provider instruction files directly/u,
+    );
   }
   assert.match(codex.content, /Create the accepted plan before delegation/u);
+  assert.match(codex.content, /##### Rule `steward-rule`/u);
   assert.match(codex.content, /Prepare and communicate an explicit plan/u);
   assert.doesNotMatch(codex.content, /Implement only the accepted plan/u);
   assert.doesNotMatch(codex.content, /Start review from a clean context/u);
@@ -118,6 +256,44 @@ test("composes distinct product views from shared and responsibility guidance", 
     claude.content,
     /Keep implementation within the accepted plan/u,
   );
+  assert.deepEqual(codex.sourcePaths, [
+    privateProjectGuidanceRulePath("shared", "shared-rule"),
+    privateProjectGuidanceRulePath("steward", "steward-rule"),
+  ]);
+  assert.deepEqual(cursor.sourcePaths, [
+    privateProjectGuidanceRulePath("developer", "developer-rule"),
+    privateProjectGuidanceRulePath("shared", "shared-rule"),
+  ]);
+  assert.deepEqual(claude.sourcePaths, [
+    privateProjectGuidanceRulePath("reviewer", "reviewer-rule"),
+    privateProjectGuidanceRulePath("shared", "shared-rule"),
+  ]);
+});
+
+test("orders rule headings by id even when catalog arrays are unsorted", () => {
+  const result = composePrivateProviderInstructionViews(
+    compile(privateLocalProjectIntent()),
+    {
+      ...emptyPrivateProjectGuidance,
+      shared: [
+        rule("shared", "zeta-rule", "Zeta content."),
+        rule("shared", "alpha-rule", "Alpha content."),
+      ],
+    },
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  for (const view of result.views) {
+    assert.ok(
+      view.content.indexOf("### Rule `alpha-rule`") <
+        view.content.indexOf("### Rule `zeta-rule`"),
+    );
+    assert.deepEqual(view.sourcePaths, [
+      privateProjectGuidanceRulePath("shared", "alpha-rule"),
+      privateProjectGuidanceRulePath("shared", "zeta-rule"),
+    ]);
+  }
 });
 
 test("explains draft readiness, CI repair, review isolation, and squash directly", () => {
@@ -149,12 +325,7 @@ test("explains draft readiness, CI repair, review isolation, and squash directly
   };
   const result = composePrivateProviderInstructionViews(
     compile(intent, privateIssueToPullRequestCapabilityObservations),
-    {
-      shared: null,
-      steward: null,
-      developer: null,
-      reviewer: null,
-    },
+    emptyPrivateProjectGuidance,
   );
 
   assert.equal(result.ok, true);
@@ -192,12 +363,7 @@ test("explains draft readiness, CI repair, review isolation, and squash directly
       { ...intent, preset: "fast" },
       privateIssueToPullRequestCapabilityObservations,
     ),
-    {
-      shared: null,
-      steward: null,
-      developer: null,
-      reviewer: null,
-    },
+    emptyPrivateProjectGuidance,
   );
   assert.equal(fastResult.ok, true);
   if (!fastResult.ok) return;
@@ -224,12 +390,14 @@ test("separates multiple responsibilities held by one provider id", () => {
       reviewer: "codex-primary",
     },
   };
-  const result = composePrivateProviderInstructionViews(compile(intent), {
-    shared: null,
-    steward: "Steward guidance.",
-    developer: "Developer guidance.",
-    reviewer: "Reviewer guidance.",
-  });
+  const result = composePrivateProviderInstructionViews(
+    compile(intent),
+    guidance({
+      steward: "Steward guidance.",
+      developer: "Developer guidance.",
+      reviewer: "Reviewer guidance.",
+    }),
+  );
 
   assert.equal(result.ok, true);
   if (!result.ok) return;
@@ -266,12 +434,10 @@ test("fails closed when one native product target cannot isolate provider ids", 
       reviewer: "claude-reviewer",
     },
   };
-  const result = composePrivateProviderInstructionViews(compile(intent), {
-    shared: null,
-    steward: null,
-    developer: null,
-    reviewer: null,
-  });
+  const result = composePrivateProviderInstructionViews(
+    compile(intent),
+    emptyPrivateProjectGuidance,
+  );
 
   assert.equal(result.ok, false);
   if (!result.ok) {
@@ -282,15 +448,139 @@ test("fails closed when one native product target cannot isolate provider ids", 
   }
 });
 
-test("reports bounded-read failures without partial guidance", async () => {
+test("rejects every legacy aggregate path with sorted manual targets", async () => {
+  let readAttempted = false;
   const result = await readPrivateProjectGuidance({
-    async readBounded(path) {
-      if (path === privateProjectGuidancePaths.reviewer) {
-        const error = new Error("oversized");
-        Object.assign(error, { code: "WORKSPACE_FILE_TOO_LARGE" });
-        throw error;
+    async listDirectoryBounded(path) {
+      assert.equal(path, privateProjectGuidanceRulesRoot);
+      return [
+        { name: "reviewer.md", kind: "symbolic-link" },
+        { name: "shared.md", kind: "file" },
+        { name: "shared", kind: "directory" },
+        { name: "developer.md", kind: "directory" },
+        { name: "steward.md", kind: "file" },
+      ];
+    },
+    async readBounded() {
+      readAttempted = true;
+      return null;
+    },
+  });
+
+  assert.equal(readAttempted, false);
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.deepEqual(
+      result.diagnostics.map((diagnostic) => [
+        diagnostic.code,
+        diagnostic.path,
+        diagnostic.message,
+      ]),
+      (["developer", "reviewer", "shared", "steward"] as const).map(
+        (scope) => [
+          "RULE_AGGREGATE_LAYOUT_UNSUPPORTED",
+          privateProjectGuidanceAggregatePaths[scope],
+          `Aggregate rule guidance is unsupported. Suggested manual target: ${privateProjectGuidanceAggregateManualTargets[scope]}. Move its exact intended content without overwriting an existing rule, remove ${privateProjectGuidanceAggregatePaths[scope]}, and rerun the command.`,
+        ],
+      ),
+    );
+  }
+});
+
+test("rejects invalid ids, recognized path types, symlinks, and global duplicates", async () => {
+  const result = await readPrivateProjectGuidance({
+    async listDirectoryBounded(path) {
+      switch (path) {
+        case privateProjectGuidanceRulesRoot:
+          return [];
+        case `${privateProjectGuidanceRulesRoot}/shared`:
+          return [
+            { name: "Bad-Rule.md", kind: "file" },
+            {
+              name: `${"a".repeat(privateProjectGuidanceRuleIdMaxLength + 1)}.md`,
+              kind: "file",
+            },
+            { name: "con.md", kind: "file" },
+            { name: "directory-rule.md", kind: "directory" },
+            { name: "linked-rule.md", kind: "symbolic-link" },
+            { name: "duplicate-rule.md", kind: "file" },
+            { name: "nested", kind: "directory" },
+          ];
+        case `${privateProjectGuidanceRulesRoot}/reviewer`:
+          return [{ name: "duplicate-rule.md", kind: "file" }];
+        default:
+          return null;
       }
-      return "observed";
+    },
+    async readBounded() {
+      assert.fail("Invalid catalogs must fail before content is read.");
+    },
+  });
+
+  assert.equal(result.ok, false);
+  if (!result.ok) {
+    assert.deepEqual(
+      result.diagnostics.map((diagnostic) => [
+        diagnostic.code,
+        diagnostic.path,
+      ]),
+      [
+        [
+          "RULE_ID_DUPLICATE",
+          privateProjectGuidanceRulePath("reviewer", "duplicate-rule"),
+        ],
+        [
+          "RULE_ID_INVALID",
+          `${privateProjectGuidanceRulesRoot}/shared/Bad-Rule.md`,
+        ],
+        [
+          "RULE_ID_INVALID",
+          `${privateProjectGuidanceRulesRoot}/shared/${"a".repeat(privateProjectGuidanceRuleIdMaxLength + 1)}.md`,
+        ],
+        [
+          "RULE_ID_INVALID",
+          `${privateProjectGuidanceRulesRoot}/shared/con.md`,
+        ],
+        [
+          "PROJECT_GUIDANCE_READ_FAILED",
+          privateProjectGuidanceRulePath("shared", "directory-rule"),
+        ],
+        [
+          "RULE_ID_DUPLICATE",
+          privateProjectGuidanceRulePath("shared", "duplicate-rule"),
+        ],
+        [
+          "PROJECT_GUIDANCE_READ_FAILED",
+          privateProjectGuidanceRulePath("shared", "linked-rule"),
+        ],
+      ],
+    );
+  }
+});
+
+test("reports bounded-read failures without partial guidance", async () => {
+  const reviewerPath = privateProjectGuidanceRulePath(
+    "reviewer",
+    "reviewer-rule",
+  );
+  const result = await readPrivateProjectGuidance({
+    async listDirectoryBounded(path) {
+      if (path === privateProjectGuidanceRulesRoot) {
+        return [];
+      }
+      if (path === `${privateProjectGuidanceRulesRoot}/reviewer`) {
+        return [{ name: "reviewer-rule.md", kind: "file" }];
+      }
+      return null;
+    },
+    async readBounded(path) {
+      assert.equal(path, reviewerPath);
+      const error = new Error("oversized");
+      Object.assign(error, {
+        code: "WORKSPACE_FILE_TOO_LARGE",
+        path,
+      });
+      throw error;
     },
   });
 
@@ -300,9 +590,9 @@ test("reports bounded-read failures without partial guidance", async () => {
       {
         stage: "planning",
         code: "PROJECT_GUIDANCE_READ_FAILED",
-        path: privateProjectGuidancePaths.reviewer,
+        path: reviewerPath,
         message:
-          "User-owned project guidance could not be read (WORKSPACE_FILE_TOO_LARGE).",
+          "Canonical rule source could not be read (WORKSPACE_FILE_TOO_LARGE).",
       },
     ]);
   }

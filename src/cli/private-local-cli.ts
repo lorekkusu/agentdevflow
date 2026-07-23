@@ -19,13 +19,18 @@ import {
   executePrivateRenderCommand,
   PrivateRenderCommandError,
 } from "../commands/private-render-command-service.js";
+import { executePrivateRuleCommand } from "../commands/private-rule-command-service.js";
 import {
   parsePrivateCliArguments,
   privateCliCommands,
+  privateRuleOperations,
   type PrivateCliInvocation,
 } from "../interface/private-cli-arguments.js";
 import { privateDomainProjectDocumentDefaultMaxBytes } from "../interface/private-domain-project-document.js";
-import { privateProjectGuidancePaths } from "../guidance/private-project-guidance.js";
+import {
+  privateProjectGuidanceFileMaxBytes,
+  privateProjectGuidanceRulesRoot,
+} from "../guidance/private-project-guidance.js";
 import {
   derivePrivateRenderLockIntent,
   privateRenderLockDefaultMaxBytes,
@@ -47,13 +52,20 @@ import {
   formatCleanRenderPlan,
   formatDiff,
   formatInit,
+  formatRuleResult,
   formatRender,
   planningDiagnostics,
   writeBoundedOutput,
+  writeBoundedRuleOutput,
   writeLine,
   type DisplayDiagnostic,
   type PrivateLocalCliIo,
+  type PrivateRuleCommandResult,
 } from "./private-local-cli-output.js";
+import {
+  readPrivateRuleInputStream,
+  type PrivateRuleInputStream,
+} from "./private-rule-input.js";
 
 const usage = `Usage:
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
@@ -61,9 +73,15 @@ const usage = `Usage:
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
+  agentdevflow rule list [--repository <path>] [--json]
+  agentdevflow rule show <id> [--repository <path>] [--json]
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule remove <id> [--repository <path>] [--json]
 
 Init creates only an absent revision-1 configuration after validating provider-file dispositions.
 Check and diff are read-only. Render requires an exact plan digest from diff.
+Rule commands read or mutate only canonical project-rule files; provider outputs still require diff and render.
 Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
 Beta configuration and JSON schema versions may require documented migration before 1.0.`;
@@ -92,7 +110,41 @@ Diff is read-only. Review its complete recognized target and copy exact-plan-dig
 
 Render mutates only the complete plan whose exact-plan-digest was reviewed through diff. A stale or foreign state fails closed.
 Adopted or imported paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
+  rule: `Usage:
+  agentdevflow rule list [--repository <path>] [--json]
+  agentdevflow rule show <id> [--repository <path>] [--json]
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule remove <id> [--repository <path>] [--json]
+
+Rule ids are globally unique lowercase ASCII slugs of at most 64 characters and must not be reserved Windows filenames. --file paths are relative to the selected repository.
+Rule mutations change only canonical files under .agentdevflow/rules. Run diff and exact-approved render separately to update provider outputs.`,
 };
+
+const ruleOperationUsage = {
+  list: `Usage:
+  agentdevflow rule list [--repository <path>] [--json]
+
+Lists canonical project rules in deterministic rule-id order.`,
+  show: `Usage:
+  agentdevflow rule show <id> [--repository <path>] [--json]
+
+Shows one canonical rule including its exact content.`,
+  add: `Usage:
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+
+Creates one absent canonical rule. Exactly one of --file or --stdin is required.`,
+  update: `Usage:
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+
+Updates one existing canonical rule without changing its scope.`,
+  remove: `Usage:
+  agentdevflow rule remove <id> [--repository <path>] [--json]
+
+Removes one existing canonical rule. Provider outputs are unchanged until a later exact-approved render.`,
+} as const satisfies Readonly<
+  Record<(typeof privateRuleOperations)[number], string>
+>;
 
 function pathsOverlap(left: string, right: string): boolean {
   return (
@@ -103,7 +155,7 @@ function pathsOverlap(left: string, right: string): boolean {
 }
 
 function pathLayoutDiagnostic(
-  invocation: PrivateCliInvocation,
+  invocation: Exclude<PrivateCliInvocation, { readonly command: "rule" }>,
 ): DisplayDiagnostic | null {
   const configuration = {
     label: "configuration",
@@ -111,10 +163,10 @@ function pathLayoutDiagnostic(
   };
   const lock = { label: "ownership lock", path: invocation.lockPath };
   const reserved = [
-    ...Object.entries(privateProjectGuidancePaths).map(([scope, path]) => ({
-      label: `${scope} guidance`,
-      path,
-    })),
+    {
+      label: "canonical rule root",
+      path: privateProjectGuidanceRulesRoot,
+    },
     ...Object.entries(nativeProjectInstructionPaths).map(([product, path]) => ({
       label: `${product} generated output`,
       path,
@@ -141,7 +193,7 @@ function pathLayoutDiagnostic(
 }
 
 function plannedPathLayoutDiagnostic(
-  invocation: PrivateCliInvocation,
+  invocation: Exclude<PrivateCliInvocation, { readonly command: "rule" }>,
   prepared: PrivateDomainProjectPlanPreparation,
 ): DisplayDiagnostic | null {
   const plan = prepared.snapshot.plan;
@@ -163,10 +215,10 @@ function plannedPathLayoutDiagnostic(
       label: "configuration",
       path: invocation.projectConfigPath,
     },
-    ...Object.entries(privateProjectGuidancePaths).map(([scope, path]) => ({
-      label: `${scope} guidance`,
-      path,
-    })),
+    {
+      label: "canonical rule root",
+      path: privateProjectGuidanceRulesRoot,
+    },
   ];
   const mutationPaths = [
     { label: "ownership lock", path: invocation.lockPath },
@@ -435,9 +487,115 @@ async function runPrivateInit(
   return outcome === "ready" ? 0 : 1;
 }
 
+function blockedRuleResult(
+  operation: Extract<
+    PrivateCliInvocation,
+    { readonly command: "rule" }
+  >["operation"],
+  diagnostic: DisplayDiagnostic,
+): PrivateRuleCommandResult {
+  return {
+    operation,
+    outcome: "blocked",
+    exitCode: 2,
+    diagnostics: [diagnostic],
+  };
+}
+
+async function runPrivateRule(
+  invocation: Extract<PrivateCliInvocation, { readonly command: "rule" }>,
+  io: PrivateLocalCliIo,
+  stdin: PrivateRuleInputStream,
+): Promise<0 | 2> {
+  let workspace: PrivateFilesystemWorkspace;
+  try {
+    workspace = await PrivateFilesystemWorkspace.open(invocation.repositoryPath);
+  } catch (error) {
+    const result = blockedRuleResult(invocation.operation, {
+      code:
+        error instanceof PrivateFilesystemWorkspaceError
+          ? error.code
+          : "CLI_REPOSITORY_OPEN_FAILED",
+      level: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "The repository could not be opened.",
+      path: invocation.repositoryPath,
+    });
+    const content = formatRuleResult(result, invocation.outputFormat);
+    writeBoundedRuleOutput(
+      io.stdout,
+      invocation.operation,
+      invocation.outputFormat,
+      content,
+    );
+    return 2;
+  }
+
+  let stdinContent: string | undefined;
+  if (
+    (invocation.operation === "add" ||
+      invocation.operation === "update") &&
+    invocation.input.kind === "stdin"
+  ) {
+    const observed = await readPrivateRuleInputStream(
+      stdin,
+      privateProjectGuidanceFileMaxBytes,
+    );
+    if (!observed.ok) {
+      const result = blockedRuleResult(invocation.operation, {
+        code: observed.code,
+        level: "error",
+        message: observed.message,
+      });
+      const content = formatRuleResult(result, invocation.outputFormat);
+      writeBoundedRuleOutput(
+        io.stdout,
+        invocation.operation,
+        invocation.outputFormat,
+        content,
+      );
+      return 2;
+    }
+    stdinContent = observed.content;
+  }
+
+  let result: PrivateRuleCommandResult;
+  try {
+    result = await executePrivateRuleCommand({
+      invocation,
+      workspace,
+      ...(stdinContent === undefined ? {} : { stdinContent }),
+    });
+  } catch (error) {
+    result = blockedRuleResult(invocation.operation, {
+      code: "RULE_COMMAND_FAILED",
+      level: "error",
+      message:
+        error instanceof Error
+          ? error.message
+          : "The rule command failed unexpectedly.",
+    });
+  }
+  const content = formatRuleResult(result, invocation.outputFormat);
+  if (
+    !writeBoundedRuleOutput(
+      io.stdout,
+      invocation.operation,
+      invocation.outputFormat,
+      content,
+    )
+  ) {
+    return 2;
+  }
+  return result.exitCode;
+}
+
 export async function runPrivateLocalCli(
   args: readonly string[],
   io: PrivateLocalCliIo = { stdout: process.stdout, stderr: process.stderr },
+  stdin: PrivateRuleInputStream = process.stdin,
 ): Promise<0 | 1 | 2> {
   if (
     args.length === 1 &&
@@ -457,6 +615,22 @@ export async function runPrivateLocalCli(
     );
     return 0;
   }
+  if (
+    args.length === 3 &&
+    args[0] === "rule" &&
+    privateRuleOperations.includes(
+      args[1] as (typeof privateRuleOperations)[number],
+    ) &&
+    (args[2] === "--help" || args[2] === "-h")
+  ) {
+    writeLine(
+      io.stdout,
+      ruleOperationUsage[
+        args[1] as (typeof privateRuleOperations)[number]
+      ],
+    );
+    return 0;
+  }
 
   const parsed = parsePrivateCliArguments(args);
   if (!parsed.ok) {
@@ -469,6 +643,9 @@ export async function runPrivateLocalCli(
     return 2;
   }
   const invocation = parsed.invocation;
+  if (invocation.command === "rule") {
+    return await runPrivateRule(invocation, io, stdin);
+  }
   const layoutDiagnostic = pathLayoutDiagnostic(invocation);
   if (layoutDiagnostic !== null) {
     writeLine(

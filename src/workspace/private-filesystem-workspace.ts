@@ -5,6 +5,7 @@ import {
   link,
   mkdir,
   open,
+  opendir,
   realpath,
   rename,
   unlink,
@@ -29,8 +30,10 @@ export type PrivateFilesystemWorkspaceErrorCode =
   | "WORKSPACE_ROOT_SYMLINK"
   | "WORKSPACE_PATH_SYMLINK"
   | "WORKSPACE_PATH_NOT_FILE"
+  | "WORKSPACE_PATH_NOT_DIRECTORY"
   | "WORKSPACE_FILE_INVALID_UTF8"
   | "WORKSPACE_FILE_TOO_LARGE"
+  | "WORKSPACE_DIRECTORY_TOO_LARGE"
   | "WORKSPACE_PARENT_NOT_DIRECTORY"
   | "WORKSPACE_OWNED_TEMPORARY_CONFLICT"
   | "WORKSPACE_OWNED_TEMPORARY_INVALID"
@@ -97,6 +100,21 @@ export interface PrivateConvergentWorkspace extends RenderReadWorkspace {
 export interface PrivateFilesystemReadWorkspace {
   read(path: string): Promise<string | null>;
   readBounded(path: string, maxBytes: number): Promise<string | null>;
+  listDirectoryBounded(
+    path: string,
+    maxEntries: number,
+  ): Promise<readonly PrivateFilesystemDirectoryEntry[] | null>;
+}
+
+export type PrivateFilesystemDirectoryEntryKind =
+  | "directory"
+  | "file"
+  | "other"
+  | "symbolic-link";
+
+export interface PrivateFilesystemDirectoryEntry {
+  readonly name: string;
+  readonly kind: PrivateFilesystemDirectoryEntryKind;
 }
 
 let temporaryFileSequence = 0;
@@ -143,10 +161,26 @@ function notRegularFile(path: string): never {
   );
 }
 
+function notDirectory(path: string): never {
+  throw new PrivateFilesystemWorkspaceError(
+    "WORKSPACE_PATH_NOT_DIRECTORY",
+    `Workspace path is not a directory: ${path}`,
+    path,
+  );
+}
+
 function fileTooLarge(path: string, maxBytes: number): never {
   throw new PrivateFilesystemWorkspaceError(
     "WORKSPACE_FILE_TOO_LARGE",
     `Workspace file exceeds the configured byte limit ${maxBytes}: ${path}`,
+    path,
+  );
+}
+
+function directoryTooLarge(path: string, maxEntries: number): never {
+  throw new PrivateFilesystemWorkspaceError(
+    "WORKSPACE_DIRECTORY_TOO_LARGE",
+    `Workspace directory exceeds the configured entry limit ${maxEntries}: ${path}`,
     path,
   );
 }
@@ -223,6 +257,12 @@ export class PrivateFilesystemWorkspace
       },
       readBounded(path: string, maxBytes: number): Promise<string | null> {
         return workspace.readBounded(path, maxBytes);
+      },
+      listDirectoryBounded(
+        path: string,
+        maxEntries: number,
+      ): Promise<readonly PrivateFilesystemDirectoryEntry[] | null> {
+        return workspace.listDirectoryBounded(path, maxEntries);
       },
     };
   }
@@ -455,6 +495,87 @@ export class PrivateFilesystemWorkspace
     } finally {
       await handle.close();
     }
+  }
+
+  async listDirectoryBounded(
+    path: string,
+    maxEntries: number,
+  ): Promise<readonly PrivateFilesystemDirectoryEntry[] | null> {
+    if (!Number.isSafeInteger(maxEntries) || maxEntries < 0) {
+      throw new Error("maxEntries must be a non-negative safe integer.");
+    }
+    const safePath = this.resolvePath(path);
+    if ((await this.ensureParent(safePath, false)) === null) {
+      return null;
+    }
+
+    let entry: Stats;
+    try {
+      entry = await lstat(safePath.absolutePath);
+    } catch (error) {
+      if (isNodeErrorWithCode(error, "ENOENT")) {
+        return null;
+      }
+      throw error;
+    }
+    if (entry.isSymbolicLink()) {
+      return symlinkPath(safePath.relativePath);
+    }
+    if (!entry.isDirectory()) {
+      return notDirectory(safePath.relativePath);
+    }
+
+    const canonicalDirectory = await realpath(safePath.absolutePath);
+    if (!pathIsWithinRoot(this.canonicalRoot, canonicalDirectory)) {
+      throw new PrivateFilesystemWorkspaceError(
+        "WORKSPACE_PATH_ESCAPES_ROOT",
+        `Workspace path escapes the repository root: ${safePath.relativePath}`,
+        safePath.relativePath,
+      );
+    }
+
+    let directory: Awaited<ReturnType<typeof opendir>>;
+    try {
+      directory = await opendir(canonicalDirectory);
+    } catch (error) {
+      if (isNodeErrorWithCode(error, "ENOENT")) {
+        return null;
+      }
+      if (isNodeErrorWithCode(error, "ELOOP")) {
+        return symlinkPath(safePath.relativePath);
+      }
+      if (isNodeErrorWithCode(error, "ENOTDIR")) {
+        return notDirectory(safePath.relativePath);
+      }
+      throw error;
+    }
+
+    const entries: PrivateFilesystemDirectoryEntry[] = [];
+    try {
+      while (true) {
+        const child = await directory.read();
+        if (child === null) {
+          break;
+        }
+        if (entries.length >= maxEntries) {
+          return directoryTooLarge(safePath.relativePath, maxEntries);
+        }
+        const kind: PrivateFilesystemDirectoryEntryKind =
+          child.isFile()
+            ? "file"
+            : child.isDirectory()
+              ? "directory"
+              : child.isSymbolicLink()
+                ? "symbolic-link"
+                : "other";
+        entries.push({ name: child.name, kind });
+      }
+    } finally {
+      await directory.close();
+    }
+    return entries.sort((left, right) =>
+      left.name < right.name ? -1 : left.name > right.name ? 1 : 0,
+    );
   }
 
   private convergentPaths(intent: PrivateConvergentMutationIntent): {

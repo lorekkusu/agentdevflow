@@ -93,11 +93,59 @@ test("opens a hardened read-only view without exposing mutation methods", async 
   assert.equal(await workspace.read("AGENTS.md"), "observed\n");
   assert.equal("writeAtomically" in workspace, false);
   assert.equal("removeAtomically" in workspace, false);
+  assert.equal("listDirectoryBounded" in workspace, true);
   await assert.rejects(
     () => workspace.read("../outside"),
     (error: unknown) =>
       error instanceof PrivateFilesystemWorkspaceError &&
       error.code === "UNSAFE_WORKSPACE_PATH",
+  );
+});
+
+test("enumerates directory entries deterministically within an explicit bound", async (t) => {
+  const root = await temporaryDirectory(t);
+  const rules = join(root, ".agentdevflow", "rules", "shared");
+  await mkdir(join(rules, "archive"), { recursive: true });
+  await writeFile(join(rules, "zeta.md"), "zeta\n", "utf8");
+  await writeFile(join(rules, "alpha.txt"), "alpha\n", "utf8");
+  await symlink(join(rules, "zeta.md"), join(rules, "linked.md"));
+  const workspace = await PrivateFilesystemWorkspace.openReadOnly(root);
+
+  assert.equal(
+    await workspace.listDirectoryBounded(".agentdevflow/missing", 10),
+    null,
+  );
+  assert.deepEqual(
+    await workspace.listDirectoryBounded(
+      ".agentdevflow/rules/shared",
+      4,
+    ),
+    [
+      { name: "alpha.txt", kind: "file" },
+      { name: "archive", kind: "directory" },
+      { name: "linked.md", kind: "symbolic-link" },
+      { name: "zeta.md", kind: "file" },
+    ],
+  );
+  await rejectsWithCode(
+    () =>
+      workspace.listDirectoryBounded(
+        ".agentdevflow/rules/shared",
+        3,
+      ),
+    "WORKSPACE_DIRECTORY_TOO_LARGE",
+  );
+  await rejectsWithCode(
+    () =>
+      workspace.listDirectoryBounded(
+        ".agentdevflow/rules/shared/zeta.md",
+        1,
+      ),
+    "WORKSPACE_PATH_NOT_DIRECTORY",
+  );
+  await assert.rejects(
+    () => workspace.listDirectoryBounded(".agentdevflow/rules/shared", -1),
+    /non-negative safe integer/u,
   );
 });
 
@@ -207,6 +255,7 @@ test(
     await symlink(outside, join(root, "linked-parent"), "dir");
     for (const operation of [
       () => workspace.read("linked-parent/target.md"),
+      () => workspace.listDirectoryBounded("linked-parent", 1),
       () =>
         workspace.removeAtomically(
           "linked-parent/target.md",
@@ -219,6 +268,7 @@ test(
     await symlink(join(outside, "target.md"), join(root, "linked-file"));
     for (const operation of [
       () => workspace.read("linked-file"),
+      () => workspace.listDirectoryBounded("linked-file", 1),
       () =>
         workspace.removeAtomically(
           "linked-file",
