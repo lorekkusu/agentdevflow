@@ -6,9 +6,9 @@ The current unreleased CLI can select this built-in workflow through
 `init`. Its configuration remains a beta surface; the finite-state definition
 and arbitrary workflow topology remain private.
 
-The workflow compiles an operational procedure and role-specific project
-instructions. It is not a tracker client, pull-request client, CI monitor,
-agent scheduler, or merge service.
+The workflow compiles an operational procedure and responsibility-filtered
+project instruction sections. It is not a tracker client, pull-request client,
+CI monitor, agent scheduler, or merge service.
 
 ## User-visible choices
 
@@ -45,7 +45,7 @@ flowchart TD
     CI -->|Passed, ready| Review["Reviewer applies the compiled review requirements"]
     EnsureReady --> Review
     Review -->|Changes requested| Repair
-    Review -->|Approved| Authorize["Current evidence authorizes squash merge"]
+    Review -->|Approved| Authorize["Compiled policy permits squash merge"]
     Authorize --> Merge["Steward performs external squash merge"]
 ```
 
@@ -68,8 +68,8 @@ The generated Steward procedure:
 6. starts the configured Reviewer under the selected preset's compiled review
    requirements;
 7. performs squash merge only when current-revision CI and the review verdict
-   satisfy policy; Balanced additionally requires current reviewer-isolation
-   evidence and no remaining blocking finding.
+   satisfy policy; Balanced additionally requires a valid
+   `ReviewerIsolationEvidence` artifact and no valid `BlockingFinding` artifact.
 
 ### Developer
 
@@ -91,12 +91,13 @@ The generated Reviewer procedure always:
    implementing the repair itself;
 3. treats the verdict as stale after every repair or revision change.
 
-Balanced additionally requires a clean execution context distinct from
-implementation and forbids completion while a blocking finding remains. Fast
-requires a current review verdict without those additional gates. A different
-provider product does not by itself prove reviewer isolation. The Balanced
-procedure states the required context boundary; the CLI does not authenticate
-it.
+Balanced additionally requires a valid `ReviewerIsolationEvidence` artifact and
+no valid `BlockingFinding` artifact at acceptance. Generated procedures tell
+the Reviewer to begin from a declared clean execution context distinct from
+implementation. Fast requires a current review verdict without those additional
+artifact gates. A different provider product does not prove reviewer identity
+or isolation, and the CLI does not acquire or authenticate the declared
+context.
 
 ## Capability semantics
 
@@ -135,7 +136,8 @@ The private finite-state compiler models:
 - static nodes and transitions, including cycles;
 - typed artifact production and invalidation;
 - current-revision CI and review requirements;
-- Balanced reviewer isolation and blocking-finding absence;
+- Balanced `ReviewerIsolationEvidence` and no-valid-`BlockingFinding`
+  requirements;
 - merge authorization and squash-merge completion;
 - deterministic counterexample traces for unsafe paths.
 
@@ -156,10 +158,12 @@ Code, and Cursor are bindings used to render native project instructions. A
 provider change normally changes role bindings and generated views, not the
 workflow topology.
 
-The same Codex provider id may act as Steward for coordination and Reviewer in
-a separately clean context. The generated `AGENTS.md` contains separate role
-sections. Two distinct Codex ids are not currently supported because both
-would map to the same project-wide `AGENTS.md`.
+The same Codex provider id may be assigned both Steward and Reviewer. Its
+generated `AGENTS.md` then contains both responsibility sections, and separate
+invocations may be instructed to follow different sections. The file itself
+does not isolate the invocations, identities, permissions, or authority. Two
+distinct Codex ids are not currently supported because both would map to the
+same project-wide `AGENTS.md`.
 
 ## Product boundary
 

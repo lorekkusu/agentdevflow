@@ -2,8 +2,8 @@
 
 `agentdevflow` is a local-first development-flow configurator and policy
 compiler. The current product slice converts bounded project choices and
-optional user-owned guidance into responsibility-specific project
-instructions for Codex, Claude Code, and Cursor.
+optional user-owned guidance into provider-native project instruction files
+whose procedure and rule sections are filtered by configured responsibility.
 
 The [engineering boundary](development/engineering-boundary.md) is normative.
 The root [product roadmap](../ROADMAP.md) is the authoritative sequence. This
@@ -18,7 +18,7 @@ revision-1 ProjectConfig bytes
   -> built-in workflow and preset resolution
   -> finite-state policy compilation
   -> bounded read of .agentdevflow/rules/*.md
-  -> responsibility-specific provider composition
+  -> responsibility-filtered provider composition
   -> native Codex, Claude Code, and Cursor staging
   -> complete repository plan and exact approval digest
   -> forward-convergent provider-file apply
@@ -83,10 +83,19 @@ fixed scope directories:
 ```
 
 Composition creates one provider view per configured product. Each view
-contains shared protocol and guidance plus only the roles assigned to that
-provider id. Multiple roles may share one id and remain separate sections.
-Multiple ids for the same product are rejected because the single native target
-cannot isolate them.
+contains shared protocol and guidance plus the procedure and rule sections
+assigned to that provider id. Multiple responsibilities assigned to one id
+appear as separate sections in the same target. This content projection does
+not select or isolate an execution context, identity, permission set, or
+authority. Multiple ids for one product are rejected because the single native
+target cannot represent them separately.
+
+Native discovery surfaces are not assumed to be isolated. A generated view
+therefore declares its target coding-agent product and makes the entire
+projection inapplicable to a nonmatching runtime. This remains advisory
+instruction text, not a runtime detector or enforcement boundary. The current
+observed overlap and its limits are recorded in
+[maintainer dogfood](development/maintainer-dogfood.md).
 
 Rule commands are the only product commands that mutate those canonical
 sources. They do not mutate provider outputs or the ownership lock; those remain

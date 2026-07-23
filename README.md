@@ -1,7 +1,8 @@
 # agentdevflow
 
 Configure how coding agents plan, implement, review, and hand work off—then
-generate native, responsibility-specific instructions for Codex, Claude Code,
+generate provider-native instruction files whose procedure and project-rule
+sections are filtered by configured responsibility for Codex, Claude Code,
 and Cursor.
 
 `agentdevflow` is a local-first Node.js and TypeScript CLI. A project selects
@@ -38,11 +39,12 @@ registry release and must not be published again as `0.1.0-beta.2`.
 ### Local reviewed change
 
 Use this when work does not require an issue, pull request, CI gate, or merge
-procedure. The Steward plans, the Developer implements and verifies, and the
-Reviewer issues the current verdict or returns the change for rework. Balanced
-additionally requires the Reviewer to start from a clean context distinct from
-implementation; Fast keeps the separate Reviewer responsibility without that
-evidence gate.
+procedure. The generated procedures assign planning to the Steward,
+implementation and verification to the Developer, and the current verdict or
+rework request to the Reviewer. Balanced additionally compiles an advisory
+requirement for reviewer-isolation evidence from a declared clean context;
+Fast keeps the Reviewer procedure without that evidence requirement. The CLI
+does not create or authenticate either execution context.
 
 ```bash
 npx agentdevflow init \
@@ -60,9 +62,11 @@ npx agentdevflow init \
 ### Issue to reviewed pull request
 
 Use this when an agent should follow a tracker-backed procedure. This example
-expresses a common setup: Codex plans and coordinates through Linear, Cursor
-implements, Codex reviews from a clean context, the pull request starts ready,
-and squash merge is allowed only after current CI and review evidence.
+instructs Codex to plan and coordinate through Linear, Cursor to implement, and
+a separately started Codex review invocation to review from a declared clean
+context. The pull request starts ready, and the generated procedure permits
+squash merge only after the required current CI and review artifacts are
+present. `agentdevflow` does not acquire or authenticate those artifacts.
 
 ```bash
 npx agentdevflow init \
@@ -156,11 +160,17 @@ A clean `check` exits with status `0`. The resulting targets are:
 | Claude Code | `CLAUDE.md` |
 | Cursor | `.cursor/rules/agentdevflow.mdc` |
 
-Each target contains only the responsibilities assigned to that provider id,
-plus shared protocol and shared user guidance. One provider id may hold
-multiple responsibilities; the output keeps them in separate sections. The
-current project-wide native paths cannot isolate two different ids of the same
-provider product, so that ambiguous configuration is rejected.
+Each target contains shared protocol and shared user guidance plus the
+procedure and rule sections assigned to that provider id. Different
+assignments can therefore produce byte-different targets. This is advisory
+content filtering, not session, identity, permission, or authority isolation.
+Provider discovery can overlap, so every generated target declares its coding-
+agent product and instructs a nonmatching runtime to ignore the entire
+projection. That instruction is not mechanical enforcement. When one provider
+id holds multiple responsibilities, every assigned section is visible in the
+same target and the agent is instructed to select exactly one section for the
+current task. Two ids for the same provider product remain unsupported because
+the single project-wide target cannot represent them separately.
 
 See [Getting started](docs/getting-started.md) for complete option behavior,
 draft and ready examples, guidance scope, existing-file adoption, JSON output,

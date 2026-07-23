@@ -81,6 +81,24 @@ function guidance(
   };
 }
 
+function applicabilityPrefix(product: string, providerId: string): string {
+  return [
+    "# Agent development flow",
+    "",
+    "## Projection applicability",
+    "",
+    `This generated projection declares coding-agent product \`${product}\` and project provider id \`${providerId}\`.`,
+    "",
+    `Apply this entire projection only when the current coding-agent runtime product is \`${product}\`. If the runtime product does not match, ignore this entire projection: its shared protocol, shared user guidance, responsibilities, operational procedures, and capability targets do not apply.`,
+    "",
+    "If multiple agentdevflow projections are visible, follow only the projection whose declared coding-agent product matches the current runtime product. Do not combine responsibilities across products.",
+    "",
+    "Within this applicability boundary, use this project protocol when planning, implementing, reviewing, or preparing an agentdevflow completion transition.",
+    "",
+    "## Shared protocol",
+  ].join("\n");
+}
+
 test("reads per-rule Markdown in deterministic id order and ignores unrelated entries", async () => {
   const listCalls: [string, number][] = [];
   const readCalls: [string, number][] = [];
@@ -226,6 +244,16 @@ test("composes distinct product views from shared and responsibility guidance", 
   assert.ok(cursor);
 
   for (const view of result.views) {
+    assert.equal(
+      view.content.startsWith(
+        applicabilityPrefix(view.product, view.providerId),
+      ),
+      true,
+    );
+    assert.ok(
+      view.content.indexOf("## Projection applicability") <
+        view.content.indexOf("## Shared user guidance"),
+    );
     assert.match(view.content, /Always report the verification result/u);
     assert.match(view.content, /### Rule `shared-rule`/u);
     assert.match(
@@ -237,6 +265,18 @@ test("composes distinct product views from shared and responsibility guidance", 
       /Do not edit generated provider instruction files directly/u,
     );
   }
+  assert.match(
+    codex.content,
+    /This projection assigns exactly one responsibility: Steward\./u,
+  );
+  assert.match(
+    cursor.content,
+    /This projection assigns exactly one responsibility: Developer\./u,
+  );
+  assert.match(
+    claude.content,
+    /This projection assigns exactly one responsibility: Reviewer\./u,
+  );
   assert.match(codex.content, /Create the accepted plan before delegation/u);
   assert.match(codex.content, /##### Rule `steward-rule`/u);
   assert.match(codex.content, /Prepare and communicate an explicit plan/u);
@@ -410,11 +450,36 @@ test("separates multiple responsibilities held by one provider id", () => {
   ]);
   assert.match(
     view?.content ?? "",
-    /Before acting, identify the active responsibility/u,
+    /This projection assigns multiple responsibilities: Steward, Developer, Reviewer\. For each applicable agentdevflow workflow task, select exactly one responsibility required by the current task and follow only that responsibility section\./u,
   );
   assert.match(view?.content ?? "", /### Steward/u);
   assert.match(view?.content ?? "", /### Developer/u);
   assert.match(view?.content ?? "", /### Reviewer/u);
+});
+
+test("prevents an unassigned provider projection from performing a workflow transition", () => {
+  const intent: PrivateDomainProjectIntent = {
+    ...privateLocalProjectIntent(),
+    roles: {
+      steward: "codex-steward",
+      developer: "cursor-developer",
+      reviewer: "codex-steward",
+    },
+  };
+  const result = composePrivateProviderInstructionViews(
+    compile(intent),
+    emptyPrivateProjectGuidance,
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const claude = result.views.find((view) => view.product === "claude-code");
+  assert.ok(claude);
+  assert.deepEqual(claude.responsibilities, []);
+  assert.match(
+    claude.content,
+    /This projection assigns no agentdevflow workflow responsibility\. Do not perform an agentdevflow workflow transition from this projection\./u,
+  );
 });
 
 test("fails closed when one native product target cannot isolate provider ids", () => {

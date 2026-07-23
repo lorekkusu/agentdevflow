@@ -114,6 +114,11 @@ Generate only the roles assigned to each provider id. One provider id may hold
 multiple roles with separate sections. Reject multiple ids for one provider
 product while its native project target cannot isolate them.
 
+Treat native instruction discovery as potentially overlapping. Every generated
+projection must declare its target coding-agent product, make the whole
+projection inapplicable to nonmatching products, and avoid claiming session,
+identity, permission, or authority isolation.
+
 ## Development commands
 
 Run from the repository root:

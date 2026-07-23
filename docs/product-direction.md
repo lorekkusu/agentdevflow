@@ -9,8 +9,8 @@ distributed through npm and intended to be invoked with `npx agentdevflow`.
 Its core value is not generic prompt synchronization. A project expresses who
 plans, implements, and reviews; which workflow and policy apply; and which
 handoffs and stop conditions matter. `agentdevflow` turns that intent and
-project-owned rules into deterministic native instructions that different
-coding-agent products can follow.
+project-owned rules into deterministic provider-native instruction files whose
+procedure and rule sections are filtered by configured responsibility.
 
 The product configures and explains the flow. It does not need to become the
 runtime that executes every step.
@@ -72,10 +72,11 @@ their own environments and must stop when a configured capability is missing.
 These are provider-neutral responsibilities. Codex, Claude Code, and Cursor
 are renderer targets and execution bindings, not role names.
 
-Fast does not require clean-context reviewer-isolation evidence. Balanced does.
-A different provider brand does not prove that isolation. Session, execution
-context, principal, inherited state, and revision identity remain relevant
-facts.
+Fast does not require a `ReviewerIsolationEvidence` artifact. Balanced does. A
+different provider brand does not prove reviewer identity, independence, or
+isolation. Session, execution context, principal, inherited state, and revision
+identity remain external facts that the current CLI does not acquire or
+authenticate.
 
 ## Built-in workflows
 
@@ -114,9 +115,11 @@ Projects may add:
 .agentdevflow/rules/reviewer/<rule-id>.md
 ```
 
-These Markdown files are user-owned inputs. Provider files are
-responsibility-specific generated projections. Direct edits to generated files
-are drift; they are not a second rule store.
+These Markdown files are user-owned inputs. Provider files are generated
+projections with procedure and rule sections filtered by configured
+responsibility. Direct edits to generated files are drift; they are not a
+second rule store. Content filtering does not create a runtime role or
+authorization boundary.
 
 The current rule surface uses one Markdown file per globally unique, stable
 rule id under fixed shared and responsibility scope directories. People,
@@ -134,8 +137,9 @@ it does not add a public migration command, dual reader, or automatic mutation.
 ## Presets
 
 - **Fast**: basic review with low ceremony.
-- **Balanced**: explicit planning, implementation, reviewer isolation,
-  findings reconciliation, and selected-workflow gates.
+- **Balanced**: explicit planning and implementation procedures, a
+  `ReviewerIsolationEvidence` requirement, findings reconciliation, and
+  selected-workflow gates.
 - **Strict**: committed near-term work. Its exact closed safety-property set
   remains a decision, but it must be mechanically distinguishable from
   Balanced in the compiler and tests rather than merely add stronger prose.
@@ -227,7 +231,8 @@ or general orchestration platform.
 
 The product is worth continuing only if real repository use shows that:
 
-1. different agents understand and follow their assigned responsibilities;
+1. provider responses consistently distinguish their supplied responsibility
+   procedures and handoff boundaries in representative repository use;
 2. a user can express a useful local or tracker-backed flow without manually
    maintaining three divergent instruction files;
 3. edits to project policy produce understandable, reviewable provider changes;

@@ -300,6 +300,22 @@ try {
   if (
     new Set([codexInstructions, claudeInstructions, cursorInstructions]).size !==
       3 ||
+    !codexInstructions.includes(
+      "declares coding-agent product `codex` and project provider id `codex-main`",
+    ) ||
+    !claudeInstructions.includes(
+      "declares coding-agent product `claude-code` and project provider id `claude-secondary`",
+    ) ||
+    !cursorInstructions.includes(
+      "declares coding-agent product `cursor` and project provider id `cursor-developer`",
+    ) ||
+    ![codexInstructions, claudeInstructions, cursorInstructions].every(
+      (content) =>
+        content.includes(
+          "If the runtime product does not match, ignore this entire projection",
+        ) &&
+        content.includes("Do not combine responsibilities across products."),
+    ) ||
     !codexInstructions.includes("Keep acceptance criteria visible.") ||
     codexInstructions.includes("Review only the current revision.") ||
     !claudeInstructions.includes("Review only the current revision.") ||
@@ -312,7 +328,7 @@ try {
     cursorInstructions.includes("Keep acceptance criteria visible.")
   ) {
     throw new Error(
-      "Packed agentdevflow did not produce distinct responsibility-scoped provider instructions.",
+      "Packed agentdevflow did not produce responsibility-filtered provider instructions with explicit product applicability.",
     );
   }
   const convergedDiff = run(binPath, ["diff", "--json"], projectRoot);

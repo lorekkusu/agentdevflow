@@ -22,11 +22,13 @@ Expansion receives an explicit workflow family and definition, validates that
 the base workflow meets the selected minimum, and returns one deterministic
 effective definition and digest.
 
-Fast represents the minimum basic-review profile. Balanced adds explicit
-blocking-finding and reviewer-isolation requirements to both current workflow
-families. Provider instruction procedures derive those visible completion and
-review requirements from the effective compiled policies rather than from the
-preset name alone. Strict never downgrades silently.
+Fast represents the minimum basic-review profile. Balanced adds a valid
+`ReviewerIsolationEvidence` requirement and a no-valid-`BlockingFinding`
+requirement to both current workflow families. Provider instruction procedures
+derive those visible artifact and completion requirements from the effective
+compiled policies rather than from the preset name alone. The compiler does not
+acquire or authenticate reviewer identity or execution context. Strict never
+downgrades silently.
 
 Topology remains a separate choice. For example, selecting a preset does not
 choose a pull-request state or tracker, while the selected workflow still

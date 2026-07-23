@@ -61,6 +61,30 @@ for (const preset of ["fast", "balanced"] as const) {
 
     const steward = staged.files.get("AGENTS.md") ?? "";
     const reviewer = staged.files.get("CLAUDE.md") ?? "";
+    const developer =
+      staged.files.get(".cursor/rules/agentdevflow.mdc") ?? "";
+    assert.match(
+      steward,
+      /declares coding-agent product `codex` and project provider id `codex-steward`/u,
+    );
+    assert.match(
+      reviewer,
+      /declares coding-agent product `claude-code` and project provider id `claude-reviewer`/u,
+    );
+    assert.match(
+      developer,
+      /declares coding-agent product `cursor` and project provider id `cursor-developer`/u,
+    );
+    for (const content of [steward, reviewer, developer]) {
+      assert.match(
+        content,
+        /If the runtime product does not match, ignore this entire projection/u,
+      );
+      assert.match(
+        content,
+        /Do not combine responsibilities across products/u,
+      );
+    }
     if (preset === "balanced") {
       assert.match(steward, /reviewer-isolation evidence/u);
       assert.match(steward, /no blocking finding remains/u);

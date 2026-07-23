@@ -595,7 +595,15 @@ function providerContent(
   const lines = [
     "# Agent development flow",
     "",
-    "Use this project protocol when planning, implementing, reviewing, or preparing a completion transition.",
+    "## Projection applicability",
+    "",
+    `This generated projection declares coding-agent product \`${product}\` and project provider id \`${providerId}\`.`,
+    "",
+    `Apply this entire projection only when the current coding-agent runtime product is \`${product}\`. If the runtime product does not match, ignore this entire projection: its shared protocol, shared user guidance, responsibilities, operational procedures, and capability targets do not apply.`,
+    "",
+    "If multiple agentdevflow projections are visible, follow only the projection whose declared coding-agent product matches the current runtime product. Do not combine responsibilities across products.",
+    "",
+    "Within this applicability boundary, use this project protocol when planning, implementing, reviewing, or preparing an agentdevflow completion transition.",
     "",
     "## Shared protocol",
     "",
@@ -630,15 +638,15 @@ function providerContent(
   lines.push("", "## Active responsibilities", "");
   if (roles.length === 0) {
     lines.push(
-      `Provider \`${providerId}\` using \`${product}\` has no assigned workflow responsibility. Do not perform a workflow transition until the project configuration assigns one.`,
+      "This projection assigns no agentdevflow workflow responsibility. Do not perform an agentdevflow workflow transition from this projection.",
     );
   } else if (roles.length === 1) {
     lines.push(
-      `Act as the ${title(roles[0] ?? "")} through provider \`${providerId}\` using \`${product}\`. Follow only this responsibility for the current action.`,
+      `This projection assigns exactly one responsibility: ${title(roles[0] ?? "")}. For each applicable agentdevflow workflow task, act as the ${title(roles[0] ?? "")} and follow only this responsibility section.`,
     );
   } else {
     lines.push(
-      `Provider \`${providerId}\` using \`${product}\` holds multiple responsibilities. Before acting, identify the active responsibility required by the current task and follow only that responsibility section.`,
+      `This projection assigns multiple responsibilities: ${roles.map(title).join(", ")}. For each applicable agentdevflow workflow task, select exactly one responsibility required by the current task and follow only that responsibility section.`,
     );
   }
 

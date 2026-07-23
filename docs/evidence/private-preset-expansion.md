@@ -11,14 +11,18 @@ provider bindings, and compiled through the same finite-state policy seam.
 Observed retained cases include:
 
 - repeated Fast expansion produces an identical object and digest;
-- Balanced adds the declared findings and reviewer-isolation requirements;
+- Balanced adds the declared `ReviewerIsolationEvidence` and
+  no-valid-`BlockingFinding` requirements;
 - draft/ready state remains an explicit CLI choice outside preset expansion;
 - Fast retains issue CI, review-verdict, and merge-authorization gates while
-  omitting Balanced-only reviewer-isolation and blocking-finding gates;
+  omitting those Balanced-only artifact requirements;
 - an incompatible base workflow fails deterministically;
 - Strict returns `PRESET_UNAVAILABLE` rather than a weaker profile;
 - Fast and Balanced produce different workflow compilation digests and
   agent-facing procedures for both workflow families.
+
+These tests cover compiler artifacts and generated text. They do not acquire or
+authenticate reviewer identity, independence, or execution context.
 
 The previous schema-version-0 convergence fixtures were removed after
 revision-1 became the authoritative beta path. They were never a public

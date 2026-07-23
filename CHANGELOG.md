@@ -20,6 +20,13 @@ All notable public changes will be recorded in this file. During beta, incompati
 
 ### Changed
 
+- Make every generated provider projection declare its target coding-agent
+  product and provider id. A nonmatching runtime is instructed to ignore the
+  entire projection, including shared guidance, after Cursor discovery overlap
+  showed that native instruction surfaces cannot be assumed to be isolated.
+- Require a multi-responsibility provider target to select exactly one
+  responsibility section for each applicable workflow task. This remains
+  advisory text, not identity, permission, session, or authority isolation.
 - Treat every issue-workflow external capability as an advisory compiled
   procedure. The CLI does not connect to trackers, pull-request hosts, CI, or
   coding-agent processes.

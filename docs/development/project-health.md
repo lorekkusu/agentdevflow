@@ -1,6 +1,6 @@
 # Project health
 
-Assessment date: 2026-07-23.
+Assessment date: 2026-07-24.
 
 This is a dated health snapshot. The root `ROADMAP.md` alone controls current
 status, sequence, decisions, and acceptance criteria.
@@ -8,11 +8,12 @@ status, sequence, decisions, and acceptance criteria.
 ## Outcome
 
 **Continue with the product and start the adoption milestone in
-`ROADMAP.md`.** The earlier role-specific candidate was completed and merged as
-pull request 10. Its tests, installed-package qualification, hosted platform
-matrix, private-repository dogfood, and focused independent review support a
-bounded conclusion: deterministic responsibility-specific instructions add
-value beyond copying one shared prompt.
+`ROADMAP.md`.** The earlier candidate was completed and merged as pull request
+10. Its tests prove deterministic responsibility-filtered content routing, and
+the maintainer dogfood records one bounded workflow observation. This evidence
+supports continuing to test the hypothesis that responsibility-filtered
+outputs add value beyond one shared prompt; it does not yet establish that
+normal-user outcome.
 
 The current repository is still not the intended adoption beta. Minimal
 command-based rule management is complete, but practical onboarding for
@@ -32,7 +33,8 @@ remain product gaps rather than optional research ideas.
   Developer, and Reviewer scope directories;
 - bounded human and JSON `rule list`, `show`, `add`, `update`, and `remove`
   commands that mutate one canonical rule file at a time;
-- responsibility-specific Codex, Claude Code, and Cursor views;
+- responsibility-filtered Codex, Claude Code, and Cursor target views with
+  explicit product applicability;
 - whole-file create, exact adopt, bounded equivalent-content import, or abort;
 - complete `diff`, exact-approved `render`, ownership lock, and read-only
   `check`;
@@ -84,26 +86,42 @@ automatic retries, an agent chain, or trusted workflow evidence.
 
 ### Role and workflow value
 
-The bounded maintainer observation in `maintainer-dogfood.md` demonstrates:
+The bounded maintainer observation in `maintainer-dogfood.md` records:
 
 - its exact pre-closure candidate tarball completed
   `init -> diff -> render -> check`;
-- canonical shared and role guidance produced materially different provider
-  outputs;
-- fresh Codex, Claude Code, and Cursor contexts understood their assigned
-  responsibilities and handoff boundaries;
-- one Codex assignment could represent Steward and fresh Reviewer contexts
-  without granting both responsibilities to the active context;
-- the representative Linear, GitHub ready-pull-request, GitHub Actions, and
-  squash-merge procedure remained understandable through CI repair and fresh
-  review;
-- tracker-native Cursor delegation could start the Developer step while later
-  gates remained Steward responsibilities; and
-- a changed revision invalidated earlier review evidence.
+- canonical shared and responsibility rules produced byte-different provider
+  targets when configured assignments differed;
+- one-shot Codex, Claude Code, and Cursor responses were consistent with the
+  supplied responsibility sections and named expected handoffs;
+- one Codex target exposed both Steward and Reviewer sections, while separate
+  invocations followed the prompted section; this did not isolate identity,
+  permissions, authority, or execution context;
+- maintainers followed the representative Linear, GitHub
+  ready-pull-request, GitHub Actions, and squash-merge procedure through CI
+  repair and fresh review;
+- tracker-native Cursor delegation started the Developer step while
+  maintainers continued to follow the Steward procedure for later gates; and
+- a changed revision caused the procedure to treat earlier review evidence as
+  stale.
 
 This is maintainer evidence from a synthetic private repository. It is not
-normal-user adoption evidence, a provider compatibility guarantee, or evidence
-for the new onboarding milestone.
+normal-user adoption evidence, a provider compatibility guarantee, proof of
+role isolation, or evidence for the new onboarding milestone.
+
+### Provider discovery overlap
+
+A 2026-07-24 bounded Cursor Agent observation showed that one runtime could
+discover the generated root `AGENTS.md`, root `CLAUDE.md`, and Cursor rules
+together. The pre-correction response selected the configured Cursor Developer
+section but reported that the visible projections lacked an explicit
+cross-product precedence rule. The current composition corrects that text by
+declaring the target product and making every nonmatching projection wholly
+inapplicable. Against the exact corrected output, the same Cursor Agent version
+selected the Cursor Developer projection, rejected cross-product role
+combination, and reported no unresolved ambiguity. Automated tests prove the
+declaration and content routing; the headless response remains point-in-time
+behavioral evidence rather than mechanical enforcement.
 
 ### Qualification
 
@@ -114,10 +132,11 @@ The earlier role-specific candidate passed:
 - a focused independent closure review after whole-project findings were
   repaired.
 
-The current rule-management working tree passed repository audit, strict type
-checking, build, 230 automated tests, packed-installed entrypoint
-qualification, and tarball dry-run. The installed bin exercised all five rule
-operations and role-specific render convergence. Aggregate-layout evidence is
+The current working tree passed repository audit, strict type checking, build,
+231 automated tests, packed-installed entrypoint qualification, and tarball
+dry-run. The installed bin exercised all five rule operations,
+responsibility-filtered render convergence, and exact product-applicability
+declarations in all three generated targets. Aggregate-layout evidence is
 layered deliberately: the shared reader has focused all-path tests, source CLI
 tests cover all five rule operations without mutation, and the installed bin
 smoke test covers all four aggregate paths in mixed and partially moved states
