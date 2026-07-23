@@ -3,8 +3,8 @@
 ## Status
 
 Fast and Balanced are executable beta profiles. Strict is recognized but fails
-closed until its additional evidence and completion gates have executable
-semantics. Custom remains deferred.
+closed until a safety-property set is accepted and has executable semantics.
+Custom remains deferred.
 
 The implementation is in `src/project/private-domain-preset.ts` and is covered
 by `test/project/private-domain-preset.test.ts` and project-resolution tests.

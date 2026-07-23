@@ -7,9 +7,9 @@ Thank you for contributing to `agentdevflow`. The project values small, reviewab
 Read:
 
 - [repository guidance](AGENTS.md);
+- [product roadmap](ROADMAP.md);
 - [product direction](docs/product-direction.md);
 - [architecture](docs/architecture.md);
-- [development roadmap](docs/development/roadmap.md);
 - [current project health](docs/development/project-health.md);
 - [public information policy](docs/development/public-information-policy.md).
 
@@ -17,7 +17,12 @@ Confirm that the proposed change fits the current phase and does not expand a de
 
 ## Repository content
 
-Write all repository content in English. Do not commit prompts, conversation transcripts, private instructions, review chronology, credentials, personal identifiers, local absolute paths, or temporary handoff material.
+Write all repository content in English. Do not commit conversation
+transcripts, private development prompts, expanded runtime requests, private
+instructions, review chronology, credentials, personal identifiers, local
+absolute paths, or temporary handoff material. Reviewed product-owned runtime
+instruction templates required by an accepted feature are source code and must
+remain visible, bounded, intentionally packaged, and tested.
 
 Preserve technical context in its durable form:
 
@@ -32,7 +37,10 @@ Preserve technical context in its durable form:
 
 Contributors are responsible for every submitted change regardless of the tools used to produce it. Review generated material for correctness, security, licensing, provenance, and confidential information.
 
-Do not attach prompts or chat transcripts to issues or pull requests. Explain the project problem, proposed behavior, implementation, evidence, risks, and limitations directly.
+Do not attach private development prompts, expanded runtime requests, provider
+transcripts, or chat transcripts to issues or pull requests. Explain the
+project problem, proposed behavior, implementation, evidence, risks, and
+limitations directly.
 
 ## Issues and decisions
 
@@ -72,6 +80,10 @@ Keep pull requests focused. Include:
 - documentation or ADR impact.
 
 Do not claim tests, enforcement, compatibility, or security properties that were not verified.
+
+Update `ROADMAP.md` when the pull request implements, changes, defers,
+supersedes, or completes a durable product requirement. If the change has no
+roadmap impact, state why in the pull-request description.
 
 ## Verification
 

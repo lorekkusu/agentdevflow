@@ -147,6 +147,12 @@ private. The CLI does not expose a plugin ABI, workflow language, orchestration
 runtime, external evidence protocol, rule CRUD surface, migration command,
 Strict or Custom preset, auxiliary-review setting, or non-squash merge option.
 
+This list describes the current executable contract. The root
+[product roadmap](../../ROADMAP.md) accepts a bounded replacement for the rule
+surface plus existing-project onboarding, external-agent operation, a wizard,
+and Strict. Those items are not current CLI claims until their acceptance
+criteria pass.
+
 ## Historical release boundary
 
 [ADR 0004](../decisions/0004-initial-beta-public-surface.md) records the exact

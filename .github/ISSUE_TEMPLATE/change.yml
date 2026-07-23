@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Describe the public technical problem and evidence. Do not include prompts, private discussion, credentials, or sensitive security details.
+        Describe the public technical problem and evidence. Do not include private development prompts, expanded runtime requests, provider transcripts, private discussion, credentials, or sensitive security details.
   - type: textarea
     id: problem
     attributes:
@@ -47,6 +47,13 @@ body:
       label: Evidence and references
       description: Link relevant repository evidence, tests, specifications, or current primary sources.
   - type: textarea
+    id: roadmap
+    attributes:
+      label: Roadmap impact
+      description: Link the affected ROADMAP.md item, propose the required update, or explain why the change has no durable roadmap impact.
+    validations:
+      required: true
+  - type: textarea
     id: risks
     attributes:
       label: Risks and limitations
@@ -56,7 +63,7 @@ body:
     attributes:
       label: Public information check
       options:
-        - label: I removed private discussion, prompts, credentials, personal data, and machine-specific paths.
+        - label: I removed private discussion, private development prompts, expanded runtime requests, provider transcripts, credentials, personal data, and machine-specific paths.
           required: true
         - label: I have not presented a candidate decision as accepted.
           required: true

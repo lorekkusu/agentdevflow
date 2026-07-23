@@ -58,7 +58,7 @@ Classify information before recording it:
 | --- | --- |
 | Public technical health | Record verified product, architecture, maintainability, documentation, and delivery findings in `project-health.md`. |
 | Embargoed security | Keep unpatched vulnerability details, exploit conditions, credentials, and private incident coordination outside the public repository and public issue tracker. Use a private maintainer security route. |
-| Transient review material | Do not retain prompts, conversation transcripts, model reasoning, reviewer identities, raw agent output, speculative findings, or local machine details. |
+| Transient review material | Do not retain private review prompts, conversation transcripts, model reasoning, reviewer identities, raw agent output, speculative findings, or local machine details. |
 
 Do not disclose that a confidential vulnerability exists when even that fact would increase risk. After coordinated remediation, route a sanitized durable security conclusion to the appropriate advisory, ADR, evidence, or release record.
 
@@ -82,7 +82,9 @@ Use evidence paths and concise measurements rather than copying source, terminal
 ## Outcome routing
 
 - Update `project-health.md` with the current accepted health assessment and disposition.
-- Update `roadmap.md` only with the accepted current, next, later, frozen, and stop-condition changes.
+- Update the root `ROADMAP.md` only with accepted current, next, later,
+  superseded, decision-required, completion-evidence, and stop-condition
+  changes.
 - Use an ADR only for an accepted material constraint.
 - Use `docs/evidence/` only for compact reproducible technical observations.
 - Use public issues for sanitized actionable work when external tracking is useful.

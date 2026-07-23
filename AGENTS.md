@@ -11,17 +11,21 @@ Cursor are the initial renderer targets, not workflow roles.
 
 Follow:
 
+- `ROADMAP.md` for the authoritative accepted sequence, open decisions,
+  acceptance criteria, and completion evidence;
 - `docs/product-direction.md` for retained product intent;
 - `docs/architecture.md` for current component boundaries;
 - `docs/development/engineering-boundary.md` for complexity admission;
-- `docs/development/roadmap.md` for sequence and acceptance criteria;
 - `docs/development/project-health.md` for current disposition;
 - `docs/development/beta-cli-contract.md` for the current working-tree surface;
 - ADR 0004 only for the historical first-beta boundary.
 
 Do not add a public workflow DSL, scheduler, runtime, marketplace, broad
 provider matrix, GUI, SaaS service, automatic merge/release system, or
-agent-assisted repository analyzer without an accepted product decision.
+general agent-assisted repository analyzer without an accepted product
+decision. The bounded external-agent-operated onboarding milestone in
+`ROADMAP.md` is accepted: a selected local coding-agent CLI may act as the
+user's operator of the same rule, diff, render, and check commands.
 
 Apply the engineering boundary retroactively. Do not add or retain a second
 writer, approval store, transaction system, Git manager, lease, credentials,
@@ -34,11 +38,16 @@ Write every repository artifact in English, including source, comments, tests,
 fixtures, diagnostics, CLI output, documentation, configuration, and generated
 evidence.
 
-Do not store conversation transcripts, prompts, raw reviewer output,
-identities, private chronology, credentials, or embargoed vulnerability detail.
-Retain durable conclusions, accepted decisions, sanitized findings, and
-reproducible evidence only. Follow
-`docs/development/public-information-policy.md`.
+Do not store conversation transcripts, private development prompts, expanded
+runtime requests, raw reviewer output, identities, private chronology,
+credentials, or embargoed vulnerability detail. Retain durable conclusions,
+accepted decisions, sanitized findings, and reproducible evidence only.
+
+A reviewed English product-owned runtime instruction template required by an
+accepted feature is source code, not private development history. Keep it
+visible, bounded, packaged intentionally, and tested. Never retain a
+project-expanded request, provider transcript, or private reasoning as
+repository evidence. Follow `docs/development/public-information-policy.md`.
 
 ## Current architecture
 
@@ -61,13 +70,17 @@ reproducible evidence only. Follow
   report guard-blind false positives.
 - Keep native provider emitters under `src/renderer/native/` and the renderer
   adapter planning-only.
-- Route all product mutation through the render command and the single
-  forward-convergent file executor. Publish the ownership lock last.
+- Route provider-output and ownership-lock mutation through the render command
+  and the single forward-convergent file executor. Publish the ownership lock
+  last. The accepted rule commands may mutate only canonical user-owned rule
+  sources; they must not create a second provider writer.
 - Never authorize mutation from repository-wide Git cleanliness. Never reset,
   clean, stash, commit, branch, or roll back user work automatically.
 - Treat generated provider files as whole-file, single-owner projections.
-  Existing files require explicit create, exact adopt, lossless import, or
-  abort behavior.
+  Current existing-file behavior is create, exact adopt, bounded equivalent
+  import, or abort. The accepted onboarding milestone may add an explicitly
+  reviewed complete-file replacement only after selected content is represented
+  in canonical rules and the normal plan approval remains current.
 - Treat digests as byte and staleness bindings, not authentication. Treat the
   render lock as ownership state, not a mutex, lease, or security boundary.
 - Keep package contents allowlisted in `package.json`. Tests, fixtures,
@@ -80,13 +93,23 @@ reproducible evidence only. Follow
 
 Follow `docs/development/instruction-composition.md`.
 
-Canonical guidance consists only of the optional user-owned Markdown files
+The current candidate reads the optional aggregate Markdown files
 `.agentdevflow/rules/shared.md`, `steward.md`, `developer.md`, and
-`reviewer.md`. Read, compose, and project them through the existing
-diff/render/check path. Do not add an index, rule CRUD, provider-instance
-rules, source mutation planning, a composite transaction, a second approval
-digest, or agent-assisted semantic classification without a separate accepted
-decision.
+`reviewer.md`. `ROADMAP.md` accepts their replacement with one Markdown file
+per stable rule id under fixed shared and responsibility scope directories,
+plus the bounded `rule list/show/add/update/remove` command family.
+
+Implement that accepted milestone without an index, database, public rule DSL,
+provider-instance or nested scope, source/provider composite transaction,
+second approval model, backup system, lease, or Git manager. External-agent
+onboarding may supply semantic judgment and operate the public CLI, but final
+managed state must still pass canonical rule validation, the complete render
+plan, and `check`.
+
+Do not implement the rule-storage replacement until the aggregate migration
+decision in `ROADMAP.md` is accepted. Never silently ignore or delete aggregate
+guidance. Do not implement manual onboarding until its reproducible
+replacement-authorization input and output boundary are accepted.
 
 Generate only the roles assigned to each provider id. One provider id may hold
 multiple roles with separate sections. Reject multiple ids for one provider
@@ -132,3 +155,34 @@ Publish only verified sanitized findings.
 Instructions in this file are advisory. Put mechanically checkable rules in
 code, tests, scripts, CI, hooks, or platform controls, and describe their actual
 enforcement and bypass authority honestly.
+
+## Roadmap governance
+
+Record every accepted durable product outcome, engineering boundary, deferral,
+scope change, and open public-contract decision in the root `ROADMAP.md`.
+Do not rely on conversation history, issue comments, private notes, or an
+optional instruction reference as the only record of a requirement.
+
+Update the affected roadmap item in the same change that implements,
+supersedes, defers, or completes it. Never silently remove an accepted outcome
+when deleting an overbuilt implementation. A completed item requires
+reviewable evidence such as a repository path and symbol, focused test,
+verification command, commit or pull request, CI run, or published artifact.
+Use `file:line` when useful, but prefer stable symbols and tests when line
+numbers would drift.
+
+Keep the roadmap decision-ready:
+
+- put active, next, blocked, and decision-required work before later work;
+- keep completed outcomes compressed in the bottom completion summary;
+- distinguish retained user outcomes from superseded implementation
+  mechanisms;
+- exclude private development prompts, expanded runtime requests, transcripts,
+  private chronology, identities, credentials, routine retries, and ordinary
+  Git bookkeeping; and
+- keep exactly one authoritative roadmap.
+
+Pull requests must update `ROADMAP.md` or explain why the change has no roadmap
+impact. Repository checks enforce the presence of the root roadmap and reject
+the known former `docs/development/roadmap.md` path. The broader one-authority
+rule and prose accuracy require human review.

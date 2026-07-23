@@ -26,6 +26,13 @@ All notable public changes will be recorded in this file. During beta, incompati
   issue-workflow CLI surface.
 - Reject multiple configured ids for one provider product because its single
   project-wide instruction target cannot isolate them.
+- Establish the root `ROADMAP.md` as the durable requirement ledger and record
+  the accepted rule-management, existing-project onboarding,
+  external-agent-operated onboarding, interactive wizard, and Strict preset
+  sequence without claiming those capabilities are already implemented.
+- Remove the unused high-risk-evidence placeholder from Fast and Balanced
+  profiles and keep the unavailable Strict diagnostic neutral until its exact
+  safety properties are accepted.
 
 ### Removed
 

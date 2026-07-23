@@ -8,7 +8,40 @@ The publication rule is:
 
 > Preserve information whose absence could cause an incompatible implementation, an unsafe decision, an unverifiable claim, or repeated investigation. Omit information that only explains who said what or how a discussion unfolded.
 
-The repository is the source of truth for public technical state. Conversation history, prompts, private instructions, and temporary analysis are not project records and must not be copied into it.
+The repository is the source of truth for public technical state. Conversation
+history, private development prompts, expanded runtime requests, private
+instructions, and temporary analysis are not project records and must not be
+copied into it.
+
+A reviewed English product-owned runtime instruction template required by an
+accepted feature is implementation source, not private development history. It
+must be visible, bounded, intentionally packaged, and tested. Runtime expansion
+with project content, provider responses, transcripts, and private reasoning
+remains transient and must not be retained as project evidence.
+
+## Requirement record
+
+The root `ROADMAP.md` is the durable requirement ledger. Record an accepted
+requirement as a public product outcome with:
+
+- the user problem and intended result;
+- current status and sequence;
+- the smallest accepted scope and explicit non-goals;
+- pass or fail acceptance criteria;
+- open public-contract decisions; and
+- implementation, test, CI, commit, pull-request, or publication evidence when
+  complete.
+
+Do not copy the discussion that produced the requirement. Omit speaker
+identity, private development prompts, private chronology, rejected wording,
+emotional context, and transient execution details. Preserve a rejected
+alternative only when its
+technical reason prevents a likely repeated mistake.
+
+Deleting or superseding an implementation does not silently cancel its user
+outcome. Update the roadmap separately for the retained outcome and the
+superseded mechanism. If an accepted outcome is canceled, narrowed, or moved,
+record that explicit product decision and its replacement or consequence.
 
 ## Information classes
 
@@ -16,7 +49,7 @@ The repository is the source of truth for public technical state. Conversation h
 | --- | --- | --- | --- |
 | Product direction | `docs/product-direction.md` | Users, outcomes, product boundary, deferred work | Private priorities and discussion history |
 | Architecture | `docs/architecture.md` | Interfaces, invariants, trust boundaries, limitations | Brainstorms and unverified future designs |
-| Development sequence | `docs/development/roadmap.md` | Scope, dependencies, exit criteria, non-goals, stop conditions | Personal assignments and invented schedules |
+| Development sequence | `ROADMAP.md` | Accepted outcomes, scope, dependencies, exit criteria, open decisions, deferrals, completion evidence, non-goals, and stop conditions | Personal assignments, chat chronology, and invented schedules |
 | Current project health | `docs/development/project-health.md` | Sanitized verified findings, disposition, next milestone, stop conditions | Raw reviewer output, recurring chronology, and confidential security findings |
 | Health review procedure | `docs/development/project-health-review.md` | Triggers, independent review method, format, disclosure classes, outcome routing | Prompts, reviewer identities, model reasoning, and speculative findings |
 | Reversible tooling | `docs/development/tooling.md` | Current choice, rationale, revisit trigger | Chronological debate |
@@ -26,7 +59,11 @@ The repository is the source of truth for public technical state. Conversation h
 | Contribution procedure | `CONTRIBUTING.md`, issue forms, and pull-request template | Operational steps and verification | Prompt transcripts and private review chronology |
 | Repository-wide agent guidance | `AGENTS.md` | Concise commands, boundaries, and routing | Duplicated design documents |
 
-Do not create ignored or hidden directories inside the repository for private notes, prompts, transcripts, or handoff material. Temporary experiment output belongs in an operating-system temporary directory and must be deleted when the experiment finishes.
+Do not create ignored or hidden directories inside the repository for private
+notes, private development prompts, expanded runtime requests, transcripts, or
+temporary handoff material. Temporary experiment output belongs in an
+operating-system temporary directory and must be deleted when the experiment
+finishes.
 
 ## Decision lifecycle
 
@@ -59,7 +96,10 @@ A durable decision explains:
 5. the reproducible evidence supporting the decision;
 6. the conditions that require reconsideration.
 
-It does not include conversation transcripts, prompts, hidden instructions, reviewer identities, assistant attribution, token usage, local machine details, or unsupported estimates.
+It does not include conversation transcripts, private development prompts,
+expanded runtime requests, hidden private instructions, reviewer identities,
+assistant attribution, token usage, local machine details, or unsupported
+estimates.
 
 ## Evidence publication
 
@@ -84,7 +124,11 @@ independently reproducible claims to `docs/evidence/`.
 
 Tool use does not change contribution accountability. Repository records describe the project problem, technical decision, implementation, and evidence rather than the tool or conversation that produced them.
 
-Contributors must review all submitted material for correctness, licensing, security, provenance, and confidential information. The project does not require prompt disclosure, and prompts or chat transcripts must not be attached to issues or pull requests.
+Contributors must review all submitted material for correctness, licensing,
+security, provenance, and confidential information. The project does not
+require private prompt disclosure, and private development prompts, expanded
+runtime requests, provider transcripts, or chat transcripts must not be
+attached to issues or pull requests.
 
 ## Security-sensitive information
 
@@ -96,7 +140,8 @@ Before a change is committed, verify that:
 
 - every durable claim helps implementation, review, operation, security, or reconsideration;
 - candidate decisions are not presented as accepted;
-- no conversation, prompt, private instruction, or review chronology is included;
+- no conversation, private development prompt, expanded runtime request,
+  private instruction, or review chronology is included;
 - no secrets, personal identifiers, local absolute paths, or transient environment details are included;
 - repository content is English;
 - evidence is reproducible and limitations are explicit;

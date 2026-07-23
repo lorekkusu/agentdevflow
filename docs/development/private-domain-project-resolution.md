@@ -125,7 +125,7 @@ permission is unavailable.
 - Custom workflows, provider versions, execution-context selection, discovery,
   and migration remain open.
 - Fast and Balanced are executable. Strict remains intentionally unavailable
-  until stronger evidence semantics exist.
+  until a safety-property set is accepted and has executable semantics.
 
 ## Change boundary
 

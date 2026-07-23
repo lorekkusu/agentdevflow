@@ -2,7 +2,7 @@
 
 > **Historical gate record:** Phase 0 is complete. Its exclusions describe the
 > experiment boundary at that time, not the current product surface. Use the
-> [roadmap](roadmap.md), [current beta CLI contract](beta-cli-contract.md), and
+> [product roadmap](../../ROADMAP.md), [current beta CLI contract](beta-cli-contract.md), and
 > [project health](project-health.md) for current work.
 
 ## Objective

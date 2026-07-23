@@ -28,6 +28,18 @@ function commonJsRequire(specifier: string): string {
   return `const dependency = require(${JSON.stringify(specifier)});\nvoid dependency;\n`;
 }
 
+async function writeGovernanceFiles(root: string): Promise<void> {
+  await writeFile(
+    join(root, "AGENTS.md"),
+    "# Repository guidance\n\n## Roadmap governance\n\nUse `ROADMAP.md`.\n",
+  );
+  await writeFile(
+    join(root, "ROADMAP.md"),
+    "# Product roadmap\n\n## Current sequence\n\n## Completed summary\n",
+  );
+  await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
+}
+
 test("enforces dependency boundaries for direct import forms", async () => {
   const root = await mkdtemp(join(tmpdir(), "agentdevflow-repository-audit-"));
   try {
@@ -41,7 +53,7 @@ test("enforces dependency boundaries for direct import forms", async () => {
       resolve(".github/workflows/publish.yml"),
       join(root, ".github", "workflows", "publish.yml"),
     );
-    await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
+    await writeGovernanceFiles(root);
     await writeFile(
       join(root, "src", "interface", "private-zod.ts"),
       sideEffectImport("zod"),
@@ -96,6 +108,39 @@ test("requires a root security policy", async () => {
   }
 });
 
+test("requires root roadmap governance and rejects the former duplicate path", async () => {
+  const root = await mkdtemp(join(tmpdir(), "agentdevflow-roadmap-boundary-"));
+  try {
+    await mkdir(join(root, "scripts"), { recursive: true });
+    await mkdir(join(root, "docs", "development"), { recursive: true });
+    const script = join(root, "scripts", "check-repository.mjs");
+    await copyFile(resolve("scripts/check-repository.mjs"), script);
+    await writeGovernanceFiles(root);
+    await writeFile(
+      join(root, "docs", "development", "roadmap.md"),
+      "# Development roadmap\n",
+    );
+
+    const duplicate = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(duplicate.status, 1);
+    assert.match(duplicate.stderr, /FORMER_ROADMAP_PATH_FORBIDDEN/u);
+
+    await unlink(join(root, "docs", "development", "roadmap.md"));
+    await writeFile(join(root, "AGENTS.md"), "# Repository guidance\n");
+    const missingGovernance = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(missingGovernance.status, 1);
+    assert.match(missingGovernance.stderr, /ROADMAP_GOVERNANCE_MISSING/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test("limits write access to the manual npm publish workflow", async () => {
   const root = await mkdtemp(join(tmpdir(), "agentdevflow-publish-workflow-"));
   const allowedWorkflow = `name: Publish npm beta
@@ -116,7 +161,7 @@ jobs:
     const script = join(root, "scripts", "check-repository.mjs");
     const workflow = join(root, ".github", "workflows", "publish.yml");
     await copyFile(resolve("scripts/check-repository.mjs"), script);
-    await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
+    await writeGovernanceFiles(root);
     await writeFile(workflow, allowedWorkflow);
 
     const allowed = spawnSync(process.execPath, [script], {
