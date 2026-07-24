@@ -1,6 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import {
+  chmod,
+  copyFile,
   mkdir,
   mkdtemp,
   readFile,
@@ -10,7 +12,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, posix } from "node:path";
+import { basename, delimiter, dirname, join, posix } from "node:path";
 
 const root = process.cwd();
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
@@ -22,9 +24,14 @@ const issueProjectRoot = join(temporaryRoot, "issue-project");
 const draftIssueProjectRoot = join(temporaryRoot, "draft-issue-project");
 const aggregateProjectRoot = join(temporaryRoot, "aggregate-project");
 const onboardingProjectRoot = join(temporaryRoot, "onboarding-project");
+const codexOnboardingProjectRoot = join(
+  temporaryRoot,
+  "codex-onboarding-project",
+);
+const fakeCodexBinRoot = join(temporaryRoot, "fake-codex-bin");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
-function run(command, args, cwd, expectedStatuses = [0], input) {
+function run(command, args, cwd, expectedStatuses = [0], input, env) {
   const usesWindowsCommandScript =
     process.platform === "win32" && command.toLowerCase().endsWith(".cmd");
   const executable = usesWindowsCommandScript
@@ -37,6 +44,7 @@ function run(command, args, cwd, expectedStatuses = [0], input) {
     cwd,
     encoding: "utf8",
     ...(input === undefined ? {} : { input }),
+    ...(env === undefined ? {} : { env }),
   });
   if (
     result.error !== undefined ||
@@ -145,7 +153,7 @@ try {
     ["init", ["local-reviewed-change", "issue-to-reviewed-pull-request", "linear|github-issues", "fast|balanced", "id,product", "claude-code, codex, cursor"]],
     ["check", ["read-only", "exit 1"]],
     ["diff", ["exact-plan-digest", "Exit 1"]],
-    ["onboard", ["Run init before onboard", "--config", "read-only inventory", "unclassified"]],
+    ["onboard", ["Run init before onboard", "--agent manual", "--agent codex", "--yes", "read-only inventory"]],
     ["render", ["exact-plan-digest", "stale or foreign state fails closed"]],
     ["rule", ["rule list", "rule add", "--config", "requires the valid selected configuration"]],
   ];
@@ -167,6 +175,157 @@ try {
       throw new Error(`Installed rule ${operation} help was unavailable.`);
     }
   }
+  await mkdir(codexOnboardingProjectRoot);
+  const codexExistingAgents =
+    "Run the repository test command before handoff.\n";
+  await writeFile(
+    join(codexOnboardingProjectRoot, "AGENTS.md"),
+    codexExistingAgents,
+    "utf8",
+  );
+  run(
+    binPath,
+    [
+      "init",
+      "--workflow",
+      "local-reviewed-change",
+      "--preset",
+      "fast",
+      "--tracker",
+      "none",
+      "--provider",
+      "codex-main,codex",
+      "--steward",
+      "codex-main",
+      "--developer",
+      "codex-main",
+      "--reviewer",
+      "codex-main",
+    ],
+    codexOnboardingProjectRoot,
+    [1],
+  );
+  await mkdir(fakeCodexBinRoot);
+  const fakeCodexImplementationPath = join(
+    fakeCodexBinRoot,
+    "fake-codex.cjs",
+  );
+  await writeFile(
+    fakeCodexImplementationPath,
+    `const { spawnSync } = require("node:child_process");
+
+let prompt = "";
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", (chunk) => {
+  prompt += chunk;
+});
+process.stdin.on("end", () => {
+const invocation = process.argv.slice(2).join(" ");
+if ((invocation !== "exec -" && invocation !== "-") || !prompt.includes("onboard --agent manual")) {
+  process.exit(91);
+}
+const prefixMatch = prompt.match(/The exact agentdevflow argv prefix for every agentdevflow command is:\\n(\\[[^\\n]+\\])/u);
+if (prefixMatch === null) process.exit(92);
+const prefix = JSON.parse(prefixMatch[1]);
+if (
+  !Array.isArray(prefix) ||
+  prefix.length !== 2 ||
+  prefix[0] !== ${JSON.stringify(process.execPath)} ||
+  !/[\\\\/]agentdevflow[\\\\/]dist[\\\\/]src[\\\\/]cli[\\\\/]private-local-cli\\.js$/u.test(prefix[1])
+) {
+  process.exit(93);
+}
+function invoke(args, statuses = [0], input) {
+  const result = spawnSync(prefix[0], [prefix[1], ...args], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    ...(input === undefined ? {} : { input }),
+  });
+  if (result.error !== undefined || result.status === null || !statuses.includes(result.status)) {
+    process.stderr.write([result.stdout, result.stderr, result.error?.message].filter(Boolean).join("\\n"));
+    process.exit(94);
+  }
+  return result.stdout;
+}
+const inventory = JSON.parse(invoke(["onboard", "--agent", "manual", "--json"]));
+const existingTarget = inventory.targets?.find((target) => target.path === "AGENTS.md");
+if (
+  existingTarget?.disposition !== "unmanaged-existing" ||
+  typeof existingTarget.observedDigest !== "string"
+) {
+  process.exit(95);
+}
+invoke(
+  ["rule", "add", "run-tests-before-handoff", "--scope", "developer", "--stdin"],
+  [0],
+  "Run the repository test command before handoff.\\n",
+);
+const replacement = \`AGENTS.md=\${existingTarget.observedDigest}\`;
+const diff = JSON.parse(
+  invoke(["diff", "--replace-existing", replacement, "--json"], [1]),
+);
+invoke([
+  "render",
+  "--approve-plan",
+  diff.exactPlanDigest,
+  "--replace-existing",
+  replacement,
+]);
+invoke(["check"]);
+});
+`,
+    "utf8",
+  );
+  const fakeCodexPath = join(
+    fakeCodexBinRoot,
+    process.platform === "win32" ? "codex.exe" : "codex",
+  );
+  if (process.platform === "win32") {
+    await copyFile(process.execPath, fakeCodexPath);
+    await writeFile(
+      join(codexOnboardingProjectRoot, "exec"),
+      await readFile(fakeCodexImplementationPath, "utf8"),
+      "utf8",
+    );
+  } else {
+    await writeFile(
+      fakeCodexPath,
+      `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(fakeCodexImplementationPath)} "$@"\n`,
+      "utf8",
+    );
+    await chmod(fakeCodexPath, 0o755);
+  }
+  const codexOnboarding = run(
+    binPath,
+    ["onboard", "--agent", "codex", "--yes"],
+    codexOnboardingProjectRoot,
+    [0],
+    undefined,
+    {
+      ...process.env,
+      PATH: `${fakeCodexBinRoot}${delimiter}${process.env.PATH ?? ""}`,
+    },
+  );
+  if (!codexOnboarding.stdout.includes("agentdevflow check: clean")) {
+    throw new Error(
+      "Packed agentdevflow did not independently verify Codex-operated onboarding.",
+    );
+  }
+  const codexOnboardingRule = await readFile(
+    join(
+      codexOnboardingProjectRoot,
+      ".agentdevflow",
+      "rules",
+      "developer",
+      "run-tests-before-handoff.md",
+    ),
+    "utf8",
+  );
+  if (codexOnboardingRule !== codexExistingAgents) {
+    throw new Error(
+      "Packed Codex-operated onboarding did not preserve existing guidance as a canonical rule.",
+    );
+  }
   await mkdir(onboardingProjectRoot);
   const existingAgents = "Retain this existing project policy.\nOmit this obsolete sentence.\n";
   await writeFile(
@@ -175,7 +334,7 @@ try {
     "utf8",
   );
   const blockedBeforeInit = JSON.parse(
-    run(binPath, ["onboard", "--json"], onboardingProjectRoot, [2]).stdout,
+    run(binPath, ["onboard", "--agent", "manual", "--json"], onboardingProjectRoot, [2]).stdout,
   );
   if (
     blockedBeforeInit.targets !== null ||
@@ -261,7 +420,7 @@ try {
     [1],
   );
   const onboardingInventory = JSON.parse(
-    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
+    run(binPath, ["onboard", "--agent", "manual", "--json"], onboardingProjectRoot).stdout,
   );
   const unmanagedAgents = onboardingInventory.targets?.find(
     (target) => target.path === "AGENTS.md",
@@ -318,7 +477,7 @@ try {
     onboardingProjectRoot,
   );
   const managedOnboardingInventory = JSON.parse(
-    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
+    run(binPath, ["onboard", "--agent", "manual", "--json"], onboardingProjectRoot).stdout,
   );
   if (
     managedOnboardingInventory.targets?.find(
@@ -428,7 +587,7 @@ try {
     ],
     projectRoot,
   );
-  run(binPath, ["onboard"], projectRoot);
+  run(binPath, ["onboard", "--agent", "manual"], projectRoot);
   const emptyRules = JSON.parse(
     run(binPath, ["rule", "list", "--json"], projectRoot).stdout,
   );
@@ -645,7 +804,7 @@ try {
     ],
     aggregateProjectRoot,
   );
-  run(binPath, ["onboard"], aggregateProjectRoot);
+  run(binPath, ["onboard", "--agent", "manual"], aggregateProjectRoot);
   await mkdir(
     join(aggregateProjectRoot, ".agentdevflow", "rules"),
     { recursive: true },
@@ -757,7 +916,7 @@ try {
     ],
     issueProjectRoot,
   );
-  run(binPath, ["onboard"], issueProjectRoot);
+  run(binPath, ["onboard", "--agent", "manual"], issueProjectRoot);
   const issueDiff = run(
     binPath,
     ["diff", "--json"],
@@ -822,7 +981,7 @@ try {
     ],
     draftIssueProjectRoot,
   );
-  run(binPath, ["onboard"], draftIssueProjectRoot);
+  run(binPath, ["onboard", "--agent", "manual"], draftIssueProjectRoot);
   const draftIssueDiff = run(
     binPath,
     ["diff", "--json"],

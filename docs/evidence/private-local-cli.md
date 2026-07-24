@@ -17,7 +17,10 @@ Implementation:
 - `src/commands/private-render-command-service.ts`;
 - `src/commands/private-rule-command-service.ts`;
 - `src/cli/private-rule-input.ts`;
-- `src/guidance/private-project-guidance.ts`.
+- `src/cli/private-onboarding-operator.ts`;
+- `src/guidance/private-project-guidance.ts`;
+- `src/onboarding/private-codex-onboarding-process.ts`;
+- `src/onboarding/private-codex-onboarding-prompt.ts`.
 
 Primary tests:
 
@@ -29,13 +32,15 @@ Primary tests:
 - `test/commands/private-diff-command-service.test.ts`;
 - `test/commands/private-render-command-service.test.ts`;
 - `test/commands/private-render-command-subprocess.test.ts`;
-- `test/guidance/private-project-guidance.test.ts`.
+- `test/guidance/private-project-guidance.test.ts`;
+- `test/onboarding/private-codex-onboarding-process.test.ts`;
+- `test/onboarding/private-codex-onboarding-prompt.test.ts`.
 
 ## Current command surface
 
 ```text
 agentdevflow init ...
-agentdevflow onboard ...
+agentdevflow onboard [--agent <manual|codex>] [--yes] ...
 agentdevflow diff ...
 agentdevflow render --approve-plan <exact-plan-digest> ...
 agentdevflow check ...
@@ -82,9 +87,16 @@ command, approval store, or transaction boundary.
 - `init` creates an absent configuration or accepts byte-identical existing
   configuration after validating the complete project and provider-file
   disposition. It never overwrites different configuration bytes.
-- `onboard` requires the valid selected configuration, then inventories the
-  three fixed provider targets without mutation. Missing, unreadable, or
-  invalid configuration blocks before the ownership lock or targets are read.
+- `onboard` requires the valid selected configuration before selecting Manual
+  or Codex. Missing, unreadable, or invalid configuration blocks before the
+  ownership lock, provider targets, picker, or external process is accessed.
+- Manual inventories the three fixed provider targets without mutation.
+- Codex launches one fixed foreground process. The normal path keeps proposal,
+  natural-language correction, confirmation, and command operation in one
+  interactive session; `--yes` authorizes one non-interactive operation.
+- Codex receives the exact current Node executable and agentdevflow entrypoint,
+  operates the existing rule, diff, render, and check path, and is followed by
+  an independent parent-run final check.
 - `diff` is read-only and returns the recognized target plus exact digest.
 - `render` rereads and replans through the mutable workspace, rejects stale
   approval, writes provider files, and publishes the lock last.
@@ -101,8 +113,11 @@ means blocked or invalid.
 ## External-system limit
 
 The tracker-backed workflow compiles advisory procedures. CLI execution does
-not access Linear, GitHub, CI, coding-agent processes, credentials, or the
-network. The generated agent instructions carry the stop conditions.
+not access Linear, GitHub, CI, or their credentials or networks. The bounded
+Codex onboarding path may launch the user's installed Codex CLI, but
+agentdevflow does not inspect or manage provider authentication,
+configuration, permissions, hooks, MCP servers, sessions, or credentials.
+Generated agent instructions carry the remaining stop conditions.
 
 ## Qualification boundary
 

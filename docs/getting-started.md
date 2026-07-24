@@ -51,10 +51,12 @@ init -> onboard -> rule as needed -> diff -> render -> check
 ```
 
 `init` is the only first-use entry. After it creates the selected
-configuration, `onboard` performs the bounded read-only provider-target
-inventory. `onboard` fails before reading those targets when the configuration
-is absent, unreadable, or invalid. This deliberate ordering avoids a separate
-preflight path and keeps new and existing projects on one journey.
+configuration, `onboard` either performs the bounded manual provider-target
+inventory or starts the user's installed Codex CLI to operate the same public
+rule, diff, render, and check path. `onboard` fails before reading targets or
+starting Codex when the configuration is absent, unreadable, or invalid. This
+deliberate ordering avoids a separate preflight path and keeps new and existing
+projects on one journey.
 
 An `init` result of `review-required` and status `1` may still mean that the
 configuration was created successfully. In that case provider targets and the
@@ -173,11 +175,13 @@ does not. The CLI does not acquire or authenticate that evidence. A
 ready-configured flow skips only the ensure-ready step.
 
 These are advisory instructions. `agentdevflow` does not call Linear, GitHub,
-CI, or a coding-agent process. Each active agent uses tools already available
-in its execution environment. If a required tool, integration, permission, or
-configured capability is unavailable, the generated instruction requires the
-agent to stop at that step and report the exact missing capability. It must not
-silently switch trackers, skip a gate, or claim success.
+or CI, and it does not run the configured workflow roles. The bounded
+onboarding command may start Codex as an operator of agentdevflow itself. Each
+active workflow agent uses tools already available in its execution
+environment. If a required tool, integration, permission, or configured
+capability is unavailable, the generated instruction requires the agent to
+stop at that step and report the exact missing capability. It must not silently
+switch trackers, skip a gate, or claim success.
 
 ## Configure providers and responsibilities
 
@@ -233,11 +237,42 @@ After `init` creates the configuration, immediately run:
 npx agentdevflow onboard
 ```
 
-The inventory is required even when every supported provider target is absent.
-It is read-only, but it refuses to inspect the targets until the selected
-configuration is present and valid. If `init` returned `review-required` after
-creating the configuration, continue here; provider targets and the ownership
-lock have not changed.
+In an interactive terminal, this asks whether to use Codex or Manual. Scripts
+must choose explicitly:
+
+```bash
+npx agentdevflow onboard --agent manual
+npx agentdevflow onboard --agent codex
+```
+
+Manual is a read-only exact inventory and supports `--json`. Codex starts one
+foreground session that analyzes the inventory, proposes a rule organization,
+accepts natural-language revisions, and asks whether to continue. After the
+user accepts, that same session operates the normal rule, diff, render, and
+check commands, so the analysis is not repeated. The parent agentdevflow
+process independently runs the existing `check` before reporting success.
+
+`--agent codex --yes` skips the in-session confirmation and authorizes one
+non-interactive onboarding operation. It does not create durable approval
+state. The launcher uses the user's installed Codex authentication,
+configuration, permission behavior, hooks, MCP servers, and session behavior
+without inspecting or overriding them. Project content can be sent to the
+user's configured Codex service and provider usage costs can apply.
+
+The current candidate implements only the Codex external onboarding operator;
+it must pass the item 3 qualification gates before release. Other launcher
+names are not menu choices or accepted `--agent` values. The manual inventory
+remains required even when every supported provider target is absent. Both
+paths refuse to inspect targets or start Codex until the selected configuration
+is present and valid. If `init` returned `review-required` after creating the
+configuration, continue here; provider targets and the ownership lock have not
+changed.
+
+If Codex exits, is cancelled, or times out after completing one or more rule
+commands, those canonical changes remain. There is no rollback or partial-
+progress store. Run `rule list`, reobserve the targets with
+`onboard --agent manual`, and run `diff` and `check` to review the exact current
+state. Continue manually or retry only after that review.
 
 ## Add canonical project guidance
 
@@ -461,7 +496,7 @@ provider files and the lock remain unchanged.
 Then run:
 
 ```bash
-npx agentdevflow onboard
+npx agentdevflow onboard --agent manual
 ```
 
 `onboard` requires that valid configuration and fails before provider-target
@@ -525,7 +560,9 @@ losing the report under shell fail-fast behavior.
 
 The candidate does not:
 
-- launch, delegate to, monitor, or retry coding-agent processes;
+- launch arbitrary coding-agent processes, run agents in the background, or
+  monitor or retry agent work; the bounded Codex onboarding operator is the
+  only current exception;
 - connect to or mutate Linear, GitHub Issues, pull requests, CI, reviews, or
   merges;
 - verify credentials, provider installations, tool availability, or external

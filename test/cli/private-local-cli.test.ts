@@ -11,11 +11,14 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Readable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import test, { type TestContext } from "node:test";
 
 import { preparePrivateDomainProjectPlan } from "../../src/application/private-domain-project-plan.js";
+import { runPrivateLocalCli } from "../../src/cli/private-local-cli.js";
+import type { PrivateOnboardingOperator } from "../../src/cli/private-onboarding-operator.js";
 import { executePrivateRenderCommand } from "../../src/commands/private-render-command-service.js";
 import { privateDomainProjectDocumentDefaultMaxBytes } from "../../src/interface/private-domain-project-document.js";
 import { privateRenderLockDefaultMaxBytes } from "../../src/lock/private-render-lock.js";
@@ -215,6 +218,8 @@ function invokeOnboard(
   const args = [
     entryPoint,
     "onboard",
+    "--agent",
+    "manual",
     "--repository",
     project.repository,
     "--config",
@@ -449,6 +454,204 @@ test("reproduces the offline init, onboard, diff, render, check, and empty-diff 
     await snapshotDirectory(second.repository),
     await snapshotDirectory(first.repository),
   );
+});
+
+test("requires an explicit agent outside a terminal after config validation", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  let stdout = "";
+  let stderr = "";
+  const operator: PrivateOnboardingOperator = {
+    canSelectInteractively: false,
+    async selectAgent() {
+      assert.fail("non-interactive onboarding must not open a selection prompt");
+    },
+    async runCodex() {
+      assert.fail("non-interactive onboarding without --agent must not launch Codex");
+    },
+  };
+  const status = await runPrivateLocalCli(
+    [
+      "onboard",
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+    ],
+    {
+      stdout: { write: (content) => (stdout += String(content)) },
+      stderr: { write: (content) => (stderr += String(content)) },
+    },
+    Readable.from([]),
+    operator,
+  );
+
+  assert.equal(status, 2);
+  assert.equal(stderr, "");
+  assert.match(stdout, /CLI_ONBOARD_AGENT_REQUIRED/u);
+  assert.match(stdout, /targets: unavailable/u);
+});
+
+test("uses the interactive selection for one bounded manual path", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  let stdout = "";
+  const operator: PrivateOnboardingOperator = {
+    canSelectInteractively: true,
+    async selectAgent() {
+      return "manual";
+    },
+    async runCodex() {
+      assert.fail("manual selection must not launch Codex");
+    },
+  };
+  const status = await runPrivateLocalCli(
+    [
+      "onboard",
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+    ],
+    {
+      stdout: { write: (content) => (stdout += String(content)) },
+      stderr: { write: () => undefined },
+    },
+    Readable.from([]),
+    operator,
+  );
+
+  assert.equal(status, 0);
+  assert.match(stdout, /^agentdevflow onboard: inventory/u);
+});
+
+test("runs one Codex operation and independently requires a clean final check", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  let stdout = "";
+  let observedAcceptWithoutConfirmation: boolean | undefined;
+  const operator: PrivateOnboardingOperator = {
+    canSelectInteractively: false,
+    async selectAgent() {
+      assert.fail("an explicit Codex selection must not open the picker");
+    },
+    async runCodex(options) {
+      observedAcceptWithoutConfirmation = options.acceptWithoutConfirmation;
+      const diff = invoke("diff", project);
+      assert.equal(diff.status, 1);
+      assert.equal(
+        invoke("render", project, lockPath, exactPlanDigest(diff)).status,
+        0,
+      );
+      return { outcome: "completed" };
+    },
+  };
+  const status = await runPrivateLocalCli(
+    [
+      "onboard",
+      "--agent",
+      "codex",
+      "--yes",
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+    ],
+    {
+      stdout: { write: (content) => (stdout += String(content)) },
+      stderr: { write: () => undefined },
+    },
+    Readable.from([]),
+    operator,
+  );
+
+  assert.equal(observedAcceptWithoutConfirmation, true);
+  assert.equal(status, 0);
+  assert.match(stdout, /^agentdevflow check: clean/u);
+});
+
+test("does not treat a successful Codex exit as a clean onboarding result", async (t) => {
+  const project = await testProject(t);
+  assert.equal(invokeInit(project).status, 0);
+  let stdout = "";
+  const operator: PrivateOnboardingOperator = {
+    canSelectInteractively: false,
+    async selectAgent() {
+      assert.fail("an explicit Codex selection must not open the picker");
+    },
+    async runCodex() {
+      return { outcome: "completed" };
+    },
+  };
+  const status = await runPrivateLocalCli(
+    [
+      "onboard",
+      "--agent",
+      "codex",
+      "--yes",
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+    ],
+    {
+      stdout: { write: (content) => (stdout += String(content)) },
+      stderr: { write: () => undefined },
+    },
+    Readable.from([]),
+    operator,
+  );
+
+  assert.equal(status, 2);
+  assert.match(stdout, /^agentdevflow check: changes-required/u);
+});
+
+test("blocks Codex launch before target inspection when config is absent", async (t) => {
+  const project = await testProject(t);
+  let launched = false;
+  let stdout = "";
+  const operator: PrivateOnboardingOperator = {
+    canSelectInteractively: false,
+    async selectAgent() {
+      return "codex";
+    },
+    async runCodex() {
+      launched = true;
+      return { outcome: "completed" };
+    },
+  };
+  const status = await runPrivateLocalCli(
+    [
+      "onboard",
+      "--agent",
+      "codex",
+      "--repository",
+      project.repository,
+      "--config",
+      "project.jsonc",
+      "--lock",
+      lockPath,
+    ],
+    {
+      stdout: { write: (content) => (stdout += String(content)) },
+      stderr: { write: () => undefined },
+    },
+    Readable.from([]),
+    operator,
+  );
+
+  assert.equal(status, 2);
+  assert.equal(launched, false);
+  assert.match(stdout, /CLI_ONBOARD_CONFIGURATION_REQUIRED/u);
+  assert.doesNotMatch(stdout, /AGENTS\\.md/u);
 });
 
 test("keeps the selected configuration path through init, onboard, and rule guidance", async (t) => {

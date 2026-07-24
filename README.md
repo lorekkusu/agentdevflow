@@ -11,11 +11,12 @@ reviewed-change flow or an issue-to-reviewed-pull-request flow; adds optional
 project rules under `.agentdevflow/rules/`; and reviews the exact generated
 files before approving them.
 
-It generates and checks project instructions. It does **not** run agents,
-connect to Linear or GitHub, poll CI, manage credentials, or merge pull
-requests. The generated procedure tells each configured agent what it owns,
-where it must hand off, and when it must stop because a required tool or
-permission is unavailable.
+It generates and checks project instructions. Onboarding may start the user's
+installed Codex CLI as a bounded foreground operator of the same public
+commands. It does **not** run the configured workflow roles, connect to Linear
+or GitHub, poll CI, manage credentials, or merge pull requests. The generated
+procedure tells each configured agent what it owns, where it must hand off, and
+when it must stop because a required tool or permission is unavailable.
 
 > **Repository status:** this README describes the current unreleased
 > working-tree candidate. The published `0.1.0-beta.2` package is an earlier
@@ -49,9 +50,12 @@ init -> onboard -> rule as needed -> diff -> render -> check
 ```
 
 Choose one `init` command below. After `init` creates the configuration, run
-`onboard` even when no provider instruction file is expected. `onboard` is
-read-only, but it refuses to inspect provider targets until the selected
+`onboard` even when no provider instruction file is expected. In a terminal,
+bare `onboard` asks whether Codex or the manual inventory should operate this
+step. It refuses to inspect provider targets or start Codex until the selected
 configuration exists and is valid. There is no alternate onboard-first path.
+Choosing Codex can send project content to the user's configured Codex service
+and can incur provider usage costs; Manual is local and read-only.
 
 If existing provider instructions conflict with the generated targets, `init`
 returns `review-required` with status `1` after creating only the
@@ -70,7 +74,7 @@ npx agentdevflow init \
   --steward codex-main \
   --developer codex-main \
   --reviewer codex-main
-npx agentdevflow onboard
+npx agentdevflow onboard --agent manual
 ```
 
 The examples below use several products to demonstrate responsibility-filtered
@@ -147,7 +151,7 @@ After `init` creates the configuration, inventory the exact supported project
 instruction targets before changing canonical guidance:
 
 ```bash
-npx agentdevflow onboard
+npx agentdevflow onboard --agent manual
 ```
 
 The command requires the valid selected configuration and fails before reading
@@ -156,6 +160,43 @@ read-only. It reports bounded exact content, SHA-256 digest, and ownership
 disposition for `AGENTS.md`, `CLAUDE.md`, and
 `.cursor/rules/agentdevflow.mdc`. It does not scan nested instructions, other
 Cursor rules, or the repository generally.
+
+## Onboard with Codex
+
+To let the user's installed Codex CLI organize existing instructions and
+operate the normal rule, diff, render, and check path, run:
+
+```bash
+npx agentdevflow onboard --agent codex
+```
+
+One foreground Codex session analyzes the manual inventory, proposes a concise
+rule organization, and asks whether to proceed. Natural-language revisions stay
+in that same session, so accepting the proposal does not repeat the analysis.
+After acceptance, Codex uses only the exact currently running agentdevflow
+entrypoint to update canonical rules and approve the current exact render plan.
+The parent agentdevflow process then independently runs the existing `check`
+command before reporting success.
+
+For unattended use, `--yes` authorizes that one onboarding operation without
+the in-session question:
+
+```bash
+npx agentdevflow onboard --agent codex --yes
+```
+
+The current candidate implements only the Codex external onboarding operator;
+it must pass the item 3 qualification gates before release. The launcher uses
+the user's existing Codex authentication, configuration, permission behavior,
+hooks, MCP servers, and session behavior without inspecting or overriding
+them. The operation can send project content to the user's configured Codex
+service and can incur provider usage costs. Use `--agent manual` when that is
+not appropriate.
+
+If Codex stops after changing canonical rules, those completed rule operations
+remain; agentdevflow does not roll them back. Run `rule list`, use
+`onboard --agent manual` to reobserve existing targets, then run `diff` and
+`check` to review the current state before continuing manually or retrying.
 
 ## Add project rules
 
@@ -276,7 +317,7 @@ and exit statuses.
 | Command | Behavior |
 | --- | --- |
 | `init` | Validates explicit project choices, creates an absent configuration or accepts exact existing bytes, and never overwrites different bytes. |
-| `onboard` | Requires a valid configuration, then reads the three supported targets and reports exact bounded inventory. |
+| `onboard` | Requires a valid configuration, then selects the bounded manual inventory or Codex-operated onboarding path. |
 | `diff` | Reads the project and prints the complete recognized plan without mutation. |
 | `render` | Applies only a currently matching plan approved by exact digest. |
 | `check` | Reports clean, changes-required, or blocked state without mutation. |
@@ -331,20 +372,18 @@ outcomes include:
 
 - the completed repository-wide health review and its retained stop
   conditions;
-- optional onboarding operated by a user-selected, already authenticated local
-  Codex, Claude Code, Cursor, or OpenCode CLI;
+- onboarding operated by the user's installed Codex CLI;
 - an interactive first-use wizard over the same reproducible configuration and
   command model; and
 - a Strict preset with a mechanically tested policy difference from Balanced.
 
-An external coding agent acts as the user's operator of the same
-`agentdevflow` rule, diff, render, and check commands. Proposal mode stops
-before mutation. In apply mode, the user explicitly delegates the rule
-decisions and exact render approval for that one operation. `agentdevflow` will
-not manage provider credentials or turn that bounded onboarding convenience
-into a background orchestration runtime. OpenCode is a launcher candidate, not
-an initial renderer target. The exact public invocation, first support tier,
-and installed-version policy remain decisions rather than current commands.
+Codex acts as the user's operator of the same `agentdevflow` rule, diff,
+render, and check commands. The normal path keeps proposal, revision,
+confirmation, and accepted execution in one interactive session; `--yes`
+authorizes one non-interactive operation. `agentdevflow` does not manage
+provider credentials or turn this bounded onboarding convenience into a
+background orchestration runtime. Other coding-agent launchers remain
+unsupported until a later accepted decision and qualification.
 
 ## Development
 

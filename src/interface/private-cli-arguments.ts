@@ -31,6 +31,8 @@ export const privateCliCommands = [
 ] as const;
 export type PrivateCliCommand = (typeof privateCliCommands)[number];
 export type PrivateCliOutputFormat = "human" | "json";
+export const privateOnboardingAgents = ["manual", "codex"] as const;
+export type PrivateOnboardingAgent = (typeof privateOnboardingAgents)[number];
 export const privateRuleOperations = [
   "add",
   "list",
@@ -106,6 +108,8 @@ export type PrivateCliInvocation =
     }
   | {
       readonly command: "onboard";
+      readonly agent: PrivateOnboardingAgent | null;
+      readonly acceptWithoutConfirmation: boolean;
       readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly lockPath: string;
@@ -653,16 +657,54 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
 
 function parseOnboardArguments(args: readonly string[]): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(args, {
+    agent: stringOption,
     config: stringOption,
     json: booleanOption,
     lock: stringOption,
     repository: stringOption,
+    yes: booleanOption,
   });
   if (!parsed.ok) return parsed.result;
+  const selectedAgent = stringValue(parsed.values, "agent");
+  if (
+    selectedAgent !== undefined &&
+    !privateOnboardingAgents.includes(selectedAgent as PrivateOnboardingAgent)
+  ) {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Option --agent must be manual or codex.",
+      "--agent",
+    );
+  }
+  const agent = (selectedAgent ?? null) as PrivateOnboardingAgent | null;
+  const acceptWithoutConfirmation = parsed.values.yes === true;
+  if (acceptWithoutConfirmation && agent !== "codex") {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Option --yes requires --agent codex.",
+      "--yes",
+    );
+  }
+  if (agent === "codex" && parsed.values.json === true) {
+    return failure(
+      "INVALID_OPTION_VALUE",
+      "Codex-operated onboarding is interactive provider output and does not support --json.",
+      "--json",
+    );
+  }
+  if (agent === null && parsed.values.json === true) {
+    return failure(
+      "MISSING_REQUIRED_OPTION",
+      "Non-interactive onboard --json requires --agent manual.",
+      "--agent",
+    );
+  }
   return {
     ok: true,
     invocation: {
       command: "onboard",
+      agent,
+      acceptWithoutConfirmation,
       projectConfigPath:
         stringValue(parsed.values, "config") ?? defaultProjectConfigPath,
       repositoryPath:

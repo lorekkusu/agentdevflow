@@ -126,12 +126,13 @@ caller are removal candidates.
 
 ### Agent assistance
 
-After explicit content and cost disclosure, a user-selected external coding
-agent may propose configuration or custom-guidance edits and operate the same
-`agentdevflow` commands that the user could operate manually. This is a
-foreground operator convenience. The launcher may inherit the user's existing
-CLI authentication, but it must not inspect, copy, store, refresh, or print
-credentials.
+A user-selected external coding agent may propose canonical-rule changes and
+operate the same `agentdevflow` commands that the user could operate manually.
+This is a foreground operator convenience. Public documentation explains
+provider content and cost implications. The launcher uses the user's installed
+CLI behavior without inspecting, copying, storing, overriding, refreshing, or
+printing credentials, configuration, permissions, hooks, MCP state, or
+sessions.
 
 The external agent may use rule commands for canonical sources and may invoke
 the normal diff, render, and check sequence. It is not a second provider writer,
@@ -141,10 +142,11 @@ protocol, transaction, or trust system. The accepted canonical state, complete
 deterministic render plan, ownership lock, and final check remain
 authoritative.
 
-Proposal mode stops before mutation. Explicit apply selection delegates
-canonical-rule decisions and exact render approval to the selected agent for
-one operation. This initial user grant is the semantic authorization; the
-existing digest remains a staleness binding and does not replace that grant.
+The initial Codex adapter uses one interactive session for analysis,
+natural-language correction, confirmation, and execution. `--yes` explicitly
+authorizes the same single operation without the confirmation question. There
+is no separate propose/apply mode, proposal handoff, or provider-output schema.
+The existing digest remains a staleness binding rather than a second approval.
 
 ### External services
 
@@ -158,6 +160,10 @@ runtime. It may map a bounded onboarding task to one installed executable,
 argv, stdin, working directory, and exit result. It must not become a
 background process manager, provider SDK, login flow, retry queue, or general
 agent chain.
+
+Do not add a proactive provider-version allowlist, authentication detector,
+permission classifier, runtime cost workflow, or arbitrary executable option
+without a reproduced in-scope failure and an accepted decision.
 
 ## Complexity admission test
 
