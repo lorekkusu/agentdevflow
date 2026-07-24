@@ -25,8 +25,15 @@ revision-1 ProjectConfig bytes
   -> ownership lock published last
 ```
 
-The CLI exposes this path through `init`, `onboard`, `diff`, `render`, `check`,
-and the bounded `rule` command family.
+The CLI exposes this path through one fixed first-use sequence:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`init` is the only first-use entry. Every `rule` operation requires the valid
+selected configuration, and the bounded family supplies canonical guidance
+within that path.
 
 ## Configuration and project resolution
 
@@ -114,7 +121,8 @@ silently ignores old content, or performs automatic migration.
 Existing-project onboarding is a primary adoption path:
 
 ```text
-supported existing provider instructions
+validated project configuration
+  -> supported existing provider instructions
   -> bounded discovery
   -> manual or external-agent-assisted rule proposal
   -> canonical changes through rule commands
@@ -140,10 +148,12 @@ canonical-rule decisions and exact render approval to the selected agent for
 one operation; the plan digest still binds freshness rather than semantic
 approval.
 
-The manual boundary is executable. `onboard` reads exact bounded content and
-ownership dispositions for the three fixed native targets without requiring a
-configuration. The complete file is the content unit. The operator represents
-retained content through canonical rule commands and repeats an exact
+The manual boundary is executable. `onboard` first requires the valid selected
+revision-1 configuration and fails without reading the lock or provider
+targets when that prerequisite is missing or invalid. It then reads exact
+bounded content and ownership dispositions for the three fixed native targets.
+The complete file is the content unit. The operator represents retained
+content through canonical rule commands and repeats an exact
 `--replace-existing <path>=<observed-sha256>` input for `diff` and `render`.
 
 That input authorizes one current unmanaged whole-file disposition. The normal

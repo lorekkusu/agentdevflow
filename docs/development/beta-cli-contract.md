@@ -14,26 +14,43 @@ remain beta surfaces and may change through documented migration before 1.0.
 
 The current command set is:
 
-- `init`: validate explicit non-interactive choices and create only an absent
-  configuration;
-- `onboard`: read the bounded exact inventory of supported existing provider
-  targets without mutation;
+- `init`: validate explicit non-interactive choices, create an absent
+  configuration or accept byte-identical existing configuration, and never
+  overwrite different bytes;
+- `onboard`: require the valid selected configuration, then read the bounded
+  exact inventory of supported existing provider targets without mutation;
 - `diff`: read the repository and show the complete recognized target;
 - `render`: apply only the current plan whose exact digest was reviewed;
 - `check`: report clean, changes-required, or blocked state without mutation;
-- `rule list` and `rule show`: inspect canonical project rules; and
-- `rule add`, `rule update`, and `rule remove`: mutate only one canonical
-  project-rule file per invocation.
+- `rule list` and `rule show`: require the valid selected configuration, then
+  inspect canonical project rules; and
+- `rule add`, `rule update`, and `rule remove`: require the valid selected
+  configuration, then mutate only one canonical project-rule file per
+  invocation.
 
 No command runs agents, calls external services, probes credentials, or manages
 Git.
 
+The fixed non-interactive first-use order is:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`init` is the only first-use entry. There is no supported onboard-first
+preflight path. Every rule operation accepts `--config` and blocks before
+reading or mutating canonical rules when the selected configuration is absent,
+unreadable, or invalid.
+
 ## Existing-project onboarding
 
 `onboard` observes exactly `AGENTS.md`, `CLAUDE.md`, and
-`.cursor/rules/agentdevflow.mdc`. It accepts `--repository`, `--lock`, and
-`--json`. It does not require a configuration and does not search parent,
-nested, or alternate provider instruction paths.
+`.cursor/rules/agentdevflow.mdc`. It accepts `--repository`, `--config`,
+`--lock`, and `--json`. Before reading the lock or any provider target, it
+requires the selected configuration to be a readable, valid revision-1 project
+document. Missing, unreadable, or invalid configuration returns status `2`,
+reports `targets: null`, and discloses no target content. The command does not
+search parent, nested, or alternate provider instruction paths.
 
 Each complete target file is one content unit. Human and JSON output report:
 
@@ -60,12 +77,15 @@ The repeatable option authorizes only a configured native target whose current
 unmanaged bytes match the supplied digest. It states that retained content is
 represented in current canonical rules and that any remainder omitted from the
 generated target is intentional. Duplicate, unsupported, unused, unnecessary,
-managed, or stale inputs block.
+managed, or stale inputs block. The operator first runs `diff` without
+replacement inputs. Exact-adopt and equivalent-content import need no input;
+replacement is used only for configured targets that remain ownership
+conflicts.
 
-An init invocation whose only provider failures are unsupported existing
+An `init` invocation whose only provider failures are unsupported existing
 content and its ownership conflict may create the absent valid configuration,
 return `review-required`, and leave all provider targets and the lock
-unchanged.
+unchanged. The next command remains `onboard`.
 
 ## Repository and paths
 
@@ -78,7 +98,9 @@ Commands use the current working directory as the exact root unless
 | Ownership lock | `.agentdevflow/lock.json` | `--lock <repository-relative-path>` |
 
 Configuration and lock paths must remain below the selected root. Absolute
-paths, traversal, symlinks, and non-regular files fail closed.
+paths, traversal, symlinks, and non-regular files fail closed. The
+configuration path must not overlap the canonical rule root or a native
+provider target; this invariant also applies before every rule operation.
 
 Canonical user guidance is discovered from immediate Markdown files under:
 
@@ -108,10 +130,12 @@ scope. `update` preserves scope, and `remove` requires an existing id.
 - `--file <repository-relative-path>`; or
 - `--stdin`.
 
-Every rule operation accepts `--repository <path>` and `--json`. Input and
-output are bounded. A mutation invocation authorizes only its one canonical
-file; provider files and the ownership lock still change only through
-`diff -> render -> check`.
+Every rule operation accepts `--repository <path>`,
+`--config <repository-relative-path>`, and `--json`. The selected configuration
+must be present and valid before canonical rules are read or mutated. Input
+and output are bounded. A mutation invocation authorizes only its one
+canonical file; provider files and the ownership lock still change only
+through `diff -> render -> check`.
 
 ## Init choices
 

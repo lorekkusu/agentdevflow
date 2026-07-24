@@ -207,12 +207,18 @@ function invokeWithReplacements(
   };
 }
 
-function invokeOnboard(project: TestProject, json = false): CommandResult {
+function invokeOnboard(
+  project: TestProject,
+  json = false,
+  selectedConfigurationPath = "project.jsonc",
+): CommandResult {
   const args = [
     entryPoint,
     "onboard",
     "--repository",
     project.repository,
+    "--config",
+    selectedConfigurationPath,
     "--lock",
     lockPath,
   ];
@@ -330,6 +336,7 @@ function invokeRule(
   project: TestProject,
   args: readonly string[],
   input?: string | Uint8Array,
+  selectedConfigurationPath = "project.jsonc",
 ): CommandResult {
   const result = spawnSync(
     process.execPath,
@@ -339,6 +346,8 @@ function invokeRule(
       ...args,
       "--repository",
       project.repository,
+      "--config",
+      selectedConfigurationPath,
     ],
     {
       encoding: "utf8",
@@ -390,7 +399,7 @@ async function writeConfiguration(
   return content;
 }
 
-test("reproduces the offline init, diff, render, check, and empty-diff path", async (t) => {
+test("reproduces the offline init, onboard, diff, render, check, and empty-diff path", async (t) => {
   const first = await testProject(t);
   const second = await testProject(t);
 
@@ -401,6 +410,10 @@ test("reproduces the offline init, diff, render, check, and empty-diff path", as
     assert.match(initialized.stdout, /^agentdevflow init: ready\n/u);
     assert.match(initialized.stdout, /configuration-disposition: create/u);
     assert.match(initialized.stdout, /provider-dispositions: 3/u);
+    assert.match(
+      initialized.stdout,
+      /next: run onboard with --config set to the configuration-path above; then use rule commands as needed and run diff without replacement inputs/u,
+    );
     const configurationContent = await readFile(project.configuration, "utf8");
     assert.deepEqual(JSON.parse(configurationContent), {
       ...localIntent(),
@@ -413,6 +426,14 @@ test("reproduces the offline init, diff, render, check, and empty-diff path", as
     const repeatedInit = invokeInit(project);
     assert.equal(repeatedInit.status, 0);
     assert.match(repeatedInit.stdout, /configuration-disposition: adopt/u);
+
+    const inventory = JSON.parse(invokeOnboard(project, true).stdout);
+    assert.deepEqual(
+      inventory.targets.map(
+        (target: { readonly disposition: string }) => target.disposition,
+      ),
+      ["absent", "absent", "absent"],
+    );
 
     const diff = invoke("diff", project);
     assert.equal(diff.status, 1);
@@ -427,6 +448,38 @@ test("reproduces the offline init, diff, render, check, and empty-diff path", as
   assert.deepEqual(
     await snapshotDirectory(second.repository),
     await snapshotDirectory(first.repository),
+  );
+});
+
+test("keeps the selected configuration path through init, onboard, and rule guidance", async (t) => {
+  const project = await testProject(t);
+  const selectedConfigurationPath = "custom-project.jsonc";
+  const initialized = invokeInit(
+    project,
+    false,
+    selectedConfigurationPath,
+  );
+  assert.equal(initialized.status, 0);
+  assert.match(
+    initialized.stdout,
+    /configuration-path: custom-project\.jsonc/u,
+  );
+  assert.match(
+    initialized.stdout,
+    /next: run onboard with --config set to the configuration-path above/u,
+  );
+  assert.equal(
+    invokeOnboard(project, false, selectedConfigurationPath).status,
+    0,
+  );
+  assert.equal(
+    invokeRule(
+      project,
+      ["list", "--json"],
+      undefined,
+      selectedConfigurationPath,
+    ).status,
+    0,
   );
 });
 
@@ -569,6 +622,23 @@ test("onboards exact whole-file dispositions without silent content loss", async
     await writeFile(join(project.repository, path), content, "utf8");
   }
 
+  const beforeInit = invokeOnboard(project, true);
+  assert.equal(beforeInit.status, 2);
+  const beforeInitReport = JSON.parse(beforeInit.stdout);
+  assert.equal(beforeInitReport.targets, null);
+  assert.equal(
+    beforeInitReport.diagnostics[0]?.code,
+    "CLI_ONBOARD_CONFIGURATION_REQUIRED",
+  );
+
+  const initialized = invokeInit(project);
+  assert.equal(initialized.status, 1);
+  assert.match(
+    initialized.stdout,
+    /next: run onboard with --config set to the configuration-path above; then use rule commands as needed and run diff without replacement inputs/u,
+  );
+  assert.doesNotMatch(initialized.stdout, /--replace-existing/u);
+
   const inventory = invokeOnboard(project, true);
   assert.equal(inventory.status, 0);
   const inventoryReport = JSON.parse(inventory.stdout);
@@ -604,9 +674,6 @@ test("onboards exact whole-file dispositions without silent content loss", async
   );
   assert.equal(inventoryReport.targets[1]?.content, existing["AGENTS.md"]);
 
-  const initialized = invokeInit(project);
-  assert.equal(initialized.status, 1);
-  assert.match(initialized.stdout, /next: run onboard/u);
   assert.equal(
     invokeRule(
       project,
@@ -783,6 +850,7 @@ test("onboards a new unmanaged provider target after other targets are managed",
 
 test("blocks onboarding inventory without partial target disclosure", async (t) => {
   const project = await testProject(t);
+  await writeConfiguration(project, localIntent());
   const outside = join(project.container, "outside.md");
   await writeFile(outside, "Outside target.\n", "utf8");
   await writeFile(
@@ -804,6 +872,68 @@ test("blocks onboarding inventory without partial target disclosure", async (t) 
     true,
   );
   assert.equal(result.stdout.includes("Visible unmanaged content."), false);
+});
+
+test("blocks onboard before reading targets when configuration is absent or invalid", async (t) => {
+  const project = await testProject(t);
+  const outside = join(project.container, "outside.md");
+  await writeFile(outside, "Outside target.\n", "utf8");
+  await symlink(outside, join(project.repository, "AGENTS.md"));
+
+  const absent = invokeOnboard(project, true);
+  assert.equal(absent.status, 2);
+  const absentReport = JSON.parse(absent.stdout);
+  assert.equal(absentReport.targets, null);
+  assert.equal(
+    absentReport.diagnostics[0]?.code,
+    "CLI_ONBOARD_CONFIGURATION_REQUIRED",
+  );
+  assert.equal(
+    absentReport.diagnostics.some(
+      (diagnostic: { readonly code: string }) =>
+        diagnostic.code === "ONBOARD_TARGET_READ_FAILED",
+    ),
+    false,
+  );
+
+  await writeFile(project.configuration, "{ invalid", "utf8");
+  const invalid = invokeOnboard(project, true);
+  assert.equal(invalid.status, 2);
+  const invalidReport = JSON.parse(invalid.stdout);
+  assert.equal(invalidReport.targets, null);
+  assert.equal(
+    invalidReport.diagnostics.some(
+      (diagnostic: { readonly code: string }) =>
+        diagnostic.code === "SYNTAX_INVALID",
+    ),
+    true,
+  );
+  assert.equal(
+    invalidReport.diagnostics.some(
+      (diagnostic: { readonly code: string }) =>
+        diagnostic.code === "ONBOARD_TARGET_READ_FAILED",
+    ),
+    false,
+  );
+});
+
+test("onboards through the selected valid configuration path", async (t) => {
+  const project = await testProject(t);
+  await writeFile(
+    join(project.repository, "custom-project.jsonc"),
+    document(localIntent()),
+    "utf8",
+  );
+
+  assert.equal(invokeOnboard(project, true).status, 2);
+  const selected = invokeOnboard(project, true, "custom-project.jsonc");
+  assert.equal(selected.status, 0);
+  assert.deepEqual(
+    JSON.parse(selected.stdout).targets.map(
+      (target: { readonly disposition: string }) => target.disposition,
+    ),
+    ["absent", "absent", "absent"],
+  );
 });
 
 test("executes initial check and exact diff without mutating the repository", async (t) => {
@@ -1298,6 +1428,7 @@ test("rejects oversized and invalid UTF-8 configuration and lock files", async (
 test("manages per-rule files while leaving provider outputs for exact-approved render", async (t) => {
   const project = await testProject(t);
   assert.equal(invokeInit(project).status, 0);
+  assert.equal(invokeOnboard(project).status, 0);
   const initialDiff = invoke("diff", project);
   assert.equal(initialDiff.status, 1);
   assert.equal(
@@ -1449,6 +1580,76 @@ test("manages per-rule files while leaving provider outputs for exact-approved r
 
 test("blocks duplicate, missing, and aggregate rule states without mutation", async (t) => {
   const project = await testProject(t);
+  const beforeInit = invokeRule(
+    project,
+    [
+      "add",
+      "verification",
+      "--scope",
+      "shared",
+      "--stdin",
+      "--json",
+    ],
+    "Run verification.\n",
+  );
+  assert.equal(beforeInit.status, 2);
+  assert.equal(
+    JSON.parse(beforeInit.stdout).diagnostics[0]?.code,
+    "CLI_RULE_CONFIGURATION_REQUIRED",
+  );
+  assert.deepEqual(await snapshotDirectory(project.repository), {});
+
+  await writeFile(project.configuration, "{ invalid", "utf8");
+  const invalidConfiguration = invokeRule(
+    project,
+    ["list", "--json"],
+  );
+  assert.equal(invalidConfiguration.status, 2);
+  assert.equal(
+    JSON.parse(invalidConfiguration.stdout).diagnostics[0]?.code,
+    "SYNTAX_INVALID",
+  );
+  assert.equal(
+    (await snapshotDirectory(project.repository))[
+      ".agentdevflow/rules/shared/verification.md"
+    ],
+    undefined,
+  );
+
+  await writeFile(
+    join(project.repository, "AGENTS.md"),
+    document(localIntent()),
+    "utf8",
+  );
+  const reservedConfigurationPath = invokeRule(
+    project,
+    [
+      "add",
+      "verification",
+      "--scope",
+      "shared",
+      "--stdin",
+      "--json",
+    ],
+    "Run verification.\n",
+    "AGENTS.md",
+  );
+  assert.equal(reservedConfigurationPath.status, 2);
+  assert.equal(
+    JSON.parse(reservedConfigurationPath.stdout).diagnostics[0]?.code,
+    "CLI_PATH_COLLISION",
+  );
+  assert.equal(
+    (await snapshotDirectory(project.repository))[
+      ".agentdevflow/rules/shared/verification.md"
+    ],
+    undefined,
+  );
+  await rm(join(project.repository, "AGENTS.md"));
+
+  await rm(project.configuration);
+  assert.equal(invokeInit(project).status, 0);
+  assert.equal(invokeOnboard(project).status, 0);
   assert.equal(
     invokeRule(
       project,
@@ -1499,6 +1700,8 @@ test("blocks duplicate, missing, and aggregate rule states without mutation", as
   }
 
   const aggregate = await testProject(t);
+  assert.equal(invokeInit(aggregate).status, 0);
+  assert.equal(invokeOnboard(aggregate).status, 0);
   await mkdir(join(aggregate.repository, ".agentdevflow/rules"), {
     recursive: true,
   });
@@ -1547,6 +1750,7 @@ test("blocks duplicate, missing, and aggregate rule states without mutation", as
 test("invalidates a reviewed render plan when canonical rules change", async (t) => {
   const project = await testProject(t);
   assert.equal(invokeInit(project).status, 0);
+  assert.equal(invokeOnboard(project).status, 0);
   const reviewed = invoke("diff", project);
   assert.equal(reviewed.status, 1);
   const staleDigest = exactPlanDigest(reviewed);

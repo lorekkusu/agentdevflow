@@ -38,6 +38,24 @@ Commands use the current directory as the exact repository root unless
 Absolute, escaping, symbolic-link, and non-regular-file configuration and lock
 paths fail closed.
 
+## Fixed first-use sequence
+
+Every unmanaged project uses the same public sequence:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`init` is the only first-use entry. After it creates the selected
+configuration, `onboard` performs the bounded read-only provider-target
+inventory. `onboard` fails before reading those targets when the configuration
+is absent, unreadable, or invalid. This deliberate ordering avoids a separate
+preflight path and keeps new and existing projects on one journey.
+
+An `init` result of `review-required` and status `1` may still mean that the
+configuration was created successfully. In that case provider targets and the
+lock remain unchanged; continue with `onboard`.
+
 ## Choose a workflow
 
 The current CLI provides two built-in workflow families. They are closed
@@ -186,6 +204,20 @@ merge method.
 accepted near-term work; Custom remains later direction. See the
 [product roadmap](../ROADMAP.md).
 
+## Run onboard after init
+
+After `init` creates the configuration, immediately run:
+
+```bash
+npx agentdevflow onboard
+```
+
+The inventory is required even when every supported provider target is absent.
+It is read-only, but it refuses to inspect the targets until the selected
+configuration is present and valid. If `init` returned `review-required` after
+creating the configuration, continue here; provider targets and the ownership
+lock have not changed.
+
 ## Add canonical project guidance
 
 Each canonical rule is one user-owned Markdown file under a fixed scope:
@@ -228,12 +260,16 @@ EOF
 The rule command family is:
 
 ```text
-agentdevflow rule list [--repository <path>] [--json]
-agentdevflow rule show <id> [--repository <path>] [--json]
-agentdevflow rule add <id> --scope <scope> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-agentdevflow rule remove <id> [--repository <path>] [--json]
+agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
+agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
+agentdevflow rule add <id> --scope <scope> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+agentdevflow rule remove <id> [--repository <path>] [--config <relative-path>] [--json]
 ```
+
+Every rule operation requires the valid selected configuration. This keeps
+`init` as the only first-use entry; a missing, unreadable, or invalid
+configuration blocks before canonical rules are read or changed.
 
 `add` fails when the id already exists. `show`, `update`, and `remove` fail when
 it does not. `update` changes content without changing scope; move a rule by
@@ -258,12 +294,13 @@ Provider files are generated views, not a second rule store. Direct edits to
 `AGENTS.md`, `CLAUDE.md`, or `.cursor/rules/agentdevflow.mdc` are drift and are
 not reverse-synchronized.
 
-## Complete the init, diff, render, check cycle
+## Complete the diff, render, check cycle
 
-Successful `init` creates only `agentdevflow.config.jsonc`. It does not write
-provider outputs or `.agentdevflow/lock.json`.
-
-Review the plan:
+Successful `init` creates an absent `agentdevflow.config.jsonc` or accepts
+byte-identical existing configuration. It never overwrites different
+configuration bytes and does not write provider outputs or
+`.agentdevflow/lock.json`. After the required `onboard` inventory and any
+canonical rule changes, review the plan:
 
 ```bash
 npx agentdevflow diff
@@ -285,9 +322,10 @@ produces a new plan and digest.
 
 ## Reconfigure an initialized project
 
-`init` is deliberately creation-only. It never overwrites an existing
-configuration and refuses to initialize over an ownership lock. To change a
-preset, provider assignment, tracker, or workflow, edit
+`init` is deliberately create-or-exact-adopt only. It never overwrites
+different existing configuration bytes and refuses to initialize over an
+ownership lock. To change a preset, provider assignment, tracker, or workflow,
+edit
 `agentdevflow.config.jsonc` as user-owned project configuration, then use the
 normal review path:
 
@@ -394,24 +432,29 @@ Adoption, import, and explicit onboarding replacement make the complete path
 agentdevflow-owned. The tool does not manage a section inside a foreign file.
 A clean Git repository is not replacement authorization.
 
-For an existing project, first run:
+For an existing project, run `init` with the intended workflow and providers.
+Unsupported existing content makes `init` return status `1` and
+`review-required`; it may still create the absent valid configuration because
+provider files and the lock remain unchanged.
+
+Then run:
 
 ```bash
 npx agentdevflow onboard
 ```
 
-The read-only inventory reports exact bounded content, byte count, digest,
-ownership disposition, and classification state for the three generated target
-paths. An unmanaged file is `unclassified`. The command does not inspect
-nested instructions or other Cursor rules.
+`onboard` requires that valid configuration and fails before provider-target
+inspection when it is absent or invalid. The read-only inventory reports exact
+bounded content, byte count, digest, ownership disposition, and classification
+state for the three generated target paths. An unmanaged file is
+`unclassified`. The command does not inspect nested instructions or other
+Cursor rules. Use `rule add` or `rule update` to represent every instruction
+that should remain.
 
-Run `init` with the intended workflow and providers. Unsupported existing
-content makes init return status `1` and `review-required`; it may still create
-the absent valid configuration because provider files and the lock remain
-unchanged. Use `rule add` or `rule update` to represent every instruction that
-should remain.
-
-Then repeat one exact input per reviewed unmanaged target:
+Run `diff` without replacement inputs first. Exact-adopt and
+equivalent-content import require no replacement. If `diff` still reports an
+ownership conflict, repeat one exact input per reviewed configured conflicting
+target:
 
 ```bash
 npx agentdevflow diff \

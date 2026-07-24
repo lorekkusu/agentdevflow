@@ -33,11 +33,11 @@ async function writeGovernanceFiles(root: string): Promise<void> {
   await writeFile(join(root, ".claude", "CLAUDE.md"), "@../AGENTS.md\n");
   await writeFile(
     join(root, "AGENTS.md"),
-    "# Repository guidance\n\n## Roadmap governance\n\nUse `ROADMAP.md`.\n",
+    "# Repository guidance\n\n## Product, authority, and design gate\n\nUse `ROADMAP.md`.\n\n## Roadmap governance and independent review\n\nReview independently.\n",
   );
   await writeFile(
     join(root, "ROADMAP.md"),
-    "# Product roadmap\n\n## Current sequence\n\n## Completed summary\n",
+    "# Product roadmap\n\n## Product objective\n\n## Current sequence\n\n## Explicitly out of scope\n\n## Open decisions\n\n## Completed summary\n",
   );
   await writeFile(join(root, "SECURITY.md"), "# Security Policy\n");
 }
@@ -174,6 +174,21 @@ test("requires root roadmap governance and rejects the former duplicate path", a
     });
     assert.equal(missingGovernance.status, 1);
     assert.match(missingGovernance.stderr, /ROADMAP_GOVERNANCE_MISSING/u);
+
+    await writeGovernanceFiles(root);
+    await writeFile(
+      join(root, "ROADMAP.md"),
+      "# Product roadmap\n\n## Current sequence\n\n## Completed summary\n",
+    );
+    const missingAuthority = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(missingAuthority.status, 1);
+    assert.match(
+      missingAuthority.stderr,
+      /ROADMAP_AUTHORITY_STRUCTURE_MISSING/u,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

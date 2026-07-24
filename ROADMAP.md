@@ -32,8 +32,9 @@ The core user outcome is:
 
 ```text
 choose a workflow and responsibilities
-  -> manage project-owned rules
-  -> onboard new or existing projects
+  -> init the project configuration
+  -> onboard the configured project
+  -> manage project-owned rules as needed
   -> generate provider-target views filtered by configured responsibilities
   -> review the complete diff
   -> render through one owned write path
@@ -43,6 +44,19 @@ choose a workflow and responsibilities
 External coding agents may act as user-selected operators of the
 `agentdevflow` CLI. They do not replace the CLI's rule validation, planning,
 render ownership, or final check.
+
+The accepted non-interactive first-use order is fixed:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`init` is the only first-use entry. `onboard` requires the valid selected
+configuration and fails before inspecting provider targets when it is absent
+or invalid. Every `rule` operation also requires the valid selected
+configuration, preventing rule management from becoming another pre-init
+entry. New projects and projects with existing instructions do not expose
+different entry orders.
 
 ## Status meanings
 
@@ -65,12 +79,48 @@ render ownership, or final check.
 Items 1 and 2 are complete and compressed in the completion summary. The
 remaining numbers preserve the accepted dependency order.
 
-### 3. External-agent-operated onboarding
+### Required repository-wide health review gate
 
 Status: **Accepted next**
 
+After the fixed first-use correction is merged, a new review must examine the
+complete current repository rather than only item 3. It covers every accepted
+ADR, completed roadmap outcome, executable command, architecture and mutation
+boundary, public claim, test boundary, packaged runtime file, and retained
+implementation dependency.
+
+The review follows `docs/development/project-health-review.md`, begins from the
+merged `main`, uses independent isolated perspectives including a zero-context
+installed-package exercise, and publishes only verified sanitized conclusions.
+Material findings receive explicit `Keep`, `Invest`, `Freeze`, `Defer`, or
+`Removal candidate` disposition. Repairs are made in bounded reviewable
+changes; the review itself does not silently redesign public contracts.
+
+Exit criteria:
+
+- every accepted decision and completed roadmap claim is mapped to current
+  implementation and evidence or identified as stale;
+- public documentation, installed help, executable behavior, tests, and
+  package contents are checked for contradiction;
+- retained production components have a current product caller and fit the
+  engineering boundary;
+- verified findings and stop conditions are recorded in
+  `docs/development/project-health.md` and this roadmap where authoritative;
+  and
+- item 3 is either restored to `Accepted next` with its prerequisites intact
+  or explicitly re-scoped by an approved decision.
+
+### 3. External-agent-operated onboarding
+
+Status: **Blocked**
+
 This item depends on the accepted rule and manual onboarding contracts in items
-1 and 2, which are complete.
+1 and 2, which are complete. Design and implementation are temporarily blocked
+until the required repository-wide health review gate above is complete.
+
+External-agent operation begins only after the same required `init -> onboard`
+entry. It must not introduce a pre-init inventory path or a second first-use
+state model.
 
 #### User outcome
 
@@ -192,7 +242,7 @@ constraint, or ownership disposition.
 
 The wizard is a user interface over the same public configuration, rule,
 onboarding, diff, render, and check operations. It does not create a second
-configuration model or hidden state.
+configuration model, hidden state, or alternate first-use order.
 
 #### Acceptance criteria
 
@@ -453,4 +503,4 @@ test, and evidence documents.
 | Overbuilt transaction, recovery, execution-transport, old-schema, second-writer, and indexed-rule mechanisms were removed while their useful conclusions were retained | `docs/development/engineering-boundary.md`; `docs/development/project-health.md`; Git history |
 | Root roadmap authority, update rules, completion evidence, and the known former duplicate-path check established | `ROADMAP.md`; `AGENTS.md`; `scripts/check-repository.mjs`; `test/repository/check-repository.test.ts` |
 | Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, responsibility-filtered composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |
-| Manual existing-project onboarding inventories the exact fixed native target files without mutation, keeps classification with the user, permits only exact digest-bound whole-file replacement through the normal diff, render, forward-convergence, and ownership-lock path, and finishes with a clean managed state without adding a repository analyzer, second writer, or approval store | `docs/decisions/0006-manual-existing-project-onboarding.md`; `src/onboarding/private-existing-project-inventory.ts`; `src/application/private-domain-project-plan.ts`; `test/onboarding/private-existing-project-inventory.test.ts`; `test/cli/private-local-cli.test.ts`; `scripts/verify-package-entrypoint.mjs`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |
+| Fixed init-first manual existing-project onboarding requires a valid selected configuration before exact native-target inventory, keeps classification with the user, permits only exact digest-bound whole-file replacement through the normal diff, render, forward-convergence, and ownership-lock path, and finishes with a clean managed state without adding an alternate entry order, repository analyzer, second writer, or approval store | `docs/decisions/0006-manual-existing-project-onboarding.md`; `src/cli/private-local-cli.ts`; `src/onboarding/private-existing-project-inventory.ts`; `src/application/private-domain-project-plan.ts`; `test/cli/private-local-cli.test.ts`; `scripts/verify-package-entrypoint.mjs`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |

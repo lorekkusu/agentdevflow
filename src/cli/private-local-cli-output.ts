@@ -356,7 +356,7 @@ export function formatExistingProjectInventory(
     );
   }
   lines.push(
-    "next: represent retained content with rule commands, then run diff with one exact --replace-existing path=sha256 input per reviewed unmanaged target",
+    "next: use rule commands as needed, then run diff without replacement inputs; only if diff reports an ownership conflict, rerun it with one exact --replace-existing path=sha256 input for each configured conflicting target whose retained content is represented in canonical rules",
   );
   return selectedOutput(format, lines.join("\n"), {
     command: "onboard",
@@ -588,10 +588,7 @@ export function formatInit(options: {
     );
   }
   lines.push(
-    options.outcome === "review-required" &&
-      options.files.some((file) => file.action === "conflict")
-      ? "next: run onboard, represent retained content with rule commands, then run diff with exact --replace-existing inputs"
-      : "next: run diff and review the complete exact plan before render",
+    "next: run onboard with --config set to the configuration-path above; then use rule commands as needed and run diff without replacement inputs",
   );
   return selectedOutput(format, lines.join("\n"), {
     command: "init",

@@ -4,6 +4,8 @@ Status: Accepted
 
 Date: 2026-07-24
 
+Amended: 2026-07-24
+
 ## Context
 
 Projects commonly contain useful instructions in `AGENTS.md`, `CLAUDE.md`, or
@@ -19,7 +21,24 @@ second writer, or second approval model.
 
 ## Decision
 
-`agentdevflow onboard` is a read-only inventory of exactly:
+Manual onboarding follows one fixed public sequence:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`init` is the only first-use entry. `agentdevflow onboard` accepts the selected
+configuration path and requires that file to contain a valid revision-1
+project configuration. When the configuration is absent, unreadable, or
+invalid, the command fails before reading the ownership lock or any provider
+target and reports no partial inventory.
+
+Every canonical `rule` operation accepts the same selected configuration path
+and requires that file to remain valid. This prevents rule management from
+becoming a second pre-init entry. `onboard` remains read-only, so no separate
+onboarding-complete marker or state model is created.
+
+After that prerequisite, `onboard` is a read-only inventory of exactly:
 
 - `AGENTS.md`;
 - `CLAUDE.md`; and
@@ -35,8 +54,10 @@ combined, duplicated, or provider- and responsibility-specific guidance
 through the existing canonical `rule` commands. No per-paragraph
 classification record is created.
 
-After reviewing the complete unmanaged file, the operator may supply this
-repeatable input to both `diff` and `render`:
+After reviewing the complete unmanaged file and running the normal `diff`
+without replacement inputs, the operator may supply this repeatable input to
+both `diff` and `render` for each configured target that remains an ownership
+conflict:
 
 ```text
 --replace-existing <repository-relative-path>=<observed-sha256>
@@ -56,12 +77,15 @@ managed, or stale inputs fail closed.
 
 When unsupported existing provider content is present, `init` may create only
 an absent valid configuration and return `review-required`. It does not write
-provider targets or the ownership lock. This permits the operator to proceed
-through inventory, rule commands, exact replacement diff, render, and check.
+provider targets or the ownership lock. The operator then proceeds through
+`onboard`, rule commands, exact replacement diff, render, and check. An
+onboard-first preflight is not supported.
 
 ## Consequences
 
 - Manual onboarding is deterministic and does not require an external model.
+- New and existing projects share one first-use entry and sequence; users do
+  not choose between init-first and onboard-first flows.
 - Existing files remain unchanged until the normal render step.
 - Content classification remains the operator's judgment; the product does
   not claim mechanically lossless natural-language transformation.
@@ -89,12 +113,18 @@ through inventory, rule commands, exact replacement diff, render, and check.
   model-free.
 - **Scan every provider instruction surface.** Rejected because the initial
   renderer owns only three fixed project-wide targets.
+- **Permit config-independent onboarding preflight.** Rejected because an
+  alternate entry order increases first-use choice and cognitive load. The
+  valid configuration is the deterministic prerequisite for the fixed
+  onboarding journey.
 
 ## Security and disclosure considerations
 
-Inventory reads only bounded regular UTF-8 files below the selected root.
-Symlinks, unreadable files, invalid UTF-8, oversized files, non-regular files,
-invalid locks, and ambiguous ownership fail without a partial inventory.
+The selected configuration must pass the existing bounded JSONC and revision-1
+schema and workflow validation before inventory begins. Inventory then reads
+only bounded regular UTF-8 files below the selected root. Symlinks, unreadable
+files, invalid UTF-8, oversized files, non-regular files, invalid locks, and
+ambiguous ownership fail without a partial inventory.
 
 Foreign bytes remain undisclosed by ordinary blocked `diff`. Exact existing
 content is emitted only by the explicit `onboard` inventory or by a `diff`

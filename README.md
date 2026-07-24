@@ -38,6 +38,24 @@ Replace the `npx agentdevflow` prefix in the examples below with
 `node dist/src/cli/private-local-cli.js`. The repository version is not a
 registry release and must not be published again as `0.1.0-beta.2`.
 
+## Start here
+
+Every unmanaged project follows one order:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+Choose one `init` command below. After `init` creates the configuration, run
+`onboard` even when no provider instruction file is expected. `onboard` is
+read-only, but it refuses to inspect provider targets until the selected
+configuration exists and is valid. There is no alternate onboard-first path.
+
+If existing provider instructions conflict with the generated targets, `init`
+returns `review-required` with status `1` after creating only the
+configuration. The provider files and ownership lock remain unchanged. Continue
+with `onboard`; do not rerun or bypass `init`.
+
 ## What it can configure
 
 ### Local reviewed change
@@ -142,25 +160,27 @@ The unreleased aggregate paths such as `.agentdevflow/rules/shared.md` are not
 read as a second format. Their presence blocks with an exact suggested manual
 move; no command silently migrates, ignores, or deletes them.
 
-## Onboard an existing project
+## Complete onboarding after init
 
-Inventory the exact supported project instruction targets before changing
-them:
+After `init` creates the configuration, inventory the exact supported project
+instruction targets before changing them:
 
 ```bash
 npx agentdevflow onboard
 ```
 
-The command is read-only. It reports bounded exact content, SHA-256 digest, and
-ownership disposition for `AGENTS.md`, `CLAUDE.md`, and
+The command requires the valid selected configuration and fails before reading
+provider targets when the configuration is absent or invalid. It is otherwise
+read-only. It reports bounded exact content, SHA-256 digest, and ownership
+disposition for `AGENTS.md`, `CLAUDE.md`, and
 `.cursor/rules/agentdevflow.mdc`. It does not scan nested instructions, other
 Cursor rules, or the repository generally.
 
-Use `init` to create the absent configuration. Existing unsupported provider
-content makes init return `review-required`, but init still writes only the
-configuration. Represent every instruction that should remain through the
-canonical `rule` commands. Then authorize each reviewed complete unmanaged
-target by exact observed digest:
+Represent every instruction that should remain through the canonical `rule`
+commands, then run `diff` without replacement inputs. Exact-adopt and
+equivalent-content import require no replacement. Only when `diff` still
+reports an ownership conflict should you rerun it with the exact observed
+digest for each configured conflicting target:
 
 ```bash
 npx agentdevflow diff \
@@ -187,8 +207,10 @@ Git operation, second writer, or durable proposal store.
 
 ## Review and render
 
-`init` creates only `agentdevflow.config.jsonc`. It reports provider-file
-dispositions but does not write provider files or the ownership lock.
+`init` creates an absent `agentdevflow.config.jsonc` or accepts byte-identical
+existing configuration. It never overwrites different configuration bytes. It
+reports provider-file dispositions but does not write provider files or the
+ownership lock.
 
 ```bash
 npx agentdevflow diff
@@ -231,12 +253,12 @@ and exit statuses.
 
 | Command | Behavior |
 | --- | --- |
-| `init` | Validates explicit project choices and creates only an absent configuration. |
-| `onboard` | Reads the three supported existing targets and reports exact bounded inventory. |
+| `init` | Validates explicit project choices, creates an absent configuration or accepts exact existing bytes, and never overwrites different bytes. |
+| `onboard` | Requires a valid configuration, then reads the three supported targets and reports exact bounded inventory. |
 | `diff` | Reads the project and prints the complete recognized plan without mutation. |
 | `render` | Applies only a currently matching plan approved by exact digest. |
 | `check` | Reports clean, changes-required, or blocked state without mutation. |
-| `rule list/show/add/update/remove` | Reads or mutates only canonical project-rule files. |
+| `rule list/show/add/update/remove` | Requires the valid selected configuration, then reads or mutates only canonical project-rule files. |
 
 Run global or command-specific help:
 
@@ -276,13 +298,15 @@ branches, or rolls back user work.
 Beta configuration, lock, diagnostic, and JSON report fields may change with
 documented migration before 1.0.
 
-## Accepted next milestones
+## Accepted direction and next gate
 
 The current limitations are not all indefinite deferrals. This is a
 non-normative orientation summary; the [product roadmap](ROADMAP.md) alone owns
 current status, order, decisions, and acceptance criteria. Its accepted product
 outcomes include:
 
+- a repository-wide health review of every current decision and implementation
+  area before item 3 resumes;
 - optional onboarding operated by a user-selected, already authenticated local
   Codex, Claude Code, Cursor, or OpenCode CLI;
 - an interactive first-use wizard over the same reproducible configuration and

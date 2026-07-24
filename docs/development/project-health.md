@@ -7,13 +7,14 @@ status, sequence, decisions, and acceptance criteria.
 
 ## Outcome
 
-**Continue with the product and start the adoption milestone in
-`ROADMAP.md`.** The earlier candidate was completed and merged as pull request
-10. Its tests prove deterministic responsibility-filtered content routing, and
-the maintainer dogfood records one bounded workflow observation. This evidence
-supports continuing to test the hypothesis that responsibility-filtered
-outputs add value beyond one shared prompt; it does not yet establish that
-normal-user outcome.
+**Continue with the product, fix the first-use contract, then complete the
+required repository-wide health review before item 3 resumes.** The earlier
+candidate was completed and merged as pull request 10. Its tests prove
+deterministic responsibility-filtered content routing, and the maintainer
+dogfood records one bounded workflow observation. This evidence supports
+continuing to test the hypothesis that responsibility-filtered outputs add
+value beyond one shared prompt; it does not yet establish that normal-user
+outcome.
 
 The current repository is still not the intended adoption beta. Minimal
 command-based rule management and bounded manual onboarding for existing
@@ -33,8 +34,9 @@ remain product gaps rather than optional research ideas.
   Developer, and Reviewer scope directories;
 - bounded human and JSON `rule list`, `show`, `add`, `update`, and `remove`
   commands that mutate one canonical rule file at a time;
-- bounded read-only `onboard` inventory for the three native targets, with
-  exact reviewed whole-file replacement through the normal plan and writer;
+- init-gated, bounded read-only `onboard` inventory for the three native
+  targets, with exact reviewed whole-file replacement through the normal plan
+  and writer;
 - responsibility-filtered Codex, Claude Code, and Cursor target views with
   explicit product applicability;
 - whole-file create, exact adopt, bounded equivalent-content import, or abort;
@@ -135,10 +137,10 @@ The earlier role-specific candidate passed:
   repaired.
 
 The current working tree passed repository audit, strict type checking, build,
-242 automated tests, packed-installed entrypoint qualification, V1 recovery
+246 automated tests, packed-installed entrypoint qualification, V1 recovery
 tests, and tarball dry-run. The installed bin exercised all five rule
 operations, responsibility-filtered render convergence, exact
-product-applicability declarations, lock-free manual onboarding, and
+product-applicability declarations, init-gated manual onboarding, and
 incremental onboarding of an unmanaged provider target after another target
 was already managed. Aggregate-layout evidence remains layered deliberately:
 the shared reader has focused all-path tests, source CLI tests cover all five
@@ -155,10 +157,18 @@ incremental managed-project coverage, aligning current-state documentation,
 clarifying local-versus-no-tracker intent, and distinguishing locally packed
 development candidates from the historical published version.
 
-A zero-context installed-package exercise completed
-`onboard -> init -> rule -> diff -> render -> check`, reached a clean state,
-and could explain the generated paths, approval sequence, and non-features.
-This is bounded pre-release usability evidence, not normal-user adoption.
+The earlier zero-context installed-package exercise used
+`onboard -> init -> rule -> diff -> render -> check`. That ordering is now
+superseded and is not evidence for the current first-use contract. The fixed
+`init -> onboard -> rule -> diff -> render -> check` path has deterministic
+installed-bin coverage. A fresh zero-context installed-package review completed
+both an empty project and a project with an unmanaged native target, verified
+that pre-init onboarding disclosed no target content, verified that absent,
+invalid, and reserved-path configurations blocked rule access without
+canonical mutation, and reached a clean managed state through the documented
+sequence with default and custom configuration paths. No unresolved journey
+question was observed. This remains bounded pre-release usability evidence,
+not normal-user adoption.
 
 Every new roadmap milestone must rerun the current required checks and add
 focused installed-bin coverage for its new public behavior.
@@ -189,9 +199,10 @@ not broad usability or normal-user adoption.
 
 The non-interactive init path is reproducible but requires a zero-context user
 to understand workflow, preset, tracker, pull-request, provider, and
-responsibility choices before seeing a guided product flow. The accepted
-wizard must wrap the same model rather than create a second configuration
-surface.
+responsibility choices before seeing a guided product flow. The accepted fixed
+sequence removes the separate init-first versus onboard-first choice, but not
+the configuration burden. The accepted wizard must wrap the same sequence and
+model rather than create a second configuration surface or alternate order.
 
 ### Strict is not yet a product capability
 
@@ -222,7 +233,8 @@ root roadmap pass:
 | --- | --- |
 | Minimal rule commands and one-file-per-rule source | Complete in the working tree |
 | Manual existing-project onboarding | Complete in the working tree |
-| External-agent-operated onboarding | Accepted next; launcher contract and qualification pending |
+| Repository-wide health review gate | Accepted next; required before item 3 resumes |
+| External-agent-operated onboarding | Blocked pending the repository-wide health review |
 | Interactive new/existing project wizard | Waiting on non-interactive contracts |
 | Strict policy difference accepted and executable | Decision required |
 | Exact final tarball dogfood and zero-context review | Waiting on implementation |
@@ -236,6 +248,9 @@ subsystem, transaction framework, or general automation platform.
 
 Run another independent project-health review when:
 
+- the fixed first-use correction is merged; this maintainer-requested review
+  must cover every current decision and implementation area before item 3
+  resumes;
 - existing-project onboarding and one external-agent adapter complete their
   first end-to-end private-repository run;
 - the Strict property set is proposed for acceptance;
