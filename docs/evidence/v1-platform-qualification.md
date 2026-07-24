@@ -9,13 +9,14 @@ passed the original V1 matrix on Ubuntu 24.04 x64, macOS 15 arm64, and Windows
 2025 x64 with Node.js 22 and 24. That run qualified the published beta.2
 candidate and is historical evidence, not proof for later working-tree changes.
 
-## Current candidate result
+## Most recent merged-tree result
 
 GitHub Actions run
-[29989549407](https://github.com/lorekkusu/agentdevflow/actions/runs/29989549407)
-passed the current committed implementation candidate on all six cells. The
-run used the workflow's explicit `workflow_dispatch` entry point and bound to
-commit `de3c320ede0d7e9e1eb7e282515c81c1a81b8d52`.
+[30067879491](https://github.com/lorekkusu/agentdevflow/actions/runs/30067879491)
+passed pull request 15 on all six cells at head commit
+`340f484bdf8ef69bfb022dd58bc08f1d4fe4bc01`. That commit and merged `main`
+commit `dc9ee9b19f7b860809d40458b9c25acadd582a7e` have the same Git tree
+`4278390982303bda5a0218fc681ed18b9c39eb65`.
 
 Every cell passed the platform probe, zero-skip qualification, installed
 package entrypoint exercise, and tracked-file cleanliness check. Later commits

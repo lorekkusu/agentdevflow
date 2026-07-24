@@ -37,6 +37,8 @@ node dist/src/cli/private-local-cli.js --help
 Replace the `npx agentdevflow` prefix in the examples below with
 `node dist/src/cli/private-local-cli.js`. The repository version is not a
 registry release and must not be published again as `0.1.0-beta.2`.
+When evaluating an installed local tarball instead, invoke its installed
+`agentdevflow` bin directly and keep the commands below unchanged.
 
 ## Start here
 
@@ -55,6 +57,24 @@ If existing provider instructions conflict with the generated targets, `init`
 returns `review-required` with status `1` after creating only the
 configuration. The provider files and ownership lock remain unchanged. Continue
 with `onboard`; do not rerun or bypass `init`.
+
+The smallest valid local setup uses one provider for all three
+responsibilities:
+
+```bash
+npx agentdevflow init \
+  --workflow local-reviewed-change \
+  --preset fast \
+  --tracker none \
+  --provider codex-main,codex \
+  --steward codex-main \
+  --developer codex-main \
+  --reviewer codex-main
+npx agentdevflow onboard
+```
+
+The examples below use several products to demonstrate responsibility-filtered
+outputs; multiple products are not required.
 
 ## What it can configure
 
@@ -121,6 +141,22 @@ them. If a required integration, tool, or permission is unavailable, generated
 instructions require the active agent to stop and report the missing
 capability instead of simulating success or skipping the gate.
 
+## Inventory provider instructions
+
+After `init` creates the configuration, inventory the exact supported project
+instruction targets before changing canonical guidance:
+
+```bash
+npx agentdevflow onboard
+```
+
+The command requires the valid selected configuration and fails before reading
+provider targets when the configuration is absent or invalid. It is otherwise
+read-only. It reports bounded exact content, SHA-256 digest, and ownership
+disposition for `AGENTS.md`, `CLAUDE.md`, and
+`.cursor/rules/agentdevflow.mdc`. It does not scan nested instructions, other
+Cursor rules, or the repository generally.
+
 ## Add project rules
 
 Each project rule is one user-owned Markdown file under a fixed scope:
@@ -160,27 +196,13 @@ The unreleased aggregate paths such as `.agentdevflow/rules/shared.md` are not
 read as a second format. Their presence blocks with an exact suggested manual
 move; no command silently migrates, ignores, or deletes them.
 
-## Complete onboarding after init
+## Resolve existing provider instructions
 
-After `init` creates the configuration, inventory the exact supported project
-instruction targets before changing them:
-
-```bash
-npx agentdevflow onboard
-```
-
-The command requires the valid selected configuration and fails before reading
-provider targets when the configuration is absent or invalid. It is otherwise
-read-only. It reports bounded exact content, SHA-256 digest, and ownership
-disposition for `AGENTS.md`, `CLAUDE.md`, and
-`.cursor/rules/agentdevflow.mdc`. It does not scan nested instructions, other
-Cursor rules, or the repository generally.
-
-Represent every instruction that should remain through the canonical `rule`
-commands, then run `diff` without replacement inputs. Exact-adopt and
-equivalent-content import require no replacement. Only when `diff` still
-reports an ownership conflict should you rerun it with the exact observed
-digest for each configured conflicting target:
+Use the `onboard` inventory to represent every instruction that should remain
+through the canonical `rule` commands, then run `diff` without replacement
+inputs. Exact-adopt and equivalent-content import require no replacement. Only
+when `diff` still reports an ownership conflict should you rerun it with the
+exact observed digest for each configured conflicting target:
 
 ```bash
 npx agentdevflow diff \
@@ -301,12 +323,14 @@ documented migration before 1.0.
 ## Accepted direction and next gate
 
 The current limitations are not all indefinite deferrals. This is a
-non-normative orientation summary; the [product roadmap](ROADMAP.md) alone owns
+non-normative orientation summary; the
+[product roadmap](https://github.com/lorekkusu/agentdevflow/blob/main/ROADMAP.md)
+alone owns
 current status, order, decisions, and acceptance criteria. Its accepted product
 outcomes include:
 
-- a repository-wide health review of every current decision and implementation
-  area before item 3 resumes;
+- the completed repository-wide health review and its retained stop
+  conditions;
 - optional onboarding operated by a user-selected, already authenticated local
   Codex, Claude Code, Cursor, or OpenCode CLI;
 - an interactive first-use wizard over the same reproducible configuration and
@@ -319,13 +343,17 @@ before mutation. In apply mode, the user explicitly delegates the rule
 decisions and exact render approval for that one operation. `agentdevflow` will
 not manage provider credentials or turn that bounded onboarding convenience
 into a background orchestration runtime. OpenCode is a launcher candidate, not
-an initial renderer target.
+an initial renderer target. The exact public invocation, first support tier,
+and installed-version policy remain decisions rather than current commands.
 
 ## Development
 
-Contributors should read [Repository guidance](AGENTS.md),
-[Contributing](CONTRIBUTING.md), the [product roadmap](ROADMAP.md), and the
-[engineering boundary](docs/development/engineering-boundary.md).
+Contributors should read the repository's
+[guidance](https://github.com/lorekkusu/agentdevflow/blob/main/AGENTS.md),
+[contribution guide](https://github.com/lorekkusu/agentdevflow/blob/main/CONTRIBUTING.md),
+[product roadmap](https://github.com/lorekkusu/agentdevflow/blob/main/ROADMAP.md),
+and
+[engineering boundary](https://github.com/lorekkusu/agentdevflow/blob/main/docs/development/engineering-boundary.md).
 
 ```bash
 npm install

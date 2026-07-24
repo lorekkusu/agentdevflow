@@ -2,260 +2,229 @@
 
 Assessment date: 2026-07-24.
 
-This is a dated health snapshot. The root `ROADMAP.md` alone controls current
-status, sequence, decisions, and acceptance criteria.
+This is the current sanitized health assessment. The root `ROADMAP.md` alone
+controls sequence, status, open decisions, and acceptance criteria.
 
-## Outcome
+## Basis
 
-**Continue with the product, fix the first-use contract, then complete the
-required repository-wide health review before item 3 resumes.** The earlier
-candidate was completed and merged as pull request 10. Its tests prove
-deterministic responsibility-filtered content routing, and the maintainer
-dogfood records one bounded workflow observation. This evidence supports
-continuing to test the hypothesis that responsibility-filtered outputs add
-value beyond one shared prompt; it does not yet establish that normal-user
-outcome.
+The review began from clean merged `main` at
+`dc9ee9b19f7b860809d40458b9c25acadd582a7e`. It covered every accepted ADR,
+completed roadmap outcome, executable command, production module, public
+journey, test boundary, package entry, and retained dependency.
 
-The current repository is still not the intended adoption beta. Minimal
-command-based rule management and bounded manual onboarding for existing
-provider instructions are complete. An interactive first-use path, the
-accepted Strict preset, and qualified external-agent-operated onboarding
-remain product gaps rather than optional research ideas.
+Three independent read-only perspectives examined product and roadmap
+alignment, implementation cost, and zero-context installed-package delivery.
+The zero-context perspective invoked the packed bin directly and completed both
+an empty project and a project with an unmanaged `AGENTS.md` before reading
+implementation or test sources. The coordinating review verified material
+claims against the repository and retained only sanitized conclusions.
 
-## Active implemented core
+This was a product and maintainability review, not a security audit,
+normal-user adoption study, or external-agent qualification.
 
-- revision-1 bounded JSONC project configuration;
-- Fast and Balanced preset expansion;
-- `local-reviewed-change`;
-- `issue-to-reviewed-pull-request` with Linear or GitHub Issues, draft or
-  ready state, auxiliary review disabled, and squash merge;
-- provider-neutral Steward, Developer, and Reviewer responsibilities;
-- globally unique, per-rule canonical guidance under fixed shared, Steward,
-  Developer, and Reviewer scope directories;
-- bounded human and JSON `rule list`, `show`, `add`, `update`, and `remove`
-  commands that mutate one canonical rule file at a time;
-- init-gated, bounded read-only `onboard` inventory for the three native
-  targets, with exact reviewed whole-file replacement through the normal plan
-  and writer;
-- responsibility-filtered Codex, Claude Code, and Cursor target views with
-  explicit product applicability;
-- whole-file create, exact adopt, bounded equivalent-content import, or abort;
-- complete `diff`, exact-approved `render`, ownership lock, and read-only
-  `check`;
-- finite-state safety validation for typed artifacts, invalidation, cycles,
-  review bypass, stale evidence, deterministic counterexamples, and guard-blind
-  diagnostics.
+## Current product outcome
 
-The public working-tree CLI exposes `init`, `onboard`, `diff`, `render`,
-`check`, and the bounded `rule` command family.
+The current unreleased candidate supports one fixed non-interactive journey:
 
-## Corrective simplification
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
 
-Executable systems without a normal-user producer or consumer were removed:
+A user can configure either bounded built-in workflow, assign provider-neutral
+Steward, Developer, and Reviewer responsibilities, inventory the three native
+provider targets, represent retained guidance as canonical per-rule Markdown,
+review a complete deterministic plan, render through one owned convergent
+writer, and verify a clean managed state.
 
-- write-ahead transaction, rollback, lease, and journal machinery;
-- execution trace transport and replay;
-- provider-specific external evidence mapping;
-- superseded schema and init paths;
-- Rulesync process-oracle tooling;
-- the indexed and transaction-heavy canonical-rule CRUD experiment;
-- composite canonical-source/provider transactions; and
-- the caller-supplied environment-observation command.
+The smallest valid setup uses one provider id for all three responsibilities.
+Codex, Claude Code, and Cursor remain optional renderer targets rather than
+required workflow roles. Tracker, pull-request, CI, review, and merge behavior
+is advisory compiled procedure text; the CLI does not operate those systems.
 
-The rule-management user outcome was not canceled by deleting its overbuilt
-implementation. Its smaller replacement is now implemented: one Markdown file
-per globally unique rule id, a closed scope set, and small commands that reuse
-the existing provider diff, render, and check path. Unreleased aggregate paths
-fail closed with exact manual-move guidance; there is no migration subsystem or
-dual reader.
+## Roadmap alignment
 
-The retained file executor provides exact before-or-after convergence and
-lock-last publication. Stronger machinery may return only after a reproduced
-in-scope failure and an accepted product decision.
+- Items 1 and 2 are complete and match executable behavior.
+- The repository-wide health gate is complete.
+- Item 3 retains its accepted user outcome and architecture boundary but is
+  `Decision required`: its exact invocation, first public support tier, and
+  version qualification policy remain open.
+- The wizard follows item 3 and must wrap the same fixed journey.
+- Strict remains committed but requires its exact finite safety properties.
+- Exact-candidate dogfood and the next beta remain later gates.
 
-## External-system boundary
+No executable work was found for a later milestone that bypasses this order.
+The published `0.1.0-beta.2` remains a historical product and is not evidence
+for the current candidate.
 
-The issue workflow's tracker, pull-request, CI, review, and merge capabilities
-remain advisory compiled procedures. The CLI does not connect to Linear or
-GitHub, poll CI, manage credentials, or merge.
+## Measured observations
 
-The accepted onboarding launcher has a different and narrower purpose. It may
-start one user-selected, already installed local coding-agent CLI in the
-foreground. That external agent acts as the user's operator of the exact
-current `agentdevflow` rule, diff, render, and check commands. The launcher
-does not provide provider login, a provider SDK, background execution,
-automatic retries, an agent chain, or trusted workflow evidence.
+- Production: 40 TypeScript modules and 12,017 physical lines.
+- Tests and fixtures: 33 files after removal of one no-value tooling test.
+- Scripts: 6 files and 1,951 physical lines.
+- Runtime dependencies: exact `jsonc-parser` 3.3.1 and Zod 4.4.3 behind their
+  required private boundaries.
+- Every production module has a current production caller. No duplicate
+  provider writer, journal, transaction store, approval store, Git manager,
+  credential client, provider SDK, or agent runtime was found.
+- The CLI runner, argument parser, and formatter total 3,101 lines across
+  `src/cli/private-local-cli.ts`,
+  `src/interface/private-cli-arguments.ts`, and
+  `src/cli/private-local-cli-output.ts`.
+- The installed-package verifier is a real release boundary but is 1,021 lines
+  and invokes the installed bin approximately 40 times.
+- The health-gate candidate passed 245 automated tests with no failure, skip,
+  or todo; V1 recovery retained 33 passing tests.
+- The packed CLI contains 45 entries, is 75,598 compressed bytes and 371,069
+  unpacked bytes, and excludes tests, fixtures, declarations, source maps,
+  experiments, provider clients, and research evidence.
+- Pull request 15 qualified the exact Git tree later merged as
+  `dc9ee9b19f7b860809d40458b9c25acadd582a7e` on Ubuntu, macOS, and Windows
+  with Node.js 22 and 24.
 
-## Current evidence
+Exact local package measurements and hosted tree bindings are recorded in
+`docs/evidence/private-package-qualification.md` and
+`docs/evidence/v1-platform-qualification.md`.
 
-### Role and workflow value
+## Findings
 
-The bounded maintainer observation in `maintainer-dogfood.md` records:
+### Core architecture remains coherent
 
-- its exact pre-closure candidate tarball completed
-  `init -> diff -> render -> check`;
-- canonical shared and responsibility rules produced byte-different provider
-  targets when configured assignments differed;
-- one-shot Codex, Claude Code, and Cursor responses were consistent with the
-  supplied responsibility sections and named expected handoffs;
-- one Codex target exposed both Steward and Reviewer sections, while separate
-  invocations followed the prompted section; this did not isolate identity,
-  permissions, authority, or execution context;
-- maintainers followed the representative Linear, GitHub
-  ready-pull-request, GitHub Actions, and squash-merge procedure through CI
-  repair and fresh review;
-- tracker-native Cursor delegation started the Developer step while
-  maintainers continued to follow the Steward procedure for later gates; and
-- a changed revision caused the procedure to treat earlier review evidence as
-  stale.
+Severity: none. Confidence: high.
 
-This is maintainer evidence from a synthetic private repository. It is not
-normal-user adoption evidence, a provider compatibility guarantee, or proof of
-role isolation.
+The finite policy compiler, two built-in workflows, responsibility-filtered
+composition, canonical rule model, native renderer, complete planning,
+ownership lock, and forward-convergent writer all have current callers and fit
+the engineering boundary. The review found no production subsystem that should
+be removed.
 
-### Provider discovery overlap
+Disposition: **Keep**.
 
-A 2026-07-24 bounded Cursor Agent observation showed that one runtime could
-discover the generated root `AGENTS.md`, root `CLAUDE.md`, and Cursor rules
-together. The pre-correction response selected the configured Cursor Developer
-section but reported that the visible projections lacked an explicit
-cross-product precedence rule. The current composition corrects that text by
-declaring the target product and making every nonmatching projection wholly
-inapplicable. Against the exact corrected output, the same Cursor Agent version
-selected the Cursor Developer projection, rejected cross-product role
-combination, and reported no unresolved ambiguity. Automated tests prove the
-declaration and content routing; the headless response remains point-in-time
-behavioral evidence rather than mechanical enforcement.
+### Accepted decision and evidence records had drifted
 
-### Qualification
+Severity: moderate. Confidence: high.
 
-The earlier role-specific candidate passed:
+ADR 0001 still described one pre-composition source and cited fixtures that no
+longer existed. It also called the implemented lock and workspace safety
+responsibilities future work. ADR 0006 lacked required evidence and supersedes
+sections. Package evidence still described 231 tests and 122 entries from an
+earlier candidate, while platform evidence did not identify the exact tree
+merged by pull request 15.
 
-- the supported Ubuntu, macOS, and Windows matrix on Node.js 22 and 24;
-- dependency-advisory review; and
-- a focused independent closure review after whole-project findings were
-  repaired.
+The health-gate change aligned those records with current implementation
+without changing their accepted outcomes.
 
-The current working tree passed repository audit, strict type checking, build,
-246 automated tests, packed-installed entrypoint qualification, V1 recovery
-tests, and tarball dry-run. The installed bin exercised all five rule
-operations, responsibility-filtered render convergence, exact
-product-applicability declarations, init-gated manual onboarding, and
-incremental onboarding of an unmanaged provider target after another target
-was already managed. Aggregate-layout evidence remains layered deliberately:
-the shared reader has focused all-path tests, source CLI tests cover all five
-rule operations without mutation, and the installed bin smoke test covers all
-four aggregate paths in mixed and partially moved states through
-representative `rule list` and `diff` commands. Hosted platform qualification
-is supplied by pull-request checks rather than inferred from local checks.
+Disposition: **Invest**, repaired in the health-gate change.
 
-Independent change and health reviews found no second writer, transaction,
-approval store, backup system, Git manager, dependency, or other
-engineering-boundary regression. Verified findings were repaired by applying
-replacement authorization per unmanaged target rather than per lock, adding
-incremental managed-project coverage, aligning current-state documentation,
-clarifying local-versus-no-tracker intent, and distinguishing locally packed
-development candidates from the historical published version.
+### The CLI-only package carried unsupported compiler artifacts
 
-The earlier zero-context installed-package exercise used
-`onboard -> init -> rule -> diff -> render -> check`. That ordering is now
-superseded and is not evidence for the current first-use contract. The fixed
-`init -> onboard -> rule -> diff -> render -> check` path has deterministic
-installed-bin coverage. A fresh zero-context installed-package review completed
-both an empty project and a project with an unmanaged native target, verified
-that pre-init onboarding disclosed no target content, verified that absent,
-invalid, and reserved-path configurations blocked rule access without
-canonical mutation, and reached a clean managed state through the documented
-sequence with default and custom configuration paths. No unresolved journey
-question was observed. This remains bounded pre-release usability evidence,
-not normal-user adoption.
+Severity: moderate. Confidence: high.
 
-Every new roadmap milestone must rerun the current required checks and add
-focused installed-bin coverage for its new public behavior.
+TypeScript declarations and source maps represented 46.96 percent of the
+previous unpacked tarball, although the package exposes no `main`, `types`,
+`exports`, or other programmatic entrypoint. They had no accepted normal-user
+caller. The health-gate change disabled both outputs, reduced the package from
+125 to 45 entries and from 699,146 to 371,069 unpacked bytes, and added a
+repository audit that prevents their accidental return while the package
+remains CLI-only.
 
-### Published package
+Disposition: **Removal candidate**, removed.
 
-The published `0.1.0-beta.2` remains an earlier local-only historical snapshot.
-It does not contain the issue workflow, responsibility-specific composition,
-rule management, practical existing-project onboarding, wizard, Strict, or
-external agent launchers now described by the current repository and roadmap.
-The source manifest retains that historical version until the final next-beta
-scope and version are selected. Locally packed tarballs from the working tree
-are development candidates, not the published artifact.
+### Public guidance did not foreground the smallest journey
 
-## Current product risks
+Severity: low. Confidence: high.
 
-### Manual onboarding remains judgment-heavy and unreleased
+The fixed order was stated correctly, but the README placed rule guidance
+before the onboarding section and all opening examples used several providers.
+The packed README also linked to repository-only authority files without
+package-safe destinations. The health-gate change orders the guidance by the
+journey, adds a one-provider example, distinguishes source-clone and installed
+tarball evaluation, and uses durable repository links for contributor-only
+material.
 
-The bounded manual path now inventories exact existing `AGENTS.md`,
-`CLAUDE.md`, and the native Cursor target, lets the user represent retained
-content in canonical rules, and permits exact reviewed replacement. It does not
-classify or merge natural-language guidance. A user must still decide what is
-shared, responsibility-specific, duplicated, conflicting, or intentionally
-omitted. The zero-context package exercise proved the documented mechanism,
-not broad usability or normal-user adoption.
+Disposition: **Invest**, repaired in the health-gate change.
 
-### First-use configuration is too demanding
+### CLI surface concentration is the next maintenance risk
 
-The non-interactive init path is reproducible but requires a zero-context user
-to understand workflow, preset, tracker, pull-request, provider, and
-responsibility choices before seeing a guided product flow. The accepted fixed
-sequence removes the separate init-first versus onboard-first choice, but not
-the configuration burden. The accepted wizard must wrap the same sequence and
-model rather than create a second configuration surface or alternate order.
+Severity: moderate. Confidence: high.
 
-### Strict is not yet a product capability
+Eleven current operations concentrate parsing, dispatch, and output behavior in
+three files totaling 3,101 lines. This is not dead or duplicated production
+code, but adding launcher and wizard branches directly to those files would
+increase review and regression cost.
 
-Strict is recognized but unavailable. The roadmap commits to implementing it,
-but the exact closed property set still needs a bounded decision. It must be
-mechanically distinguishable from Balanced and must not imply live external
-enforcement.
+Disposition: **Invest**. Item 3 should introduce only bounded internal command
+specification and handler seams required by its approved first adapter. This
+does not justify a CLI framework, plugin system, or broad adapter abstraction.
 
-### External-agent operation is unqualified
+### Two public output details need a separate decision
 
-Codex, Claude Code, Cursor, and OpenCode expose different executable, auth,
-permission, session, and output behavior. Thin adapters and real installed
-CLI dogfood are required before any launcher is described as supported. The
-manual onboarding path must remain available.
+Severity: low. Confidence: high.
 
-### Maintainer evidence is not user adoption
+Planning output exposes `renderer-plan-digest` even though only
+`exact-plan-digest` is a render approval input. Existing-file `init` can also
+report several related diagnostics for one ownership conflict. Both are
+deterministic and fail safe, and current next-action text remains correct, but
+they add avoidable cognitive load.
 
-The project has no normal-user adoption evidence. Internal testing must make
-the first useful beta coherent, but it cannot substitute for later observation
-of unfamiliar users onboarding their own repositories.
+Disposition: **Removal candidate** for the public renderer digest and
+**Invest** for diagnostic hierarchy. They remain unchanged because altering
+public human or JSON output requires an explicit bounded decision. Neither
+blocks the item 3 decision proposal.
 
-## Active milestone closure
+## Disposition summary
 
-The active milestone is complete only when all current-sequence items in the
-root roadmap pass:
+- **Keep:** current product boundary, fixed journey, two workflows, rule
+  sources, three native targets, policy compiler, planner, one renderer writer,
+  lock-last publication, exact dependencies, and deterministic qualification.
+- **Invest:** bounded CLI internal seams, installed-package scenario helpers,
+  package-facing clarity, and one qualified external-agent adapter after public
+  decisions are accepted.
+- **Freeze:** historical beta evidence, ADR 0004, unsupported Strict
+  recognition, provider target set, and current mutation model.
+- **Defer:** additional launchers, wizard, executable Strict behavior,
+  exact-candidate dogfood expansion, and release work according to roadmap
+  order.
+- **Removal candidate:** public `renderer-plan-digest` and redundant conflict
+  presentation, pending explicit public-output decisions.
 
-| Criterion | Current status |
-| --- | --- |
-| Minimal rule commands and one-file-per-rule source | Complete in the working tree |
-| Manual existing-project onboarding | Complete in the working tree |
-| Repository-wide health review gate | Accepted next; required before item 3 resumes |
-| External-agent-operated onboarding | Blocked pending the repository-wide health review |
-| Interactive new/existing project wizard | Waiting on non-interactive contracts |
-| Strict policy difference accepted and executable | Decision required |
-| Exact final tarball dogfood and zero-context review | Waiting on implementation |
-| Next beta qualification and separately authorized publication | Waiting on prior gates |
+## Next milestone
 
-If the compiler, onboarding path, or external-agent operation adds no useful
-value, recommend a pivot or stop. Do not respond by adding a runtime, security
-subsystem, transaction framework, or general automation platform.
+The next work is a bounded item 3 decision proposal, not implementation. It
+must start from the fixed `init -> onboard` prerequisite and select one
+Codex-first vertical slice rather than a generic launcher framework.
 
-## Next review triggers
+Before implementation, explicit approval is required for the public invocation
+and mode selection, Codex support tier, installed-version policy, fixed process
+contract, output limits, timeout behavior, diagnostics, exact current
+`agentdevflow` entrypoint transfer, and independent final `check`.
 
-Run another independent project-health review when:
+## Stop conditions
 
-- the fixed first-use correction is merged; this maintainer-requested review
-  must cover every current decision and implementation area before item 3
-  resumes;
-- existing-project onboarding and one external-agent adapter complete their
-  first end-to-end private-repository run;
-- the Strict property set is proposed for acceptance;
-- the adoption milestone reaches exact-candidate qualification;
-- a new public command, schema revision, provider renderer, live external
-  adapter, or runtime is proposed;
-- a superseded mechanism is proposed for reintroduction; or
-- ordinary change cost grows without a corresponding user outcome.
+- Do not implement or finalize item 3 public syntax before those decisions are
+  approved.
+- Do not add launcher or wizard branches directly to the current CLI
+  concentration without bounded internal seams.
+- Do not start the wizard, Strict, dogfood expansion, or release work ahead of
+  the roadmap.
+- Do not add a CLI framework, general command runner, broad provider adapter
+  matrix, provider SDK, credential subsystem, background process, retries,
+  agent chain, second writer, approval store, transaction, Git manager, or
+  onboarding state model.
+- Do not describe a launcher as supported before installed-version
+  qualification and authenticated end-to-end dogfood.
+
+## Decision requests
+
+The next proposal must obtain the item 3 decisions already listed in the
+roadmap. Separately, a later public-output cleanup should decide whether to
+remove `renderer-plan-digest` from human and JSON output and how to collapse
+related ownership-conflict diagnostics without hiding actionable causes.
+
+## Limitations
+
+The review did not test hostile local writers, power-loss durability, provider
+authentication, external-agent execution, live trackers, normal-user
+adoption, or published-registry installation of the current candidate. The
+local environment observation does not replace the supported hosted matrix.
+Historical evidence remains historical, and provider behavior remains
+point-in-time advisory evidence rather than enforcement.

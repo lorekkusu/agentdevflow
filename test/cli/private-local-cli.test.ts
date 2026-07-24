@@ -1801,13 +1801,36 @@ test("prints bounded private help without requiring a CLI framework", () => {
   assert.equal(result.status, 0);
   assert.equal(result.stderr, "");
   assert.match(result.stdout, /^Usage:\n/u);
-  assert.match(result.stdout, /Check and diff are read-only\./u);
+  assert.match(result.stdout, /Diff and check are read-only\./u);
   assert.match(result.stdout, /Render requires an exact plan digest from diff\./u);
   assert.match(result.stdout, /agentdevflow rule list/u);
+  const journeyCommands = [
+    "agentdevflow init",
+    "agentdevflow onboard",
+    "agentdevflow rule list",
+    "agentdevflow diff",
+    "agentdevflow render",
+    "agentdevflow check",
+  ];
+  for (const [index, command] of journeyCommands.entries()) {
+    if (index === 0) continue;
+    assert.ok(
+      result.stdout.indexOf(journeyCommands[index - 1] ?? "") <
+        result.stdout.indexOf(command),
+      `${command} must follow the previous first-use command in global help`,
+    );
+  }
 });
 
 test("prints focused help for every beta command", () => {
-  for (const command of ["init", "check", "diff", "render", "rule"]) {
+  for (const command of [
+    "init",
+    "onboard",
+    "rule",
+    "diff",
+    "render",
+    "check",
+  ]) {
     const result = spawnSync(process.execPath, [entryPoint, command, "--help"], {
       encoding: "utf8",
     });

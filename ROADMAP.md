@@ -79,44 +79,15 @@ different entry orders.
 Items 1 and 2 are complete and compressed in the completion summary. The
 remaining numbers preserve the accepted dependency order.
 
-### Required repository-wide health review gate
-
-Status: **Accepted next**
-
-After the fixed first-use correction is merged, a new review must examine the
-complete current repository rather than only item 3. It covers every accepted
-ADR, completed roadmap outcome, executable command, architecture and mutation
-boundary, public claim, test boundary, packaged runtime file, and retained
-implementation dependency.
-
-The review follows `docs/development/project-health-review.md`, begins from the
-merged `main`, uses independent isolated perspectives including a zero-context
-installed-package exercise, and publishes only verified sanitized conclusions.
-Material findings receive explicit `Keep`, `Invest`, `Freeze`, `Defer`, or
-`Removal candidate` disposition. Repairs are made in bounded reviewable
-changes; the review itself does not silently redesign public contracts.
-
-Exit criteria:
-
-- every accepted decision and completed roadmap claim is mapped to current
-  implementation and evidence or identified as stale;
-- public documentation, installed help, executable behavior, tests, and
-  package contents are checked for contradiction;
-- retained production components have a current product caller and fit the
-  engineering boundary;
-- verified findings and stop conditions are recorded in
-  `docs/development/project-health.md` and this roadmap where authoritative;
-  and
-- item 3 is either restored to `Accepted next` with its prerequisites intact
-  or explicitly re-scoped by an approved decision.
-
 ### 3. External-agent-operated onboarding
 
-Status: **Blocked**
+Status: **Decision required**
 
 This item depends on the accepted rule and manual onboarding contracts in items
-1 and 2, which are complete. Design and implementation are temporarily blocked
-until the required repository-wide health review gate above is complete.
+1 and 2, which are complete. The repository-wide health review gate is also
+complete. The outcome and architecture boundary remain accepted, but the exact
+public invocation, first support tier, and installed-version qualification
+policy require explicit approval before implementation.
 
 External-agent operation begins only after the same required `init -> onboard`
 entry. It must not introduce a pre-init inventory path or a second first-use
@@ -129,13 +100,15 @@ act as their operator during onboarding. The external agent supplies semantic
 judgment, proposes a rule organization, and operates the same `agentdevflow`
 commands that a user would operate manually.
 
-The candidate invocation is:
+The following invocation is an unresolved sketch, not an accepted public
+contract:
 
 ```text
 agentdevflow onboard --agent <agent>
 ```
 
-It has two explicit operation modes:
+Propose and apply semantics are accepted, but their exact command and flag
+syntax remains open:
 
 ```text
 propose
@@ -504,3 +477,4 @@ test, and evidence documents.
 | Root roadmap authority, update rules, completion evidence, and the known former duplicate-path check established | `ROADMAP.md`; `AGENTS.md`; `scripts/check-repository.mjs`; `test/repository/check-repository.test.ts` |
 | Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, responsibility-filtered composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |
 | Fixed init-first manual existing-project onboarding requires a valid selected configuration before exact native-target inventory, keeps classification with the user, permits only exact digest-bound whole-file replacement through the normal diff, render, forward-convergence, and ownership-lock path, and finishes with a clean managed state without adding an alternate entry order, repository analyzer, second writer, or approval store | `docs/decisions/0006-manual-existing-project-onboarding.md`; `src/cli/private-local-cli.ts`; `src/onboarding/private-existing-project-inventory.ts`; `src/application/private-domain-project-plan.ts`; `test/cli/private-local-cli.test.ts`; `scripts/verify-package-entrypoint.mjs`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |
+| Repository-wide health review mapped every accepted ADR, completed outcome, command, production module, public journey, package entry, and retained dependency; repaired stale ADR and package evidence; removed unsupported compiler artifacts and a no-value test; and completed independent product, implementation-cost, and zero-context installed-package perspectives | `docs/development/project-health.md`; `docs/decisions/0001-native-project-instructions-renderer.md`; `docs/decisions/0006-manual-existing-project-onboarding.md`; `docs/evidence/private-package-qualification.md`; `docs/evidence/v1-platform-qualification.md`; `npm run check`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |

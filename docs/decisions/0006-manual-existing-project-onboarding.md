@@ -133,6 +133,17 @@ whose matching replacement input names the exact observed digest.
 Digests bind bytes and freshness. They do not authenticate the operator or
 prove semantic correctness.
 
+## Evidence
+
+- `src/onboarding/private-existing-project-inventory.ts`
+- `src/application/private-domain-project-plan.ts`
+- `src/cli/private-local-cli.ts`
+- Automated coverage in `test/cli/private-local-cli.test.ts`
+- Installed-package coverage in `scripts/verify-package-entrypoint.mjs`
+- `npm run check:v1-qualification`
+- `npm run check:package-entrypoint`
+- `npm run test:v1-recovery`
+
 ## Revisit triggers
 
 - A qualified provider renderer owns another project instruction target.
@@ -141,3 +152,9 @@ prove semantic correctness.
 - The one MiB CLI output boundary prevents representative onboarding.
 - A reproduced supported-operation failure cannot resume through the existing
   convergent writer and lock publication path.
+
+## Supersedes
+
+This amendment supersedes the earlier config-independent, onboard-first entry
+ordering within this record. It does not supersede ADR 0005; external-agent
+operation remains downstream of the same fixed init-first path.

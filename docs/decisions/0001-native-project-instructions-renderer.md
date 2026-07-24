@@ -22,7 +22,14 @@ Build and maintain a minimal native project-instructions renderer for the initia
 
 The native renderer accepts only a verified private source materialization with a matching digest and source-path set. It produces staged files and diagnostics but has no direct filesystem write authority. Planning, ownership, adoption, application, drift detection, and verification remain in the backend-neutral adapter.
 
-The first revision supports one project-wide `project-instructions` source document. Unsupported capabilities and source layouts fail closed. It does not support global or nested instructions, path-scoped rules, commands, skills, hooks, MCP configuration, permissions, ignore files, import, conversion, or additional providers.
+The renderer accepts one composed project-wide `project-instructions` source
+document for each configured provider target. Canonical project rules and
+responsibility procedures are composed upstream into that provider-specific
+document; the renderer does not expose another source model. Unsupported
+capabilities and target layouts fail closed. It does not support global or
+nested targets, path-scoped outputs, commands, skills, hooks, MCP
+configuration, permissions, ignore files, conversion, or additional
+providers.
 
 Rulesync remains a pinned external experimental oracle. It is not a production or test runtime dependency, and the project will not fork it.
 
@@ -42,11 +49,10 @@ The native scope must remain narrow. Reimplementing Rulesync's broad provider ma
 
 ## Evidence
 
-- [Gate 1 renderer evidence](../evidence/renderer-backend.md)
 - [Renderer backend evidence](../evidence/renderer-backend.md)
 - Automated coverage in `test/renderer/native-project-instructions.test.ts`
-- Golden fixtures under `test/fixtures/renderer/native/`
-- Automated coverage in `test/renderer/native-project-instructions.test.ts`
+- Responsibility-filtered materialization coverage in
+  `test/renderer/materialize-domain-project.test.ts`
 - [Official Codex `AGENTS.md` documentation](https://learn.chatgpt.com/docs/agent-configuration/agents-md)
 - [Official Claude Code instruction documentation](https://code.claude.com/docs/en/memory)
 - [Official Cursor rules documentation](https://docs.cursor.com/context/rules)
@@ -54,9 +60,16 @@ The native scope must remain narrow. Reimplementing Rulesync's broad provider ma
 
 ## Security and disclosure considerations
 
-Provider instruction files are advisory context, not a mechanical authorization or enforcement boundary. Machine provenance remains in render metadata and the future lock state rather than being embedded wholesale in agent-facing instructions.
+Provider instruction files are advisory context, not a mechanical authorization
+or enforcement boundary. Machine provenance remains in render metadata and the
+ownership lock rather than being embedded wholesale in agent-facing
+instructions.
 
-The renderer refuses mismatched materialization digests and paths, unsupported capabilities, unowned overwrites, and modified owned files. Filesystem transaction and symlink safety remain future workspace responsibilities and are not claimed by this decision.
+The renderer refuses mismatched materialization digests and paths and
+unsupported capabilities. Unowned overwrite refusal, owned-file drift,
+symlink refusal, and forward-convergent filesystem application belong to the
+workspace and render path selected in ADR 0002; they are not duplicate renderer
+responsibilities.
 
 No Rulesync source code is copied into the native renderer. If future work incorporates substantial third-party code, the applicable license and notices must be retained.
 

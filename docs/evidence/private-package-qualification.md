@@ -4,10 +4,11 @@ Snapshot date: 2026-07-24.
 
 ## Verdict
 
-**Pass for the current working-tree package candidate on the tested local
-environment.** The packed and installed CLI exercises the bounded product
-surface, including responsibility-filtered guidance and both accepted workflow
-families.
+**Pass for the repository-wide health-gate package candidate on the tested
+local environment.** The candidate is derived from merged base
+`dc9ee9b19f7b860809d40458b9c25acadd582a7e`. The packed and installed CLI
+exercises the bounded product surface, including the fixed init-first journey,
+responsibility-filtered guidance, and both accepted workflow families.
 
 This is not publication authorization, registry-installation evidence, a new
 release, or a claim about the already published package. The manifest still
@@ -34,8 +35,8 @@ npm run check
 npm run check:v1-qualification
 ```
 
-Both commands passed. The complete automated test set contained 231 tests with
-231 passes, zero failures, zero skips, and zero todos. The V1 qualification
+Both commands passed. The complete automated test set contained 245 tests with
+245 passes, zero failures, zero skips, and zero todos. The V1 qualification
 selector discovered the full current test set, required the retained recovery
 tests, and produced the same result.
 
@@ -46,6 +47,10 @@ the tarball into isolated temporary projects, and invoked the installed
 `agentdevflow` bin. The exercise covered:
 
 - `init -> changing diff -> exact-approved render -> clean check`;
+- the fixed `init -> onboard -> rule as needed -> diff -> render -> check`
+  journey;
+- fail-closed pre-init onboarding and rule operations;
+- empty-project and exact existing-target onboarding;
 - the local reviewed-change workflow;
 - a Linear-backed ready-pull-request workflow;
 - a GitHub Issues-backed draft-pull-request workflow;
@@ -69,18 +74,19 @@ trackers, GitHub, provider services, credentials, or a network.
 
 | Property | Observation |
 | --- | --- |
-| Compressed size | 123,957 bytes |
-| Unpacked size | 637,128 bytes |
-| Entry count | 122 |
-| SHA-1 | `07f6ecdc99838afdda3eeb402c74229f138063da` |
-| npm integrity | `sha512-8yyYna/eRjFrHUcTPOTtQmrllJ1QDQx4LpEakO7i9ihs9MNOt4eUgiHzHY4lycVTftuOsT9wzfL1+sqTG4fknQ==` |
+| Compressed size | 75,598 bytes |
+| Unpacked size | 371,069 bytes |
+| Entry count | 45 |
+| SHA-1 | `cee4e844ff581f7855049b0ad4de9860f2a7b441` |
+| npm integrity | `sha512-aQtNm7nlvmAy1XpoHafml0odxx1TQeHVb/pg6Hh2eWVHY68akCQghBVvg4TB5zQYs/cXBpIQ5clOG5QsjdZR5g==` |
 | CLI target mode | `0755` |
 
 The package uses a manifest allowlist. It contains the runtime guidance,
 compiler, renderer, command, workflow, and workspace modules required by the
 CLI. It excludes tests, fixtures, research evidence, development scripts,
-provider clients, experiments, transaction machinery, execution transport, and
-external-system adapters.
+provider clients, experiments, transaction machinery, execution transport,
+external-system adapters, TypeScript declarations, and source maps. The
+package exposes no programmatic entrypoint.
 
 The digest binds only this exact working-tree specimen. Reproducible builds
 across machines are not claimed.
@@ -116,13 +122,13 @@ directories. It does not publish or mutate external project state.
 - Provider comprehension is recorded separately as maintainer dogfood
   evidence and is not a deterministic package property.
 - Arbitrary legacy instruction merging is not supported.
-- Initial independent closure review findings were addressed and the focused
-  closure review passed without a remaining actionable finding.
+- The repository-wide health review separately records current findings and
+  dispositions; this document is package evidence rather than a review verdict.
 - No npm publication, tag, release, registry round trip, provenance statement,
   or rollback exercise occurred.
 
 ## Recommendation
 
-Use this snapshot as the package evidence for the current milestone. The exact
-committed implementation passed the hosted matrix; complete final PR checks
-before making a release or version decision.
+Use this snapshot as local package evidence for the health-gate candidate.
+Hosted pull-request checks must still pass for the final exact tree before this
+change is merged. A release or version decision remains separate.

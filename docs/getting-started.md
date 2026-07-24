@@ -27,6 +27,10 @@ Use `node dist/src/cli/private-local-cli.js` in place of the
 `npx agentdevflow` prefix in the examples below. This runs the exact checked-out
 source and does not install or publish another package version.
 
+When evaluating an installed local candidate tarball, invoke its installed
+`agentdevflow` bin directly and use the examples without the source-tree
+replacement above.
+
 Commands use the current directory as the exact repository root unless
 `--repository <path>` is supplied. They do not search parent directories.
 
@@ -55,6 +59,23 @@ preflight path and keeps new and existing projects on one journey.
 An `init` result of `review-required` and status `1` may still mean that the
 configuration was created successfully. In that case provider targets and the
 lock remain unchanged; continue with `onboard`.
+
+The smallest valid local setup uses one provider id for every responsibility:
+
+```bash
+npx agentdevflow init \
+  --workflow local-reviewed-change \
+  --preset fast \
+  --tracker none \
+  --provider codex-main,codex \
+  --steward codex-main \
+  --developer codex-main \
+  --reviewer codex-main
+npx agentdevflow onboard
+```
+
+Multiple providers are optional. The later examples use them to demonstrate
+responsibility-filtered outputs.
 
 ## Choose a workflow
 
@@ -202,7 +223,7 @@ merge method.
 
 `strict` and `custom` are not available in the current candidate. Strict is
 accepted near-term work; Custom remains later direction. See the
-[product roadmap](../ROADMAP.md).
+[product roadmap](https://github.com/lorekkusu/agentdevflow/blob/main/ROADMAP.md).
 
 ## Run onboard after init
 
@@ -516,5 +537,7 @@ The candidate does not:
 - claim that advisory instructions mechanically enforce agent behavior.
 
 These are current implementation limits, not a priority or deferral list. The
-root [product roadmap](../ROADMAP.md) alone records which limits are accepted
-next, decision-required, later, or out of scope.
+root
+[product roadmap](https://github.com/lorekkusu/agentdevflow/blob/main/ROADMAP.md)
+alone records which limits are accepted next, decision-required, later, or out
+of scope.

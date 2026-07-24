@@ -83,20 +83,20 @@ import {
 const usage = `Usage:
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
-  agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
-  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--replace-existing <path=observed-sha256>]... [--json]
-  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
   agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule remove <id> [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--replace-existing <path=observed-sha256>]... [--json]
+  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
+  agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
 
 Init creates an absent revision-1 configuration or accepts byte-identical existing configuration after validating provider-file dispositions.
-Check and diff are read-only. Render requires an exact plan digest from diff.
 Onboard requires the valid configuration created by init, then reads a bounded inventory of supported existing provider targets.
 Rule commands require the valid selected configuration and read or mutate only canonical project-rule files; provider outputs still require diff and render.
+Diff and check are read-only. Render requires an exact plan digest from diff.
 Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
 Beta configuration and JSON schema versions may require documented migration before 1.0.`;
