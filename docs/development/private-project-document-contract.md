@@ -88,9 +88,10 @@ observations; issue-workflow capabilities use advisory compiled procedures and
 do not imply live adapters.
 
 The non-interactive init entry emits two-space-indented strict JSON with one
-final LF from the resolved revision-1 intent and creates only an absent
-caller-selected relative path. Its flags, default path, and schema revision are
-documented beta surfaces subject to migration before 1.0.
+final LF from the resolved revision-1 intent. It creates an absent
+caller-selected relative path or accepts existing byte-identical content, and
+never overwrites different bytes. Its flags, default path, and schema revision
+are documented beta surfaces subject to migration before 1.0.
 
 ## Change boundary
 

@@ -112,9 +112,9 @@ try {
     ["init", ["local-reviewed-change", "issue-to-reviewed-pull-request", "linear|github-issues", "fast|balanced", "id,product", "claude-code, codex, cursor"]],
     ["check", ["read-only", "exit 1"]],
     ["diff", ["exact-plan-digest", "Exit 1"]],
-    ["onboard", ["read-only inventory", "unclassified"]],
+    ["onboard", ["Run init before onboard", "--config", "read-only inventory", "unclassified"]],
     ["render", ["exact-plan-digest", "stale or foreign state fails closed"]],
-    ["rule", ["rule list", "rule add", "globally unique lowercase ASCII slugs"]],
+    ["rule", ["rule list", "rule add", "--config", "requires the valid selected configuration"]],
   ];
   for (const [command, expectedText] of helpAssertions) {
     const commandHelp = run(binPath, [command, "--help"], installRoot);
@@ -141,19 +141,68 @@ try {
     existingAgents,
     "utf8",
   );
-  const onboardingInventory = JSON.parse(
-    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
-  );
-  const unmanagedAgents = onboardingInventory.targets?.find(
-    (target) => target.path === "AGENTS.md",
+  const blockedBeforeInit = JSON.parse(
+    run(binPath, ["onboard", "--json"], onboardingProjectRoot, [2]).stdout,
   );
   if (
-    unmanagedAgents?.disposition !== "unmanaged-existing" ||
-    unmanagedAgents?.classification !== "unclassified" ||
-    unmanagedAgents?.content !== existingAgents
+    blockedBeforeInit.targets !== null ||
+    blockedBeforeInit.diagnostics?.[0]?.code !==
+      "CLI_ONBOARD_CONFIGURATION_REQUIRED"
+  ) {
+    throw new Error("Packed agentdevflow did not require init before onboard.");
+  }
+  const blockedRuleBeforeInit = JSON.parse(
+    run(
+      binPath,
+      ["rule", "list", "--json"],
+      onboardingProjectRoot,
+      [2],
+    ).stdout,
+  );
+  if (
+    blockedRuleBeforeInit.rules !== null ||
+    blockedRuleBeforeInit.diagnostics?.[0]?.code !==
+      "CLI_RULE_CONFIGURATION_REQUIRED"
   ) {
     throw new Error(
-      "Packed agentdevflow did not inventory exact unmanaged AGENTS.md bytes.",
+      "Packed agentdevflow allowed rule access before initialization.",
+    );
+  }
+  const blockedReservedRuleConfiguration = JSON.parse(
+    run(
+      binPath,
+      [
+        "rule",
+        "add",
+        "verification",
+        "--scope",
+        "shared",
+        "--stdin",
+        "--config",
+        "AGENTS.md",
+        "--json",
+      ],
+      onboardingProjectRoot,
+      [2],
+      "Run verification.\n",
+    ).stdout,
+  );
+  if (
+    blockedReservedRuleConfiguration.diagnostics?.[0]?.code !==
+      "CLI_PATH_COLLISION" ||
+    await readFile(
+      join(
+        onboardingProjectRoot,
+        ".agentdevflow/rules/shared/verification.md",
+      ),
+      "utf8",
+    ).then(
+      () => true,
+      () => false,
+    )
+  ) {
+    throw new Error(
+      "Packed agentdevflow allowed a reserved rule configuration path.",
     );
   }
   run(
@@ -178,6 +227,21 @@ try {
     onboardingProjectRoot,
     [1],
   );
+  const onboardingInventory = JSON.parse(
+    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
+  );
+  const unmanagedAgents = onboardingInventory.targets?.find(
+    (target) => target.path === "AGENTS.md",
+  );
+  if (
+    unmanagedAgents?.disposition !== "unmanaged-existing" ||
+    unmanagedAgents?.classification !== "unclassified" ||
+    unmanagedAgents?.content !== existingAgents
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not inventory exact unmanaged AGENTS.md bytes after init.",
+    );
+  }
   run(
     binPath,
     ["rule", "add", "retained-policy", "--scope", "shared", "--stdin"],
@@ -331,6 +395,7 @@ try {
     ],
     projectRoot,
   );
+  run(binPath, ["onboard"], projectRoot);
   const emptyRules = JSON.parse(
     run(binPath, ["rule", "list", "--json"], projectRoot).stdout,
   );
@@ -547,6 +612,7 @@ try {
     ],
     aggregateProjectRoot,
   );
+  run(binPath, ["onboard"], aggregateProjectRoot);
   await mkdir(
     join(aggregateProjectRoot, ".agentdevflow", "rules"),
     { recursive: true },
@@ -658,6 +724,7 @@ try {
     ],
     issueProjectRoot,
   );
+  run(binPath, ["onboard"], issueProjectRoot);
   const issueDiff = run(
     binPath,
     ["diff", "--json"],
@@ -722,6 +789,7 @@ try {
     ],
     draftIssueProjectRoot,
   );
+  run(binPath, ["onboard"], draftIssueProjectRoot);
   const draftIssueDiff = run(
     binPath,
     ["diff", "--json"],

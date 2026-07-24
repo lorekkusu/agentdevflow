@@ -28,6 +28,11 @@ and session behavior differ.
 Existing-project onboarding may launch one user-selected, already installed
 and authenticated coding-agent CLI in the foreground.
 
+External-agent operation is downstream of the accepted fixed
+`init -> onboard` entry. The selected project configuration must already be
+present and valid; a launcher must not create an alternate pre-init discovery
+or onboarding path.
+
 The external agent acts as the user's operator of the exact current
 `agentdevflow` executable. It may:
 

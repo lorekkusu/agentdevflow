@@ -106,6 +106,7 @@ export type PrivateCliInvocation =
     }
   | {
       readonly command: "onboard";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly lockPath: string;
       readonly outputFormat: PrivateCliOutputFormat;
@@ -122,12 +123,14 @@ export type PrivateCliInvocation =
   | {
       readonly command: "rule";
       readonly operation: "list";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
       readonly command: "rule";
       readonly operation: "show";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly ruleId: string;
       readonly outputFormat: PrivateCliOutputFormat;
@@ -135,6 +138,7 @@ export type PrivateCliInvocation =
   | {
       readonly command: "rule";
       readonly operation: "remove";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly ruleId: string;
       readonly outputFormat: PrivateCliOutputFormat;
@@ -142,6 +146,7 @@ export type PrivateCliInvocation =
   | {
       readonly command: "rule";
       readonly operation: "add";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly ruleId: string;
       readonly scope: PrivateRuleScope;
@@ -151,6 +156,7 @@ export type PrivateCliInvocation =
   | {
       readonly command: "rule";
       readonly operation: "update";
+      readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly ruleId: string;
       readonly input: PrivateRuleContentInput;
@@ -647,6 +653,7 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
 
 function parseOnboardArguments(args: readonly string[]): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(args, {
+    config: stringOption,
     json: booleanOption,
     lock: stringOption,
     repository: stringOption,
@@ -656,6 +663,8 @@ function parseOnboardArguments(args: readonly string[]): PrivateCliArgumentResul
     ok: true,
     invocation: {
       command: "onboard",
+      projectConfigPath:
+        stringValue(parsed.values, "config") ?? defaultProjectConfigPath,
       repositoryPath:
         stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
       lockPath: stringValue(parsed.values, "lock") ?? defaultRenderLockPath,
@@ -734,6 +743,7 @@ function parseRuleListArguments(
   args: readonly string[],
 ): PrivateCliArgumentResult {
   const parsed = parseCommandOptions(args, {
+    config: stringOption,
     json: booleanOption,
     repository: stringOption,
   });
@@ -743,6 +753,8 @@ function parseRuleListArguments(
     invocation: {
       command: "rule",
       operation: "list",
+      projectConfigPath:
+        stringValue(parsed.values, "config") ?? defaultProjectConfigPath,
       repositoryPath:
         stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
       outputFormat: outputFormat(parsed.values),
@@ -757,12 +769,15 @@ function parseRuleShowOrRemoveArguments(
   const id = parseRuleId(args);
   if (!id.ok) return id.result;
   const parsed = parseCommandOptions(id.optionArgs, {
+    config: stringOption,
     json: booleanOption,
     repository: stringOption,
   });
   if (!parsed.ok) return parsed.result;
   const repositoryPath =
     stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
+  const projectConfigPath =
+    stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
   const selectedOutputFormat = outputFormat(parsed.values);
   if (operation === "show") {
     return {
@@ -770,6 +785,7 @@ function parseRuleShowOrRemoveArguments(
       invocation: {
         command: "rule",
         operation: "show",
+        projectConfigPath,
         repositoryPath,
         ruleId: id.ruleId,
         outputFormat: selectedOutputFormat,
@@ -781,6 +797,7 @@ function parseRuleShowOrRemoveArguments(
     invocation: {
       command: "rule",
       operation: "remove",
+      projectConfigPath,
       repositoryPath,
       ruleId: id.ruleId,
       outputFormat: selectedOutputFormat,
@@ -794,6 +811,7 @@ function parseRuleAddArguments(
   const id = parseRuleId(args);
   if (!id.ok) return id.result;
   const parsed = parseCommandOptions(id.optionArgs, {
+    config: stringOption,
     file: stringOption,
     json: booleanOption,
     repository: stringOption,
@@ -816,6 +834,8 @@ function parseRuleAddArguments(
     invocation: {
       command: "rule",
       operation: "add",
+      projectConfigPath:
+        stringValue(parsed.values, "config") ?? defaultProjectConfigPath,
       repositoryPath:
         stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
       ruleId: id.ruleId,
@@ -832,6 +852,7 @@ function parseRuleUpdateArguments(
   const id = parseRuleId(args);
   if (!id.ok) return id.result;
   const parsed = parseCommandOptions(id.optionArgs, {
+    config: stringOption,
     file: stringOption,
     json: booleanOption,
     repository: stringOption,
@@ -845,6 +866,8 @@ function parseRuleUpdateArguments(
     invocation: {
       command: "rule",
       operation: "update",
+      projectConfigPath:
+        stringValue(parsed.values, "config") ?? defaultProjectConfigPath,
       repositoryPath:
         stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
       ruleId: id.ruleId,

@@ -23,6 +23,8 @@ Describe compatibility, migration, ownership, security, enforcement, or maintena
 
 Link updated documentation, evidence, issues, or ADRs. State explicitly when no public contract or decision changed.
 
+Authoritative user journey and accepted decision:
+
 ## Roadmap impact
 
 Link the updated `ROADMAP.md` item and its evidence, or explain why this change

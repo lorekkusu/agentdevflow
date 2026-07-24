@@ -1,124 +1,153 @@
 # Repository guidance
 
-## Product boundary
+## Product, authority, and design gate
 
 `agentdevflow` is a local-first Node.js and TypeScript development-flow
 configurator and policy compiler distributed through npm and invoked with
 `npx agentdevflow`.
 
-Keep Steward, Developer, and Reviewer provider-neutral. Codex, Claude Code, and
-Cursor are the initial renderer targets, not workflow roles.
+Use these sources for their stated authority:
 
-Follow:
+- `ROADMAP.md`: accepted sequence, durable outcomes, open decisions, exit
+  criteria, and evidence;
+- `docs/product-direction.md`: retained product intent;
+- `docs/architecture.md`: current component and mutation boundaries;
+- `docs/development/engineering-boundary.md`: complexity admission;
+- `docs/development/project-health.md`: current verified disposition;
+- `docs/development/beta-cli-contract.md`: current unreleased CLI surface; and
+- accepted ADRs: durable decisions, with older ADRs treated as historical when
+  a later accepted decision explicitly supersedes them.
 
-- `ROADMAP.md` for accepted sequence, open decisions, exit criteria, and evidence;
-- `docs/product-direction.md` for retained product intent;
-- `docs/architecture.md` for current component boundaries;
-- `docs/development/engineering-boundary.md` for complexity admission;
-- `docs/development/project-health.md` for current disposition;
-- `docs/development/beta-cli-contract.md` for the current unreleased working-tree CLI surface;
-- `docs/decisions/0004-initial-beta-public-surface.md` only for the historical first-beta boundary.
+Derive public interfaces from the authoritative user journey. Do not use an
+interface sketch, candidate implementation, test, or repeated rewrite to
+decide the product. Before proposing or changing a public command, flag,
+configuration field, file format, workflow or preset behavior, provider
+adapter, or durable architecture boundary:
 
-Do not add a public workflow DSL, scheduler, runtime, marketplace, broad
-provider matrix, GUI, SaaS service, automatic merge/release system, or
-general agent-assisted repository analyzer without an accepted product
-decision. The bounded external-agent-operated onboarding milestone in
-`ROADMAP.md` is accepted: a selected local coding-agent CLI may act as the
-user's operator of the same rule, diff, render, and check commands.
+1. name the owning roadmap outcome and its position in the current sequence;
+2. describe the user journey and relevant starting states;
+3. state prerequisites, observations, mutations, success, failure, and recovery;
+4. distinguish current behavior, accepted decisions, recommendations, open
+   decisions, and prohibited or deferred work; and
+5. obtain explicit acceptance for every unresolved public-contract decision.
 
-Apply the engineering boundary retroactively. Do not add or retain a second
-writer, approval store, transaction system, Git manager, lease, credentials,
-or hostile-local-writer defense without a reproduced in-scope failure and an
-accepted decision. Git history is sufficient for discarded experiments.
+If authority is missing or the roadmap says `Decision required`, present only
+bounded alternatives and acceptance criteria, then stop before production
+implementation or compatibility commitments.
 
-## Repository language and disclosure
+The fixed non-interactive first-use sequence is:
 
-Write every repository artifact in English, including source, comments, tests,
-fixtures, diagnostics, CLI output, documentation, configuration, and generated
-evidence.
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
 
-Do not store conversation transcripts, private development prompts, expanded
-runtime requests, raw reviewer output, identities, private chronology,
-credentials, or embargoed vulnerability detail. Retain durable conclusions,
-accepted decisions, sanitized findings, and reproducible evidence only.
+`init` is the only first-use entry. `onboard` requires the valid selected
+configuration and fails before inspecting provider targets when that
+configuration is absent or invalid. Every `rule` operation also requires that
+valid selected configuration, so rule management cannot become another
+pre-init entry. Do not introduce alternate first-use orders, implicit
+discovery branches, or a second onboarding state model without a new accepted
+decision.
 
-A reviewed English product-owned runtime instruction template required by an
-accepted feature is source code, not private development history. Keep it
-visible, bounded, packaged intentionally, and tested. Never retain a
-project-expanded request, provider transcript, or private reasoning as repository
-evidence. Follow `docs/development/public-information-policy.md`; route security-sensitive findings through `SECURITY.md`.
+Keep this file limited to repository-wide stop rules, invariants, required
+commands, review gates, and source routing. Do not append milestone narratives,
+exhaustive CLI syntax, test counts, or evidence summaries. A referenced
+document may provide detail, but it must not be the only location of a
+must-follow stop or permission rule. Consolidate overlapping rules instead of
+adding exceptions.
 
-## Current architecture
+## Non-negotiable product boundaries
 
-- Put implementation under `src/` and tests under `test/`.
-- Use ESM TypeScript with strict type checking.
-- Name tests `*.test.ts`; `npm test` builds and runs emitted tests with
-  `node:test`.
+- Keep Steward, Developer, and Reviewer provider-neutral. Codex, Claude Code,
+  and Cursor are renderer targets, not workflow roles.
+- Keep `local-reviewed-change` and `issue-to-reviewed-pull-request` as bounded
+  built-in choices. Do not expose arbitrary workflow topology.
+- Treat tracker, pull-request, CI, review, and merge capabilities as advisory
+  compiled procedures. Do not imply live clients, credentials, observations,
+  or mutation authority.
+- Do not add a public workflow DSL, scheduler, runtime, marketplace, broad
+  provider matrix, GUI, SaaS service, automatic merge or release system, or
+  general agent-assisted repository analyzer without an accepted product
+  decision.
+- Do not add or retain a second writer, approval store, transaction system, Git
+  manager, lease, credential subsystem, or hostile-local-writer defense without
+  a reproduced in-scope failure and an accepted decision. Git history is
+  sufficient for discarded experiments.
+- The accepted external-agent onboarding milestone permits one selected local
+  coding-agent CLI to operate the same public rule, diff, render, and check
+  path. It does not authorize a general command runner, workflow runtime,
+  provider SDK, credential manager, background process, retry system, or
+  unsupported launcher claim.
+
+## Architecture and mutation invariants
+
+- Put implementation under `src/` and tests under `test/`. Use ESM TypeScript
+  with strict type checking. Name tests `*.test.ts`; `npm test` builds and runs
+  emitted tests with `node:test`.
 - Keep JSONC and Zod imports behind
   `src/interface/private-domain-project-document.ts` and
   `src/interface/private-zod.ts`.
 - Keep provider, tracker, and integration bindings out of generic workflow
   topology and policy validation.
-- Keep `local-reviewed-change` and `issue-to-reviewed-pull-request` as bounded
-  built-in choices. Do not expose arbitrary workflow topology.
-- Treat issue-workflow tracker, pull-request, CI, review, and merge
-  capabilities as advisory compiled procedures. Do not imply that the CLI has
-  network clients, credentials, live observations, or mutation authority.
 - Model finite nodes, transitions, artifact production, and invalidation
   explicitly. Cycles are allowed. Treat guards as potentially enabled and
   report guard-blind false positives.
-- Keep native provider emitters under `src/renderer/native/` and the renderer
+- Keep native provider emitters under `src/renderer/native/`; keep the renderer
   adapter planning-only.
-- Route provider-output and ownership-lock mutation through the render command
-  and the single forward-convergent file executor. Publish the ownership lock
-  last. The accepted rule commands may mutate only canonical user-owned rule
-  sources; they must not create a second provider writer.
-- `agentdevflow` must not use repository-wide Git cleanliness as write authorization
-  or run Git reset, clean, stash, commit, branch, or rollback operations. This does
-  not prohibit explicitly authorized Git work by maintainers or coding agents.
+- Route every provider-output and ownership-lock mutation through `render` and
+  the single forward-convergent file executor. Publish the ownership lock last.
 - Treat generated provider files as whole-file, single-owner projections.
-  Current existing-file behavior is create, exact adopt, bounded equivalent
-  import, explicit exact onboarding replacement, or abort. Onboarding
-  replacement requires selected content to be represented in canonical rules,
-  an exact per-target observed digest, and a current normal plan approval.
-- Treat digests as byte and staleness bindings, not authentication. Treat the
-  render lock as ownership state, not a mutex, lease, or security boundary.
-- Keep package contents allowlisted in `package.json`. Tests, fixtures,
-  experiments, research evidence, and external-provider clients must not enter
-  the runtime tarball.
-- Never invoke `npm publish` locally. `.github/workflows/publish.yml` is the
-  only reviewed publication path.
+  Existing-file behavior is create, exact adopt, bounded equivalent import,
+  explicit exact onboarding replacement, or abort.
+- Onboarding replacement requires retained content to be represented in
+  canonical rules, an exact current per-target digest, the complete normal
+  diff, and the current exact-plan render approval. Digests bind bytes and
+  staleness; they are not authentication. The lock records ownership state; it
+  is not a mutex, lease, or security boundary.
+- Store canonical guidance as one Markdown file per globally unique rule id
+  under the fixed shared, Steward, Developer, and Reviewer scope directories.
+  A rule command may mutate only one canonical rule file. It must not write
+  provider outputs or the lock.
+- Do not add a rule index, database, public rule DSL, provider-instance or
+  nested scope, composite source/provider transaction, approval store, backup
+  system, lease, or Git manager. Unsupported aggregate rule paths fail closed
+  with exact manual-move guidance.
+- Generate only the roles assigned to each provider id. One id may hold
+  multiple roles with separate sections. Reject multiple ids for one provider
+  product while its native project target cannot isolate them.
+- Treat native instruction discovery as overlapping. Every generated
+  projection must name its target product, be wholly inapplicable to
+  nonmatching products, and avoid claims of session, identity, permission, or
+  authority isolation.
+- `agentdevflow` must not use repository-wide Git cleanliness as write
+  authorization or execute Git reset, clean, stash, commit, branch, or rollback
+  operations. This does not restrict separately authorized maintainer or coding
+  agent Git work.
 
-## Canonical guidance
+## Repository content and implementation
 
-Canonical guidance follows `docs/development/instruction-composition.md`. The
-current implementation stores one Markdown file per globally unique rule id
-under fixed shared, Steward, Developer, and Reviewer scope directories. The
-bounded `rule list/show/add/update/remove` command family may mutate one
-canonical rule file per invocation. Provider outputs and the ownership lock
-still change only through `diff` and exact-approved `render`.
+Write every repository artifact in English, including source, comments, tests,
+fixtures, diagnostics, CLI output, documentation, configuration, evidence,
+commit messages, and pull-request content.
 
-Keep rule management without an index, database, public rule DSL,
-provider-instance or nested scope, source/provider composite transaction,
-second approval model, backup system, lease, or Git manager. The four
-unreleased aggregate paths must fail closed with exact manual-move guidance;
-never silently ignore, delete, or automatically migrate them.
+Do not store conversation transcripts, private development prompts, expanded
+runtime requests, raw reviewer or provider output, identities, private
+chronology, credentials, or embargoed vulnerability detail. Retain only
+accepted decisions, sanitized verified findings, and reproducible evidence.
+Follow `docs/development/public-information-policy.md` and route
+security-sensitive findings through `SECURITY.md`.
 
-External-agent onboarding may supply semantic judgment and operate the public
-CLI, but final managed state must still pass canonical rule validation, the
-complete render plan, and `check`. Manual onboarding uses the accepted
-whole-file inventory and exact replacement boundary in ADR 0006.
+A reviewed English product-owned runtime instruction template required by an
+accepted feature is source code. Keep it visible, bounded, intentionally
+packaged, and tested. Never retain a project-expanded request, provider event
+stream, transcript, raw response, credential, or private reasoning as evidence.
 
-Generate only the roles assigned to each provider id. One provider id may hold
-multiple roles with separate sections. Reject multiple ids for one provider
-product while its native project target cannot isolate them.
+Keep package contents allowlisted in `package.json`. Tests, fixtures,
+experiments, research material, and external-provider clients must not enter
+the runtime tarball. Never invoke `npm publish` locally;
+`.github/workflows/publish.yml` is the only reviewed publication path.
 
-Treat native instruction discovery as potentially overlapping. Every generated
-projection must declare its target coding-agent product, make the whole
-projection inapplicable to nonmatching products, and avoid claiming session,
-identity, permission, or authority isolation.
-
-## Development commands
+## Verification
 
 Run from the repository root:
 
@@ -134,66 +163,53 @@ npm run test:v1-recovery
 npm pack --dry-run --json
 ```
 
-`npm run check` is the required local verification. It audits repository and
-package hygiene, type-checks, builds, and runs the automated tests.
-`check:v1-qualification` discovers the full current test set, requires the V1
-recovery tests, and fails on skips. `check:package-entrypoint` packs and
-exercises the installed npm bin. There is no lint or format command; do not
-claim one has run.
+`npm run check` is required for every repository change. It audits repository
+and package hygiene, type-checks, builds, and runs the automated tests. Run the
+qualification, installed package-entrypoint, recovery, and pack commands when
+public behavior, packaging, qualification evidence, or release readiness is in
+scope. Exercise the installed artifact for every public CLI or onboarding
+change.
 
 Add or update tests whenever behavior changes. Keep fixtures deterministic and
-free of machine-specific paths, timestamps, credentials, and network
-assumptions.
+free of machine-specific paths, timestamps, credentials, network access, and
+real provider authentication. There is no lint or format command; do not claim
+that one ran.
 
-## Decisions and reviews
+## Roadmap governance and independent review
 
-Create an ADR only for a material, evidence-backed decision. Mark it Accepted
-only after explicit approval. Label candidates and open questions honestly.
-
-Before finalizing any repository change, have a separate read-only context review
-the complete change, including staged, unstaged, and relevant untracked files.
-The reviewer must not have implemented the change or received prior findings or
-conclusions; a subagent qualifies only if it meets this boundary. If none does,
-report the review as incomplete rather than substituting self-review. Review
-engineering-boundary compliance and implementation correctness in proportion to
-risk. For this file, also review clarity, concision, disclosure safety,
-source-of-truth conflicts, actual commands and paths, and honest enforcement
-claims. Verify material findings directly.
-
-Run independent project-health reviews only at the documented triggers. Initial
-reviewers must be read-only, context-isolated, and unaware of the current health
-conclusion. Publish only verified sanitized findings. Ordinary change review does
-not replace or trigger a project-health review. Follow
-`docs/development/project-health-review.md`.
-
-Instructions in this file are advisory. Put mechanically checkable rules in code,
-tests, scripts, CI, hooks, or platform controls; describe enforcement and bypass
-authority honestly.
-
-## Roadmap governance
-
-Record every accepted durable product outcome, engineering boundary, deferral,
-scope change, and open public-contract decision in the root `ROADMAP.md`.
-Do not rely on conversation history, issue comments, private notes, or an
-optional instruction reference as the only record of a requirement.
+Record every accepted durable outcome, engineering boundary, deferral, scope
+change, and open public-contract decision in the root `ROADMAP.md`. Do not use
+conversation history, issue comments, private notes, tests, or an optional
+instruction reference as the sole authority for a requirement.
 
 Update the affected roadmap item in the same change that implements,
-supersedes, defers, or completes it. Never silently remove an accepted outcome
-when deleting an overbuilt implementation. A completed item requires
-reviewable evidence such as a repository path and symbol, focused test,
-verification command, commit or pull request, CI run, or published artifact.
-Use `file:line` when useful, but prefer stable symbols and tests when line
-numbers would drift.
+supersedes, defers, or completes it. Never silently remove or weaken an
+accepted outcome. A completed item requires reviewable repository, test,
+verification, commit, pull-request, CI, or published-artifact evidence. Pull
+requests must update `ROADMAP.md` or explain why they have no roadmap impact.
 
-Keep the roadmap decision-ready:
+Create an ADR only for a material, evidence-backed durable decision. Mark it
+Accepted only after explicit approval. Amend or supersede an existing ADR when
+that is clearer than creating a new mechanics-only record.
 
-- put active, next, blocked, and decision-required work before later work;
-- keep completed outcomes compressed in the bottom completion summary;
-- distinguish retained user outcomes from superseded implementation
-  mechanisms;
-- apply the repository disclosure rules; and
-- keep exactly one authoritative roadmap.
+Before finalizing any repository change, obtain a separate read-only review of
+the complete staged, unstaged, and relevant untracked change. The reviewer must
+not have implemented the change or received earlier findings or conclusions.
+Verify material findings directly. If no qualified reviewer is available,
+report the review as incomplete.
 
-Pull requests must update `ROADMAP.md` or explain why they have no roadmap impact.
-Checks require the root roadmap and reject `docs/development/roadmap.md`; human
-review remains responsible for one-authority and prose accuracy.
+For every public-surface or durable-architecture change, the independent
+reviewer must name the authorizing roadmap outcome and decision, then verify
+that the complete change follows the accepted journey, sequence, state
+transitions, criteria, and non-goals. Missing or unresolved authority is a
+blocking scope finding, not an implementation detail.
+
+Run project-health reviews only at the triggers and with the isolation defined
+in `docs/development/project-health-review.md`. Ordinary change review does not
+replace a health review. Publish only verified sanitized conclusions.
+
+Instructions here are advisory. Put mechanically checkable constraints in
+code, tests, repository audits, CI, hooks, or platform controls, and describe
+their limits honestly. Mechanical checks may ensure that authority and review
+gates remain present; they cannot determine whether a product decision is
+semantically correct.

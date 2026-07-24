@@ -38,6 +38,8 @@ test("represents every supported top-level command without filesystem discovery"
     ],
     [
       "onboard",
+      "--config",
+      "project.jsonc",
       "--repository",
       ".",
       "--lock",
@@ -95,6 +97,26 @@ test("retains explicit repository, configuration, and lock paths", () => {
   expectSuccess(result);
   assert.deepEqual(result.invocation, {
     command: "check",
+    projectConfigPath: "project.jsonc",
+    repositoryPath: "repository",
+    lockPath: ".state/render-lock.json",
+    outputFormat: "human",
+  });
+});
+
+test("retains the selected configuration path for onboard", () => {
+  const result = parsePrivateCliArguments([
+    "onboard",
+    "--repository",
+    "repository",
+    "--config",
+    "project.jsonc",
+    "--lock",
+    ".state/render-lock.json",
+  ]);
+  expectSuccess(result);
+  assert.deepEqual(result.invocation, {
+    command: "onboard",
     projectConfigPath: "project.jsonc",
     repositoryPath: "repository",
     lockPath: ".state/render-lock.json",
@@ -436,6 +458,7 @@ test("parses the complete rule command family into typed invocations", () => {
       invocation: {
         command: "rule",
         operation: "list",
+        projectConfigPath: "agentdevflow.config.jsonc",
         repositoryPath: ".",
         outputFormat: "human",
       },
@@ -445,6 +468,7 @@ test("parses the complete rule command family into typed invocations", () => {
       invocation: {
         command: "rule",
         operation: "show",
+        projectConfigPath: "agentdevflow.config.jsonc",
         repositoryPath: ".",
         ruleId: "review-required",
         outputFormat: "json",
@@ -461,11 +485,14 @@ test("parses the complete rule command family into typed invocations", () => {
         "guidance/run-tests.md",
         "--repository",
         "project",
+        "--config",
+        "custom-project.jsonc",
         "--json",
       ],
       invocation: {
         command: "rule",
         operation: "add",
+        projectConfigPath: "custom-project.jsonc",
         repositoryPath: "project",
         ruleId: "run-tests",
         scope: "developer",
@@ -478,6 +505,7 @@ test("parses the complete rule command family into typed invocations", () => {
       invocation: {
         command: "rule",
         operation: "update",
+        projectConfigPath: "agentdevflow.config.jsonc",
         repositoryPath: ".",
         ruleId: "run-tests",
         input: { kind: "stdin" },
@@ -496,6 +524,7 @@ test("parses the complete rule command family into typed invocations", () => {
       invocation: {
         command: "rule",
         operation: "remove",
+        projectConfigPath: "agentdevflow.config.jsonc",
         repositoryPath: "project",
         ruleId: "run-tests",
         outputFormat: "json",

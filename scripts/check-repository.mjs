@@ -511,6 +511,17 @@ async function inspectRequiredRepositoryFiles() {
 async function inspectRoadmapBoundary() {
   const diagnostics = [];
   const formerRoadmap = "docs/development/roadmap.md";
+  const requiredAgentHeadings = [
+    "## Product, authority, and design gate",
+    "## Roadmap governance and independent review",
+  ];
+  const requiredRoadmapHeadings = [
+    "## Product objective",
+    "## Current sequence",
+    "## Explicitly out of scope",
+    "## Open decisions",
+    "## Completed summary",
+  ];
 
   try {
     await stat(join(root, formerRoadmap));
@@ -529,18 +540,33 @@ async function inspectRoadmapBoundary() {
     const agents = await readFile(join(root, "AGENTS.md"), "utf8");
     if (
       !agents.includes("ROADMAP.md") ||
-      !agents.includes("## Roadmap governance")
+      requiredAgentHeadings.some((heading) => !agents.includes(heading))
     ) {
       diagnostics.push({
         path: "AGENTS.md",
         line: 1,
         code: "ROADMAP_GOVERNANCE_MISSING",
         message:
-          "Route durable requirement tracking and completion evidence through ROADMAP.md.",
+          "Keep the product design gate and roadmap review authority in AGENTS.md.",
       });
     }
   } catch {
     // The required-root-file diagnostic reports a missing AGENTS.md.
+  }
+
+  try {
+    const roadmap = await readFile(join(root, "ROADMAP.md"), "utf8");
+    if (requiredRoadmapHeadings.some((heading) => !roadmap.includes(heading))) {
+      diagnostics.push({
+        path: "ROADMAP.md",
+        line: 1,
+        code: "ROADMAP_AUTHORITY_STRUCTURE_MISSING",
+        message:
+          "Keep the product objective, sequence, scope, decisions, and completion summary in the authoritative roadmap.",
+      });
+    }
+  } catch {
+    // The required-root-file diagnostic reports a missing ROADMAP.md.
   }
 
   return diagnostics;

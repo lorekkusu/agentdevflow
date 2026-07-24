@@ -137,11 +137,13 @@ The accepted slice does not provide:
 - automatic import of arbitrary existing provider instructions.
 
 These absences are intentional boundaries. Manual existing-project onboarding
-is built on this rule surface through exact whole-file inventory and
-replacement disposition. Optional operation by one user-selected external
-coding-agent CLI remains a later roadmap item.
+is built on this rule surface after `init` establishes the valid selected
+configuration, followed by exact whole-file inventory and replacement
+disposition. Optional operation by one user-selected external coding-agent CLI
+remains a later roadmap item.
 
-Rule commands mutate only canonical rule files. A later external-agent
+Rule commands require the valid selected project configuration and mutate only
+canonical rule files. A later external-agent
 onboarding path may propose rule organization and operate the exact current
 `agentdevflow` executable, including rule, diff, render, and check commands.
 Provider outputs and the ownership lock remain under the existing render

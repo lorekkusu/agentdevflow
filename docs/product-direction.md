@@ -48,14 +48,25 @@ The current unreleased candidate supports:
 - bounded `rule list`, `show`, `add`, `update`, and `remove` commands over
   optional per-rule Markdown sources under `.agentdevflow/rules/`;
 - bounded manual existing-project onboarding for the three native target files,
-  with exact reviewed whole-file replacement through the normal plan;
+  entered only after `init`, with exact reviewed whole-file replacement through
+  the normal plan;
 - complete deterministic planning, exact digest approval, whole-file
   ownership, safe existing-file adoption, and drift checking.
 
 This is the current unreleased implementation, not the complete accepted
-adoption experience. The authoritative [product roadmap](../ROADMAP.md) adds
+adoption experience. The authoritative [product roadmap](../ROADMAP.md)
+requires a repository-wide health review before item 3 resumes, then retains
 user-selected external-agent operation, an interactive wizard, and Strict
 before the next beta release.
+
+The non-interactive first-use journey is fixed rather than user-selectable:
+
+```text
+init -> onboard -> rule as needed -> diff -> render -> check
+```
+
+`onboard` requires the valid selected configuration and is not an alternate
+pre-init discovery entry.
 
 The issue workflow produces advisory procedures. It does not call Linear,
 GitHub, CI, agent processes, or merge APIs. Agents use the tools available in
@@ -193,7 +204,8 @@ state.
 An interactive wizard is part of the accepted near-term adoption experience.
 It will cover new projects and existing-project onboarding while preserving an
 equivalent reproducible configuration or flag representation for every
-selection. It may not create a second configuration model or hidden state.
+selection. It wraps the same init-first sequence and may not create a second
+configuration model, hidden state, or alternate onboarding order.
 
 Existing-project onboarding may launch one user-selected, already installed
 and authenticated coding-agent CLI. That external agent acts as the user's

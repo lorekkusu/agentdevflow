@@ -22,7 +22,9 @@ See [product direction](../product-direction.md) for product scope and
 The primary local operation is:
 
 ```text
-project intent plus canonical custom guidance
+init creates validated project configuration
+-> onboard inventories supported provider targets
+-> canonical custom guidance as needed
 -> policy compilation and responsibility-specific instruction views
 -> complete deterministic diff
 -> explicit render approval
@@ -92,14 +94,15 @@ accepted requirement proves more is necessary:
 - clear diagnostics when the current state no longer matches the plan.
 
 Existing-file onboarding must stay inside that path. The current implementation
-shows exact adopt, bounded equivalent import, or abort. The accepted next
-milestone may also show an explicit whole-file replacement after the operator
-has represented selected existing content in canonical rules. The normal diff
-must show the complete replacement, and the normal render approval authorizes
-the complete current plan. A changed source or target invalidates the plan.
-The exact per-target replacement disposition must be a reproducible input to
-both diff and render; its public representation remains a roadmap decision.
-Do not add a durable approval record, per-section authorization ledger, backup
+requires `init` to establish the valid selected configuration before
+`onboard` reads any provider target. The current implementation supports exact
+adopt, bounded equivalent import, explicit exact whole-file replacement, or
+abort. Replacement is allowed only after the operator has represented retained
+content in canonical rules. The normal diff shows the complete replacement,
+and the normal render approval authorizes the complete current plan. A changed
+source or target invalidates the plan. The exact per-target replacement input
+must be repeated for both diff and render. Do not add an alternate onboard-first
+path, durable approval record, per-section authorization ledger, backup
 service, Git transaction, or second provider writer.
 
 ## Responsibility boundaries

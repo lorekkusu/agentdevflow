@@ -26,7 +26,11 @@ import {
   privateRuleOperations,
   type PrivateCliInvocation,
 } from "../interface/private-cli-arguments.js";
-import { privateDomainProjectDocumentDefaultMaxBytes } from "../interface/private-domain-project-document.js";
+import {
+  compilePrivateDomainProjectDocument,
+  parsePrivateDomainProjectDocument,
+  privateDomainProjectDocumentDefaultMaxBytes,
+} from "../interface/private-domain-project-document.js";
 import {
   privateProjectGuidanceFileMaxBytes,
   privateProjectGuidanceRulesRoot,
@@ -36,12 +40,18 @@ import {
   privateRenderLockDefaultMaxBytes,
   serializePrivateRenderLock,
 } from "../lock/private-render-lock.js";
-import { executePrivateExistingProjectInventory } from "../onboarding/private-existing-project-inventory.js";
+import {
+  executePrivateExistingProjectInventory,
+  type PrivateExistingProjectInventoryResult,
+} from "../onboarding/private-existing-project-inventory.js";
 import { nativeProjectInstructionPaths } from "../renderer/native/common.js";
+import { privateIssueToPullRequestCapabilityObservations } from "../workflows/private-issue-to-reviewed-pull-request.js";
+import { privateLocalReviewedChangeCapabilityObservations } from "../workflows/private-local-reviewed-change.js";
 import { createPrivateConvergentMutationIntent } from "../workspace/private-convergent-intent.js";
 import {
   PrivateFilesystemWorkspace,
   PrivateFilesystemWorkspaceError,
+  type PrivateFilesystemReadWorkspace,
 } from "../workspace/private-filesystem-workspace.js";
 import {
   blockedBeforePlanning,
@@ -74,19 +84,19 @@ const usage = `Usage:
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
-  agentdevflow onboard [--repository <path>] [--lock <relative-path>] [--json]
+  agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--replace-existing <path=observed-sha256>]... [--json]
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
-  agentdevflow rule list [--repository <path>] [--json]
-  agentdevflow rule show <id> [--repository <path>] [--json]
-  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-  agentdevflow rule remove <id> [--repository <path>] [--json]
+  agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule remove <id> [--repository <path>] [--config <relative-path>] [--json]
 
-Init creates only an absent revision-1 configuration after validating provider-file dispositions.
+Init creates an absent revision-1 configuration or accepts byte-identical existing configuration after validating provider-file dispositions.
 Check and diff are read-only. Render requires an exact plan digest from diff.
-Onboard is a bounded read-only inventory of supported existing provider targets.
-Rule commands read or mutate only canonical project-rule files; provider outputs still require diff and render.
+Onboard requires the valid configuration created by init, then reads a bounded inventory of supported existing provider targets.
+Rule commands require the valid selected configuration and read or mutate only canonical project-rule files; provider outputs still require diff and render.
 Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
 Beta configuration and JSON schema versions may require documented migration before 1.0.`;
@@ -100,7 +110,8 @@ Provider products: claude-code, codex, cursor.
 The id is a user-chosen provider-instance name referenced by each role option.
 Issue workflows compile instructions for the selected tracker, pull-request host, and CI binding. They do not verify or invoke those services.
 Auxiliary review is disabled and squash is the merge method in the current issue-workflow CLI surface.
-Init creates only an absent configuration. It reports provider-file dispositions but does not write provider files or the lock.
+Init creates an absent configuration or accepts byte-identical existing configuration. It never overwrites different configuration bytes.
+It reports provider-file dispositions but does not write provider files or the lock.
 Exact adopt or lossless import makes the complete provider path a managed file; no managed section is created.`,
   check: `Usage:
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
@@ -112,9 +123,10 @@ Check is read-only. Exit 0 is clean, exit 1 means reviewable changes are require
 Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.
 Each --replace-existing input states that the exact complete unmanaged target was reviewed, retained content is represented in current canonical rules, and omitted remainder is intentional.`,
   onboard: `Usage:
-  agentdevflow onboard [--repository <path>] [--lock <relative-path>] [--json]
+  agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
 
-Onboard performs a read-only inventory of AGENTS.md, CLAUDE.md, and .cursor/rules/agentdevflow.mdc.
+Run init before onboard. Onboard refuses to inspect provider targets until the selected configuration is present and valid.
+It then performs a read-only inventory of AGENTS.md, CLAUDE.md, and .cursor/rules/agentdevflow.mdc.
 It reports exact bounded content, digests, ownership dispositions, and whether unmanaged content remains unclassified.`,
   render: `Usage:
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
@@ -123,37 +135,38 @@ Render mutates only the complete plan whose exact-plan-digest was reviewed throu
 The exact --replace-existing inputs used for diff must be repeated for render.
 Adopted, imported, or explicitly replaced paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
   rule: `Usage:
-  agentdevflow rule list [--repository <path>] [--json]
-  agentdevflow rule show <id> [--repository <path>] [--json]
-  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
-  agentdevflow rule remove <id> [--repository <path>] [--json]
+  agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
+  agentdevflow rule remove <id> [--repository <path>] [--config <relative-path>] [--json]
 
 Rule ids are globally unique lowercase ASCII slugs of at most 64 characters and must not be reserved Windows filenames. --file paths are relative to the selected repository.
+Run init and onboard before rule commands. Every rule operation requires the valid selected configuration.
 Rule mutations change only canonical files under .agentdevflow/rules. Run diff and exact-approved render separately to update provider outputs.`,
 };
 
 const ruleOperationUsage = {
   list: `Usage:
-  agentdevflow rule list [--repository <path>] [--json]
+  agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
 
-Lists canonical project rules in deterministic rule-id order.`,
+Lists canonical project rules in deterministic rule-id order. Requires the valid selected configuration.`,
   show: `Usage:
-  agentdevflow rule show <id> [--repository <path>] [--json]
+  agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
 
-Shows one canonical rule including its exact content.`,
+Shows one canonical rule including its exact content. Requires the valid selected configuration.`,
   add: `Usage:
-  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
 
-Creates one absent canonical rule. Exactly one of --file or --stdin is required.`,
+Creates one absent canonical rule after validating the selected configuration. Exactly one of --file or --stdin is required.`,
   update: `Usage:
-  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
+  agentdevflow rule update <id> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
 
-Updates one existing canonical rule without changing its scope.`,
+Updates one existing canonical rule without changing its scope after validating the selected configuration.`,
   remove: `Usage:
-  agentdevflow rule remove <id> [--repository <path>] [--json]
+  agentdevflow rule remove <id> [--repository <path>] [--config <relative-path>] [--json]
 
-Removes one existing canonical rule. Provider outputs are unchanged until a later exact-approved render.`,
+Removes one existing canonical rule after validating the selected configuration. Provider outputs are unchanged until a later exact-approved render.`,
 } as const satisfies Readonly<
   Record<(typeof privateRuleOperations)[number], string>
 >;
@@ -166,35 +179,56 @@ function pathsOverlap(left: string, right: string): boolean {
   );
 }
 
+const reservedConfigurationPaths = [
+  {
+    label: "canonical rule root",
+    path: privateProjectGuidanceRulesRoot,
+  },
+  ...Object.entries(nativeProjectInstructionPaths).map(([product, path]) => ({
+    label: `${product} generated output`,
+    path,
+  })),
+] as const;
+
+function configurationPathLayoutDiagnostic(
+  projectConfigPath: string,
+): DisplayDiagnostic | null {
+  for (const reserved of reservedConfigurationPaths) {
+    if (pathsOverlap(projectConfigPath, reserved.path)) {
+      return {
+        code: "CLI_PATH_COLLISION",
+        level: "error",
+        message: `The configuration path overlaps the ${reserved.label} path (${reserved.path}).`,
+        path: projectConfigPath,
+      };
+    }
+  }
+  return null;
+}
+
 function pathLayoutDiagnostic(
-  invocation: Exclude<
-    PrivateCliInvocation,
-    { readonly command: "onboard" | "rule" }
-  >,
+  invocation: Exclude<PrivateCliInvocation, { readonly command: "rule" }>,
 ): DisplayDiagnostic | null {
   const configuration = {
     label: "configuration",
     path: invocation.projectConfigPath,
   };
   const lock = { label: "ownership lock", path: invocation.lockPath };
-  const reserved = [
-    {
-      label: "canonical rule root",
-      path: privateProjectGuidanceRulesRoot,
-    },
-    ...Object.entries(nativeProjectInstructionPaths).map(([product, path]) => ({
-      label: `${product} generated output`,
-      path,
-    })),
-  ];
-  const pairs = [
-    [configuration, lock],
-    ...reserved.flatMap((entry) => [
-      [configuration, entry],
-      [lock, entry],
-    ]),
-  ] as const;
-  for (const [left, right] of pairs) {
+  if (pathsOverlap(configuration.path, lock.path)) {
+    return {
+      code: "CLI_PATH_COLLISION",
+      level: "error",
+      message: `The ${configuration.label} path overlaps the ${lock.label} path (${lock.path}).`,
+      path: configuration.path,
+    };
+  }
+  const configurationDiagnostic =
+    configurationPathLayoutDiagnostic(configuration.path);
+  if (configurationDiagnostic !== null) {
+    return configurationDiagnostic;
+  }
+  for (const right of reservedConfigurationPaths) {
+    const left = lock;
     if (pathsOverlap(left.path, right.path)) {
       return {
         code: "CLI_PATH_COLLISION",
@@ -525,14 +559,103 @@ function blockedRuleResult(
     PrivateCliInvocation,
     { readonly command: "rule" }
   >["operation"],
-  diagnostic: DisplayDiagnostic,
+  diagnostics: readonly DisplayDiagnostic[],
 ): PrivateRuleCommandResult {
   return {
     operation,
     outcome: "blocked",
     exitCode: 2,
-    diagnostics: [diagnostic],
+    diagnostics,
   };
+}
+
+type RequiredProjectConfigurationResult =
+  | { readonly ok: true }
+  | {
+      readonly ok: false;
+      readonly diagnostics: readonly (Omit<DisplayDiagnostic, "level"> & {
+        readonly level: "error";
+      })[];
+    };
+
+async function requireValidProjectConfiguration(
+  workspace: PrivateFilesystemReadWorkspace,
+  projectConfigPath: string,
+  command: "onboard" | "rule",
+): Promise<RequiredProjectConfigurationResult> {
+  let configurationContent: string | null;
+  try {
+    configurationContent = await workspace.readBounded(
+      projectConfigPath,
+      privateDomainProjectDocumentDefaultMaxBytes,
+    );
+  } catch (error) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          code:
+            command === "onboard"
+              ? "CLI_ONBOARD_CONFIGURATION_READ_FAILED"
+              : "CLI_RULE_CONFIGURATION_READ_FAILED",
+          level: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "The project configuration could not be read.",
+          path: projectConfigPath,
+        },
+      ],
+    };
+  }
+  if (configurationContent === null) {
+    return {
+      ok: false,
+      diagnostics: [
+        {
+          code:
+            command === "onboard"
+              ? "CLI_ONBOARD_CONFIGURATION_REQUIRED"
+              : "CLI_RULE_CONFIGURATION_REQUIRED",
+          level: "error",
+          message:
+            command === "onboard"
+              ? "Onboard requires the valid project configuration created by init. Run init before onboard."
+              : "Rule commands require the valid project configuration created by init. Run init and onboard before using rule commands.",
+          path: projectConfigPath,
+        },
+      ],
+    };
+  }
+  const parsedConfiguration =
+    parsePrivateDomainProjectDocument(configurationContent);
+  if (!parsedConfiguration.ok) {
+    return {
+      ok: false,
+      diagnostics: planningDiagnostics(parsedConfiguration.diagnostics).map(
+        (diagnostic) => ({ ...diagnostic, level: "error" as const }),
+      ),
+    };
+  }
+  const compiledConfiguration = compilePrivateDomainProjectDocument(
+    configurationContent,
+    {
+      capabilityObservations:
+        parsedConfiguration.document.intent.workflow.family ===
+        "local-reviewed-change"
+          ? privateLocalReviewedChangeCapabilityObservations
+          : privateIssueToPullRequestCapabilityObservations,
+    },
+  );
+  if (!compiledConfiguration.ok) {
+    return {
+      ok: false,
+      diagnostics: planningDiagnostics(compiledConfiguration.diagnostics).map(
+        (diagnostic) => ({ ...diagnostic, level: "error" as const }),
+      ),
+    };
+  }
+  return { ok: true };
 }
 
 async function runPrivateRule(
@@ -540,11 +663,77 @@ async function runPrivateRule(
   io: PrivateLocalCliIo,
   stdin: PrivateRuleInputStream,
 ): Promise<0 | 2> {
+  const layoutDiagnostic = configurationPathLayoutDiagnostic(
+    invocation.projectConfigPath,
+  );
+  if (layoutDiagnostic !== null) {
+    const result = blockedRuleResult(invocation.operation, [
+      layoutDiagnostic,
+    ]);
+    const content = formatRuleResult(result, invocation.outputFormat);
+    writeBoundedRuleOutput(
+      io.stdout,
+      invocation.operation,
+      invocation.outputFormat,
+      content,
+    );
+    return 2;
+  }
+
+  let readWorkspace: PrivateFilesystemReadWorkspace;
+  try {
+    readWorkspace = await PrivateFilesystemWorkspace.openReadOnly(
+      invocation.repositoryPath,
+    );
+  } catch (error) {
+    const result = blockedRuleResult(invocation.operation, [
+      {
+        code:
+          error instanceof PrivateFilesystemWorkspaceError
+            ? error.code
+            : "CLI_REPOSITORY_OPEN_FAILED",
+        level: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "The repository could not be opened read-only.",
+        path: invocation.repositoryPath,
+      },
+    ]);
+    const content = formatRuleResult(result, invocation.outputFormat);
+    writeBoundedRuleOutput(
+      io.stdout,
+      invocation.operation,
+      invocation.outputFormat,
+      content,
+    );
+    return 2;
+  }
+  const configuration = await requireValidProjectConfiguration(
+    readWorkspace,
+    invocation.projectConfigPath,
+    "rule",
+  );
+  if (!configuration.ok) {
+    const result = blockedRuleResult(
+      invocation.operation,
+      configuration.diagnostics,
+    );
+    const content = formatRuleResult(result, invocation.outputFormat);
+    writeBoundedRuleOutput(
+      io.stdout,
+      invocation.operation,
+      invocation.outputFormat,
+      content,
+    );
+    return 2;
+  }
+
   let workspace: PrivateFilesystemWorkspace;
   try {
     workspace = await PrivateFilesystemWorkspace.open(invocation.repositoryPath);
   } catch (error) {
-    const result = blockedRuleResult(invocation.operation, {
+    const result = blockedRuleResult(invocation.operation, [{
       code:
         error instanceof PrivateFilesystemWorkspaceError
           ? error.code
@@ -555,7 +744,7 @@ async function runPrivateRule(
           ? error.message
           : "The repository could not be opened.",
       path: invocation.repositoryPath,
-    });
+    }]);
     const content = formatRuleResult(result, invocation.outputFormat);
     writeBoundedRuleOutput(
       io.stdout,
@@ -577,11 +766,11 @@ async function runPrivateRule(
       privateProjectGuidanceFileMaxBytes,
     );
     if (!observed.ok) {
-      const result = blockedRuleResult(invocation.operation, {
+      const result = blockedRuleResult(invocation.operation, [{
         code: observed.code,
         level: "error",
         message: observed.message,
-      });
+      }]);
       const content = formatRuleResult(result, invocation.outputFormat);
       writeBoundedRuleOutput(
         io.stdout,
@@ -602,20 +791,60 @@ async function runPrivateRule(
       ...(stdinContent === undefined ? {} : { stdinContent }),
     });
   } catch (error) {
-    result = blockedRuleResult(invocation.operation, {
+    result = blockedRuleResult(invocation.operation, [{
       code: "RULE_COMMAND_FAILED",
       level: "error",
       message:
         error instanceof Error
           ? error.message
           : "The rule command failed unexpectedly.",
-    });
+    }]);
   }
   const content = formatRuleResult(result, invocation.outputFormat);
   if (
     !writeBoundedRuleOutput(
       io.stdout,
       invocation.operation,
+      invocation.outputFormat,
+      content,
+    )
+  ) {
+    return 2;
+  }
+  return result.exitCode;
+}
+
+type BlockedOnboardResult = Extract<
+  PrivateExistingProjectInventoryResult,
+  { readonly outcome: "blocked" }
+>;
+
+function blockedOnboardResult(
+  diagnostics: BlockedOnboardResult["diagnostics"],
+): BlockedOnboardResult {
+  return {
+    outcome: "blocked",
+    exitCode: 2,
+    diagnostics,
+    targets: null,
+  };
+}
+
+function writeOnboardResult(
+  result: PrivateExistingProjectInventoryResult,
+  invocation: Extract<
+    PrivateCliInvocation,
+    { readonly command: "onboard" }
+  >,
+  io: PrivateLocalCliIo,
+): 0 | 2 {
+  const content = formatExistingProjectInventory(
+    result,
+    invocation.outputFormat,
+  );
+  if (
+    !writeBoundedOnboardOutput(
+      io.stdout,
       invocation.outputFormat,
       content,
     )
@@ -637,10 +866,8 @@ async function runPrivateOnboard(
       invocation.repositoryPath,
     );
   } catch (error) {
-    const result = {
-      outcome: "blocked" as const,
-      exitCode: 2 as const,
-      diagnostics: [
+    return writeOnboardResult(
+      blockedOnboardResult([
         {
           code:
             error instanceof PrivateFilesystemWorkspaceError
@@ -653,38 +880,28 @@ async function runPrivateOnboard(
               : "The repository could not be opened read-only.",
           path: invocation.repositoryPath,
         },
-      ],
-      targets: null,
-    };
-    const content = formatExistingProjectInventory(
-      result,
-      invocation.outputFormat,
+      ]),
+      invocation,
+      io,
     );
-    writeBoundedOnboardOutput(
-      io.stdout,
-      invocation.outputFormat,
-      content,
+  }
+  const configuration = await requireValidProjectConfiguration(
+    workspace,
+    invocation.projectConfigPath,
+    "onboard",
+  );
+  if (!configuration.ok) {
+    return writeOnboardResult(
+      blockedOnboardResult(configuration.diagnostics),
+      invocation,
+      io,
     );
-    return 2;
   }
   const result = await executePrivateExistingProjectInventory({
     lockPath: invocation.lockPath,
     workspace,
   });
-  const content = formatExistingProjectInventory(
-    result,
-    invocation.outputFormat,
-  );
-  if (
-    !writeBoundedOnboardOutput(
-      io.stdout,
-      invocation.outputFormat,
-      content,
-    )
-  ) {
-    return 2;
-  }
-  return result.exitCode;
+  return writeOnboardResult(result, invocation, io);
 }
 
 export async function runPrivateLocalCli(
@@ -741,11 +958,17 @@ export async function runPrivateLocalCli(
   if (invocation.command === "rule") {
     return await runPrivateRule(invocation, io, stdin);
   }
-  if (invocation.command === "onboard") {
-    return await runPrivateOnboard(invocation, io);
-  }
   const layoutDiagnostic = pathLayoutDiagnostic(invocation);
   if (layoutDiagnostic !== null) {
+    if (invocation.command === "onboard") {
+      return writeOnboardResult(
+        blockedOnboardResult([
+          { ...layoutDiagnostic, level: "error" },
+        ]),
+        invocation,
+        io,
+      );
+    }
     writeLine(
       io.stdout,
       blockedBeforePlanning(
@@ -755,6 +978,9 @@ export async function runPrivateLocalCli(
       ),
     );
     return 2;
+  }
+  if (invocation.command === "onboard") {
+    return await runPrivateOnboard(invocation, io);
   }
   try {
     if (invocation.command === "init") {
