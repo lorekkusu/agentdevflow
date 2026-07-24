@@ -2,6 +2,7 @@ import { posix } from "node:path";
 
 import type { PrivateResolvedDomainProject } from "./materialize-domain-project.js";
 import type {
+  ExistingTargetReplacementAuthorization,
   InitializationImportAuthorization,
   OwnershipClaim,
   RenderRequest,
@@ -22,6 +23,7 @@ export interface CompilationRenderRequestOptions {
   readonly ownership?: Readonly<Record<string, OwnershipClaim>>;
   readonly adoptPaths?: readonly string[];
   readonly initializationImports?: readonly InitializationImportAuthorization[];
+  readonly existingTargetReplacements?: readonly ExistingTargetReplacementAuthorization[];
 }
 
 export type MaterializedCompilationRenderRequestOptions = Omit<
@@ -98,6 +100,43 @@ function normalizeInitializationImports(
   });
 }
 
+function normalizeExistingTargetReplacements(
+  values: readonly ExistingTargetReplacementAuthorization[],
+): ExistingTargetReplacementAuthorization[] {
+  const paths = normalizeRelativePaths(
+    values.map((value) => value.path),
+    "Existing target replacement",
+    false,
+  );
+  const byPath = new Map(values.map((value) => [value.path, value]));
+  return paths.map((path) => {
+    const value = byPath.get(path);
+    if (!value) {
+      throw new Error(
+        `Existing target replacement path is not canonical: ${path}`,
+      );
+    }
+    if (
+      !sha256Pattern.test(value.observedDigest) ||
+      !sha256Pattern.test(value.targetDigest)
+    ) {
+      throw new Error(
+        `Existing target replacement digests must be lowercase SHA-256 digests: ${path}`,
+      );
+    }
+    if (value.observedDigest === value.targetDigest) {
+      throw new Error(
+        `Existing target replacement must bind different observed and target digests: ${path}`,
+      );
+    }
+    return {
+      path,
+      observedDigest: value.observedDigest,
+      targetDigest: value.targetDigest,
+    };
+  });
+}
+
 interface PrivateRenderRequestSource {
   readonly compilerDigest: string;
   readonly providers: readonly RendererProvider[];
@@ -126,11 +165,27 @@ function renderRequestFromSource(
   const initializationImports = normalizeInitializationImports(
     options.initializationImports ?? [],
   );
+  const existingTargetReplacements = normalizeExistingTargetReplacements(
+    options.existingTargetReplacements ?? [],
+  );
   const adopted = new Set(adoptPaths);
   for (const authorization of initializationImports) {
     if (adopted.has(authorization.path)) {
       throw new Error(
         `Initialization path cannot be both adopted and imported: ${authorization.path}`,
+      );
+    }
+  }
+  const imported = new Set(
+    initializationImports.map((authorization) => authorization.path),
+  );
+  for (const authorization of existingTargetReplacements) {
+    if (
+      adopted.has(authorization.path) ||
+      imported.has(authorization.path)
+    ) {
+      throw new Error(
+        `Existing target replacement path overlaps another initialization disposition: ${authorization.path}`,
       );
     }
   }
@@ -155,6 +210,9 @@ function renderRequestFromSource(
     ),
     ...(options.adoptPaths ? { adoptPaths } : {}),
     ...(options.initializationImports ? { initializationImports } : {}),
+    ...(options.existingTargetReplacements
+      ? { existingTargetReplacements }
+      : {}),
   };
 }
 

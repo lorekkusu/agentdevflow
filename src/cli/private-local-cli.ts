@@ -36,6 +36,7 @@ import {
   privateRenderLockDefaultMaxBytes,
   serializePrivateRenderLock,
 } from "../lock/private-render-lock.js";
+import { executePrivateExistingProjectInventory } from "../onboarding/private-existing-project-inventory.js";
 import { nativeProjectInstructionPaths } from "../renderer/native/common.js";
 import { createPrivateConvergentMutationIntent } from "../workspace/private-convergent-intent.js";
 import {
@@ -52,10 +53,12 @@ import {
   formatCleanRenderPlan,
   formatDiff,
   formatInit,
+  formatExistingProjectInventory,
   formatRuleResult,
   formatRender,
   planningDiagnostics,
   writeBoundedOutput,
+  writeBoundedOnboardOutput,
   writeBoundedRuleOutput,
   writeLine,
   type DisplayDiagnostic,
@@ -71,8 +74,9 @@ const usage = `Usage:
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
-  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
-  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
+  agentdevflow onboard [--repository <path>] [--lock <relative-path>] [--json]
+  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--replace-existing <path=observed-sha256>]... [--json]
+  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
   agentdevflow rule list [--repository <path>] [--json]
   agentdevflow rule show <id> [--repository <path>] [--json]
   agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--json]
@@ -81,6 +85,7 @@ const usage = `Usage:
 
 Init creates only an absent revision-1 configuration after validating provider-file dispositions.
 Check and diff are read-only. Render requires an exact plan digest from diff.
+Onboard is a bounded read-only inventory of supported existing provider targets.
 Rule commands read or mutate only canonical project-rule files; provider outputs still require diff and render.
 Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
 Defaults: repository '.', config 'agentdevflow.config.jsonc', lock '.agentdevflow/lock.json'.
@@ -102,14 +107,21 @@ Exact adopt or lossless import makes the complete provider path a managed file; 
 
 Check is read-only. Exit 0 is clean, exit 1 means reviewable changes are required, and exit 2 is blocked or invalid.`,
   diff: `Usage:
-  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+  agentdevflow diff [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--replace-existing <path=observed-sha256>]... [--json]
 
-Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.`,
+Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.
+Each --replace-existing input states that the exact complete unmanaged target was reviewed, retained content is represented in current canonical rules, and omitted remainder is intentional.`,
+  onboard: `Usage:
+  agentdevflow onboard [--repository <path>] [--lock <relative-path>] [--json]
+
+Onboard performs a read-only inventory of AGENTS.md, CLAUDE.md, and .cursor/rules/agentdevflow.mdc.
+It reports exact bounded content, digests, ownership dispositions, and whether unmanaged content remains unclassified.`,
   render: `Usage:
-  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--json]
+  agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
 
 Render mutates only the complete plan whose exact-plan-digest was reviewed through diff. A stale or foreign state fails closed.
-Adopted or imported paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
+The exact --replace-existing inputs used for diff must be repeated for render.
+Adopted, imported, or explicitly replaced paths become whole-file managed targets. A later approved plan can delete one when its exact locked bytes still match.`,
   rule: `Usage:
   agentdevflow rule list [--repository <path>] [--json]
   agentdevflow rule show <id> [--repository <path>] [--json]
@@ -155,7 +167,10 @@ function pathsOverlap(left: string, right: string): boolean {
 }
 
 function pathLayoutDiagnostic(
-  invocation: Exclude<PrivateCliInvocation, { readonly command: "rule" }>,
+  invocation: Exclude<
+    PrivateCliInvocation,
+    { readonly command: "onboard" | "rule" }
+  >,
 ): DisplayDiagnostic | null {
   const configuration = {
     label: "configuration",
@@ -193,7 +208,10 @@ function pathLayoutDiagnostic(
 }
 
 function plannedPathLayoutDiagnostic(
-  invocation: Exclude<PrivateCliInvocation, { readonly command: "rule" }>,
+  invocation: Exclude<
+    PrivateCliInvocation,
+    { readonly command: "onboard" | "rule" }
+  >,
   prepared: PrivateDomainProjectPlanPreparation,
 ): DisplayDiagnostic | null {
   const plan = prepared.snapshot.plan;
@@ -386,13 +404,24 @@ async function runPrivateInit(
     lockPath: invocation.lockPath,
     workspace,
   });
-  if (check.outcome === "blocked") {
+  const onboardingConflictCodes = new Set([
+    "CHECK_PATH_CONFLICT",
+    "CHECK_PLAN_UNSAFE",
+    "INITIALIZATION_IMPORT_UNSUPPORTED",
+    "OWNERSHIP_CONFLICT",
+  ]);
+  const blockingDiagnostics = check.diagnostics.filter(
+    (diagnostic) =>
+      diagnostic.level === "error" &&
+      !onboardingConflictCodes.has(diagnostic.code),
+  );
+  if (check.outcome === "blocked" && blockingDiagnostics.length > 0) {
     writeLine(
       io.stdout,
       blockedWithPlan("init", {
         planDigest: prepared.plan.planDigest,
         snapshotDigest: prepared.snapshot.digest,
-        diagnostics: check.diagnostics,
+        diagnostics: blockingDiagnostics,
       }, invocation.outputFormat),
     );
     return 2;
@@ -466,7 +495,9 @@ async function runPrivateInit(
     }
   }
 
-  const outcome = prepared.plan.files.some((file) => file.action === "update")
+  const outcome =
+    check.outcome === "blocked" ||
+    prepared.plan.files.some((file) => file.action === "update")
     ? "review-required"
     : "ready";
   const output = formatInit({
@@ -477,6 +508,8 @@ async function runPrivateInit(
       planDigest: prepared.plan.planDigest,
       snapshotDigest: prepared.snapshot.digest,
       files: prepared.plan.files,
+      diagnostics:
+        check.outcome === "blocked" ? check.diagnostics : [],
     }, invocation.outputFormat);
   if (!writeBoundedOutput(
     io.stdout,
@@ -592,6 +625,68 @@ async function runPrivateRule(
   return result.exitCode;
 }
 
+async function runPrivateOnboard(
+  invocation: Extract<PrivateCliInvocation, { readonly command: "onboard" }>,
+  io: PrivateLocalCliIo,
+): Promise<0 | 2> {
+  let workspace: Awaited<
+    ReturnType<typeof PrivateFilesystemWorkspace.openReadOnly>
+  >;
+  try {
+    workspace = await PrivateFilesystemWorkspace.openReadOnly(
+      invocation.repositoryPath,
+    );
+  } catch (error) {
+    const result = {
+      outcome: "blocked" as const,
+      exitCode: 2 as const,
+      diagnostics: [
+        {
+          code:
+            error instanceof PrivateFilesystemWorkspaceError
+              ? error.code
+              : "CLI_REPOSITORY_OPEN_FAILED",
+          level: "error" as const,
+          message:
+            error instanceof Error
+              ? error.message
+              : "The repository could not be opened read-only.",
+          path: invocation.repositoryPath,
+        },
+      ],
+      targets: null,
+    };
+    const content = formatExistingProjectInventory(
+      result,
+      invocation.outputFormat,
+    );
+    writeBoundedOnboardOutput(
+      io.stdout,
+      invocation.outputFormat,
+      content,
+    );
+    return 2;
+  }
+  const result = await executePrivateExistingProjectInventory({
+    lockPath: invocation.lockPath,
+    workspace,
+  });
+  const content = formatExistingProjectInventory(
+    result,
+    invocation.outputFormat,
+  );
+  if (
+    !writeBoundedOnboardOutput(
+      io.stdout,
+      invocation.outputFormat,
+      content,
+    )
+  ) {
+    return 2;
+  }
+  return result.exitCode;
+}
+
 export async function runPrivateLocalCli(
   args: readonly string[],
   io: PrivateLocalCliIo = { stdout: process.stdout, stderr: process.stderr },
@@ -645,6 +740,9 @@ export async function runPrivateLocalCli(
   const invocation = parsed.invocation;
   if (invocation.command === "rule") {
     return await runPrivateRule(invocation, io, stdin);
+  }
+  if (invocation.command === "onboard") {
+    return await runPrivateOnboard(invocation, io);
   }
   const layoutDiagnostic = pathLayoutDiagnostic(invocation);
   if (layoutDiagnostic !== null) {
@@ -717,6 +815,12 @@ export async function runPrivateLocalCli(
     content,
     lockPath: invocation.lockPath,
     workspace,
+    ...(invocation.command === "diff" || invocation.command === "render"
+      ? {
+          existingTargetReplacements:
+            invocation.existingTargetReplacements,
+        }
+      : {}),
   });
   if (!prepared.ok) {
     writeLine(
@@ -897,6 +1001,7 @@ export async function runPrivateLocalCli(
     content: freshContent,
     lockPath: invocation.lockPath,
     workspace: mutableWorkspace,
+    existingTargetReplacements: invocation.existingTargetReplacements,
   });
   if (!freshResult.ok) {
     writeLine(

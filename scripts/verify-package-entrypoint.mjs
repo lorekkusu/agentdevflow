@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -20,6 +21,7 @@ const projectRoot = join(temporaryRoot, "project");
 const issueProjectRoot = join(temporaryRoot, "issue-project");
 const draftIssueProjectRoot = join(temporaryRoot, "draft-issue-project");
 const aggregateProjectRoot = join(temporaryRoot, "aggregate-project");
+const onboardingProjectRoot = join(temporaryRoot, "onboarding-project");
 const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
 
 function run(command, args, cwd, expectedStatuses = [0], input) {
@@ -110,6 +112,7 @@ try {
     ["init", ["local-reviewed-change", "issue-to-reviewed-pull-request", "linear|github-issues", "fast|balanced", "id,product", "claude-code, codex, cursor"]],
     ["check", ["read-only", "exit 1"]],
     ["diff", ["exact-plan-digest", "Exit 1"]],
+    ["onboard", ["read-only inventory", "unclassified"]],
     ["render", ["exact-plan-digest", "stale or foreign state fails closed"]],
     ["rule", ["rule list", "rule add", "globally unique lowercase ASCII slugs"]],
   ];
@@ -131,6 +134,177 @@ try {
       throw new Error(`Installed rule ${operation} help was unavailable.`);
     }
   }
+  await mkdir(onboardingProjectRoot);
+  const existingAgents = "Retain this existing project policy.\nOmit this obsolete sentence.\n";
+  await writeFile(
+    join(onboardingProjectRoot, "AGENTS.md"),
+    existingAgents,
+    "utf8",
+  );
+  const onboardingInventory = JSON.parse(
+    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
+  );
+  const unmanagedAgents = onboardingInventory.targets?.find(
+    (target) => target.path === "AGENTS.md",
+  );
+  if (
+    unmanagedAgents?.disposition !== "unmanaged-existing" ||
+    unmanagedAgents?.classification !== "unclassified" ||
+    unmanagedAgents?.content !== existingAgents
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not inventory exact unmanaged AGENTS.md bytes.",
+    );
+  }
+  run(
+    binPath,
+    [
+      "init",
+      "--workflow",
+      "local-reviewed-change",
+      "--preset",
+      "fast",
+      "--tracker",
+      "none",
+      "--provider",
+      "codex-main,codex",
+      "--steward",
+      "codex-main",
+      "--developer",
+      "codex-main",
+      "--reviewer",
+      "codex-main",
+    ],
+    onboardingProjectRoot,
+    [1],
+  );
+  run(
+    binPath,
+    ["rule", "add", "retained-policy", "--scope", "shared", "--stdin"],
+    onboardingProjectRoot,
+    [0],
+    "Retain this existing project policy.\n",
+  );
+  run(binPath, ["diff", "--json"], onboardingProjectRoot, [2]);
+  const existingAgentsDigest = createHash("sha256")
+    .update(existingAgents)
+    .digest("hex");
+  const replacementInput = `AGENTS.md=${existingAgentsDigest}`;
+  const onboardingDiff = JSON.parse(
+    run(
+      binPath,
+      ["diff", "--replace-existing", replacementInput, "--json"],
+      onboardingProjectRoot,
+      [1],
+    ).stdout,
+  );
+  const replacementChange = onboardingDiff.changes?.find(
+    (change) => change.path === "AGENTS.md",
+  );
+  if (
+    replacementChange?.beforeContent !== existingAgents ||
+    typeof onboardingDiff.exactPlanDigest !== "string"
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not disclose the exact authorized replacement diff.",
+    );
+  }
+  run(
+    binPath,
+    [
+      "render",
+      "--approve-plan",
+      onboardingDiff.exactPlanDigest,
+      "--replace-existing",
+      replacementInput,
+    ],
+    onboardingProjectRoot,
+  );
+  const managedOnboardingInventory = JSON.parse(
+    run(binPath, ["onboard", "--json"], onboardingProjectRoot).stdout,
+  );
+  if (
+    managedOnboardingInventory.targets?.find(
+      (target) => target.path === "AGENTS.md",
+    )?.disposition !== "managed-exact"
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not report the rendered target as managed exact.",
+    );
+  }
+  const existingClaude =
+    "Legacy Claude review policy intentionally replaced after classification.\n";
+  await writeFile(
+    join(onboardingProjectRoot, "CLAUDE.md"),
+    existingClaude,
+    "utf8",
+  );
+  await writeFile(
+    join(onboardingProjectRoot, "agentdevflow.config.jsonc"),
+    `${JSON.stringify(
+      {
+        revision: 1,
+        preset: "fast",
+        providers: [
+          { id: "claude-reviewer", product: "claude-code" },
+          { id: "codex-main", product: "codex" },
+        ],
+        roles: {
+          steward: "codex-main",
+          developer: "codex-main",
+          reviewer: "claude-reviewer",
+        },
+        tracker: { mode: "none" },
+        workflow: { family: "local-reviewed-change" },
+        capabilityBindings: [
+          {
+            binding: "developer",
+            target: { kind: "responsibility", responsibility: "developer" },
+          },
+          {
+            binding: "reviewer",
+            target: { kind: "responsibility", responsibility: "reviewer" },
+          },
+        ],
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+  const existingClaudeDigest = createHash("sha256")
+    .update(existingClaude)
+    .digest("hex");
+  const claudeReplacementInput = `CLAUDE.md=${existingClaudeDigest}`;
+  const incrementalDiff = JSON.parse(
+    run(
+      binPath,
+      ["diff", "--replace-existing", claudeReplacementInput, "--json"],
+      onboardingProjectRoot,
+      [1],
+    ).stdout,
+  );
+  if (
+    incrementalDiff.changes?.find((change) => change.path === "CLAUDE.md")
+      ?.beforeContent !== existingClaude ||
+    typeof incrementalDiff.exactPlanDigest !== "string"
+  ) {
+    throw new Error(
+      "Packed agentdevflow did not plan an unmanaged provider target after another target was managed.",
+    );
+  }
+  run(
+    binPath,
+    [
+      "render",
+      "--approve-plan",
+      incrementalDiff.exactPlanDigest,
+      "--replace-existing",
+      claudeReplacementInput,
+    ],
+    onboardingProjectRoot,
+  );
+  run(binPath, ["check"], onboardingProjectRoot);
   await mkdir(projectRoot);
   run(
     binPath,

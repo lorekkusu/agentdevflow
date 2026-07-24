@@ -16,9 +16,9 @@ outputs add value beyond one shared prompt; it does not yet establish that
 normal-user outcome.
 
 The current repository is still not the intended adoption beta. Minimal
-command-based rule management is complete, but practical onboarding for
-projects with existing provider instructions, an interactive first-use path,
-the accepted Strict preset, and qualified external-agent-operated onboarding
+command-based rule management and bounded manual onboarding for existing
+provider instructions are complete. An interactive first-use path, the
+accepted Strict preset, and qualified external-agent-operated onboarding
 remain product gaps rather than optional research ideas.
 
 ## Active implemented core
@@ -33,6 +33,8 @@ remain product gaps rather than optional research ideas.
   Developer, and Reviewer scope directories;
 - bounded human and JSON `rule list`, `show`, `add`, `update`, and `remove`
   commands that mutate one canonical rule file at a time;
+- bounded read-only `onboard` inventory for the three native targets, with
+  exact reviewed whole-file replacement through the normal plan and writer;
 - responsibility-filtered Codex, Claude Code, and Cursor target views with
   explicit product applicability;
 - whole-file create, exact adopt, bounded equivalent-content import, or abort;
@@ -42,8 +44,8 @@ remain product gaps rather than optional research ideas.
   review bypass, stale evidence, deterministic counterexamples, and guard-blind
   diagnostics.
 
-The public working-tree CLI exposes `init`, `diff`, `render`, `check`, and the
-bounded `rule` command family.
+The public working-tree CLI exposes `init`, `onboard`, `diff`, `render`,
+`check`, and the bounded `rule` command family.
 
 ## Corrective simplification
 
@@ -106,8 +108,8 @@ The bounded maintainer observation in `maintainer-dogfood.md` records:
   stale.
 
 This is maintainer evidence from a synthetic private repository. It is not
-normal-user adoption evidence, a provider compatibility guarantee, proof of
-role isolation, or evidence for the new onboarding milestone.
+normal-user adoption evidence, a provider compatibility guarantee, or proof of
+role isolation.
 
 ### Provider discovery overlap
 
@@ -133,43 +135,55 @@ The earlier role-specific candidate passed:
   repaired.
 
 The current working tree passed repository audit, strict type checking, build,
-231 automated tests, packed-installed entrypoint qualification, and tarball
-dry-run. The installed bin exercised all five rule operations,
-responsibility-filtered render convergence, and exact product-applicability
-declarations in all three generated targets. Aggregate-layout evidence is
-layered deliberately: the shared reader has focused all-path tests, source CLI
-tests cover all five rule operations without mutation, and the installed bin
-smoke test covers all four aggregate paths in mixed and partially moved states
-through representative `rule list` and `diff` commands. Hosted platform
-qualification is supplied by pull-request checks rather than inferred from
-local checks.
+242 automated tests, packed-installed entrypoint qualification, V1 recovery
+tests, and tarball dry-run. The installed bin exercised all five rule
+operations, responsibility-filtered render convergence, exact
+product-applicability declarations, lock-free manual onboarding, and
+incremental onboarding of an unmanaged provider target after another target
+was already managed. Aggregate-layout evidence remains layered deliberately:
+the shared reader has focused all-path tests, source CLI tests cover all five
+rule operations without mutation, and the installed bin smoke test covers all
+four aggregate paths in mixed and partially moved states through
+representative `rule list` and `diff` commands. Hosted platform qualification
+is supplied by pull-request checks rather than inferred from local checks.
 
-A bounded independent review found no second writer, transaction, approval
-store, backup system, Git manager, or other engineering-boundary regression.
-Its actionable findings were repaired by adding portable rule-id constraints,
-making generated rule-command guidance invocation-neutral, synchronizing root
-repository instructions, and narrowing qualification claims to the evidence
-actually executed.
+Independent change and health reviews found no second writer, transaction,
+approval store, backup system, Git manager, dependency, or other
+engineering-boundary regression. Verified findings were repaired by applying
+replacement authorization per unmanaged target rather than per lock, adding
+incremental managed-project coverage, aligning current-state documentation,
+clarifying local-versus-no-tracker intent, and distinguishing locally packed
+development candidates from the historical published version.
+
+A zero-context installed-package exercise completed
+`onboard -> init -> rule -> diff -> render -> check`, reached a clean state,
+and could explain the generated paths, approval sequence, and non-features.
+This is bounded pre-release usability evidence, not normal-user adoption.
 
 Every new roadmap milestone must rerun the current required checks and add
 focused installed-bin coverage for its new public behavior.
 
 ### Published package
 
-`0.1.0-beta.2` remains an earlier local-only historical snapshot. It does not
-contain the issue workflow, responsibility-specific composition, rule
-management, practical existing-project onboarding, wizard, Strict, or external
-agent launchers now described by the current repository and roadmap.
+The published `0.1.0-beta.2` remains an earlier local-only historical snapshot.
+It does not contain the issue workflow, responsibility-specific composition,
+rule management, practical existing-project onboarding, wizard, Strict, or
+external agent launchers now described by the current repository and roadmap.
+The source manifest retains that historical version until the final next-beta
+scope and version are selected. Locally packed tarballs from the working tree
+are development candidates, not the published artifact.
 
 ## Current product risks
 
-### Existing projects remain blocked
+### Manual onboarding remains judgment-heavy and unreleased
 
-The current analyzer accepts only a narrow case where existing logical content
-is already preserved by the proposed generated target. It does not organize
-arbitrary existing `AGENTS.md`, `CLAUDE.md`, or Cursor guidance into managed
-rules. This blocks the primary audience that already maintains project
-instructions.
+The bounded manual path now inventories exact existing `AGENTS.md`,
+`CLAUDE.md`, and the native Cursor target, lets the user represent retained
+content in canonical rules, and permits exact reviewed replacement. It does not
+classify or merge natural-language guidance. A user must still decide what is
+shared, responsibility-specific, duplicated, conflicting, or intentionally
+omitted. The zero-context package exercise proved the documented mechanism,
+not broad usability or normal-user adoption.
 
 ### First-use configuration is too demanding
 
@@ -207,8 +221,8 @@ root roadmap pass:
 | Criterion | Current status |
 | --- | --- |
 | Minimal rule commands and one-file-per-rule source | Complete in the working tree |
-| Manual existing-project onboarding | Interface decision required |
-| External-agent-operated onboarding | Waiting on the manual onboarding contract |
+| Manual existing-project onboarding | Complete in the working tree |
+| External-agent-operated onboarding | Accepted next; launcher contract and qualification pending |
 | Interactive new/existing project wizard | Waiting on non-interactive contracts |
 | Strict policy difference accepted and executable | Decision required |
 | Exact final tarball dogfood and zero-context review | Waiting on implementation |

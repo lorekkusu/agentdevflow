@@ -105,8 +105,10 @@ generated target directly creates ownership drift. No generated content is
 reverse-synchronized into the canonical source.
 
 Existing provider files use the renderer's ordinary create, exact-adopt,
-supported lossless-import, or abort behavior. Instruction composition adds no
-replacement authorization, second writer, or second approval mechanism.
+supported equivalent-content import, explicit onboarding whole-file
+replacement, or abort behavior. Replacement remains a planner input to the
+same diff, render, and lock path; instruction composition adds no second
+writer, approval mechanism, or source store.
 
 ## Failure behavior
 
@@ -132,11 +134,12 @@ The accepted slice does not provide:
   lease, or Git manager;
 - natural-language merge, semantic deduplication, or agent-assisted
   classification;
-- automatic import of arbitrary legacy provider instructions.
+- automatic import of arbitrary existing provider instructions.
 
 These absences are intentional boundaries. Manual existing-project onboarding
-and optional operation by one user-selected external coding-agent CLI are later
-roadmap items built on this rule surface.
+is built on this rule surface through exact whole-file inventory and
+replacement disposition. Optional operation by one user-selected external
+coding-agent CLI remains a later roadmap item.
 
 Rule commands mutate only canonical rule files. A later external-agent
 onboarding path may propose rule organization and operate the exact current

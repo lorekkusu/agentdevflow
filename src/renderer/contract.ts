@@ -33,9 +33,16 @@ export interface RenderRequest {
   readonly ownership: Readonly<Record<string, OwnershipClaim>>;
   readonly adoptPaths?: readonly string[];
   readonly initializationImports?: readonly InitializationImportAuthorization[];
+  readonly existingTargetReplacements?: readonly ExistingTargetReplacementAuthorization[];
 }
 
 export interface InitializationImportAuthorization {
+  readonly path: string;
+  readonly observedDigest: string;
+  readonly targetDigest: string;
+}
+
+export interface ExistingTargetReplacementAuthorization {
   readonly path: string;
   readonly observedDigest: string;
   readonly targetDigest: string;

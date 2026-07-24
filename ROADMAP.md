@@ -62,103 +62,15 @@ render ownership, or final check.
 
 ## Current sequence
 
-Item 1 is complete and compressed in the completion summary. The remaining
-numbers preserve the accepted dependency order.
-
-### 2. Existing-project onboarding
-
-Status: **Decision required**
-
-The user outcome and safety boundary are accepted. The manual interface and
-replacement-authorization representation below must be accepted before
-implementation. This item depends on item 1.
-
-#### User outcome
-
-A project that already contains `AGENTS.md`, `CLAUDE.md`, or supported Cursor
-rules can move its useful instructions into canonical `agentdevflow` rules and
-let the normal renderer take ownership without silent content loss.
-
-This is a primary adoption path, not a legacy edge case. A manual deterministic
-path must exist even when no external coding agent is installed.
-
-#### Required flow
-
-```text
-discover supported existing instruction files
-  -> show exact paths and ownership dispositions
-  -> the operator classifies retained, duplicated, conflicting, and
-     unclassified content
-  -> write accepted rules through the rule command boundary
-  -> show the complete provider replacement diff
-  -> render the exact approved plan
-  -> finish with a clean check
-```
-
-The original provider files remain unchanged until the normal render step.
-Every replacement is represented in the complete render plan. A changed source
-or target invalidates that plan.
-
-#### Manual interface decision
-
-The no-model path needs one reproducible public boundary for:
-
-- read-only inventory of supported existing targets;
-- the content unit and operator-supplied classification;
-- bounded human and JSON output;
-- the transition from accepted classifications to rule commands; and
-- explicit per-target complete-file replacement authorization that both
-  `diff` and `render` can reproduce and bind into the same plan digest.
-
-The current recommendation is a read-only onboarding inventory plus explicit
-per-target replacement arguments repeated for `diff` and `render`. It would
-keep classifications in the operator's rule choices and complete diff instead
-of adding a durable proposal store. The exact command and output shape require
-acceptance before implementation.
-
-#### Acceptance criteria
-
-- Discovery is read-only, bounded to explicitly supported project paths, and
-  fails clearly on unreadable, oversized, non-regular, or ambiguous files.
-- The manual path can preserve selected existing content without an external
-  model.
-- The user can inspect content that was retained, combined, left unresolved,
-  or intentionally omitted before provider replacement.
-- The user, not a heuristic, owns every manual classification. Unresolved or
-  unclassified content blocks replacement unless the user explicitly includes
-  its omission in the reviewed whole-file disposition.
-- Existing files are never silently overwritten or deleted.
-- Replacement authorization is an explicit reproducible planner input bound to
-  the target's observed bytes and the current canonical sources. It is not
-  inferred from Git state, an earlier process, or an external agent's claim.
-- The normal render plan, approval, forward convergence, and ownership lock are
-  reused; onboarding adds no second provider writer or transaction.
-- Tests cover duplicate guidance, provider-specific guidance, conflicting
-  guidance, unclassified content, target drift, and interruption before lock
-  publication.
-
-#### Non-goals
-
-- No repository-wide semantic analyzer.
-- No claim that natural-language transformation is mechanically lossless.
-- No managed regions, reverse synchronization, backup service, or Git rollback.
-- No requirement that the manual onboarding path use an external agent or
-  model.
-
-#### Evidence
-
-The current analyzer only accepts existing logical content already preserved by
-the proposed generated target:
-`src/import/private-project-instructions-analyzer.ts:121`.
-The current adoption limitation is documented at
-`docs/development/project-health.md`.
+Items 1 and 2 are complete and compressed in the completion summary. The
+remaining numbers preserve the accepted dependency order.
 
 ### 3. External-agent-operated onboarding
 
 Status: **Accepted next**
 
 This item depends on the accepted rule and manual onboarding contracts in items
-1 and 2.
+1 and 2, which are complete.
 
 #### User outcome
 
@@ -490,15 +402,13 @@ accepted milestone.
 
 Only the following current decisions remain open:
 
-1. the manual onboarding command, classification output, and reproducible
-   per-target replacement authorization described in item 2;
-2. the exact additional finite safety properties that distinguish Strict from
+1. the exact additional finite safety properties that distinguish Strict from
    Balanced;
-3. the final interactive wizard questions and whether no-argument invocation or
+2. the final interactive wizard questions and whether no-argument invocation or
    an explicit command is the primary entry point;
-4. the final launcher command and mode flags, qualified version ranges, and
+3. the final launcher command and mode flags, qualified version ranges, and
    public support tier for each external-agent launcher; and
-5. the next beta version after the implemented public scope is fixed.
+4. the next beta version after the implemented public scope is fixed.
 
 These decisions must be resolved before their corresponding public contracts
 are finalized. They do not reopen the accepted outcomes or reorder the current
@@ -543,3 +453,4 @@ test, and evidence documents.
 | Overbuilt transaction, recovery, execution-transport, old-schema, second-writer, and indexed-rule mechanisms were removed while their useful conclusions were retained | `docs/development/engineering-boundary.md`; `docs/development/project-health.md`; Git history |
 | Root roadmap authority, update rules, completion evidence, and the known former duplicate-path check established | `ROADMAP.md`; `AGENTS.md`; `scripts/check-repository.mjs`; `test/repository/check-repository.test.ts` |
 | Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, responsibility-filtered composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |
+| Manual existing-project onboarding inventories the exact fixed native target files without mutation, keeps classification with the user, permits only exact digest-bound whole-file replacement through the normal diff, render, forward-convergence, and ownership-lock path, and finishes with a clean managed state without adding a repository analyzer, second writer, or approval store | `docs/decisions/0006-manual-existing-project-onboarding.md`; `src/onboarding/private-existing-project-inventory.ts`; `src/application/private-domain-project-plan.ts`; `test/onboarding/private-existing-project-inventory.test.ts`; `test/cli/private-local-cli.test.ts`; `scripts/verify-package-entrypoint.mjs`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |

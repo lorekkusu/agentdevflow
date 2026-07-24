@@ -176,10 +176,22 @@ export class StagedRendererAdapter implements RendererBackend {
         authorization,
       ]),
     );
+    const existingTargetReplacements = new Map(
+      (request.existingTargetReplacements ?? []).map((authorization) => [
+        normalizeRelativePath(authorization.path),
+        authorization,
+      ]),
+    );
     if (
       initializationImports.size !== (request.initializationImports ?? []).length
     ) {
       throw new Error("Initialization import paths are duplicated.");
+    }
+    if (
+      existingTargetReplacements.size !==
+      (request.existingTargetReplacements ?? []).length
+    ) {
+      throw new Error("Existing target replacement paths are duplicated.");
     }
     for (const [path, authorization] of initializationImports) {
       if (
@@ -192,7 +204,24 @@ export class StagedRendererAdapter implements RendererBackend {
         );
       }
     }
+    for (const [path, authorization] of existingTargetReplacements) {
+      if (
+        !/^[a-f0-9]{64}$/u.test(authorization.observedDigest) ||
+        !/^[a-f0-9]{64}$/u.test(authorization.targetDigest) ||
+        authorization.observedDigest === authorization.targetDigest
+      ) {
+        throw new Error(
+          `Existing target replacement authorization is invalid: ${path}`,
+        );
+      }
+      if (initializationImports.has(path)) {
+        throw new Error(
+          `A path cannot be both imported and explicitly replaced: ${path}`,
+        );
+      }
+    }
     const usedInitializationImports = new Set<string>();
+    const usedExistingTargetReplacements = new Set<string>();
 
     for (const stagedFile of staged.files) {
       const path = normalizeRelativePath(stagedFile.path);
@@ -230,17 +259,27 @@ export class StagedRendererAdapter implements RendererBackend {
       if (claim && claim.owner !== this.backend.ownershipKey) {
         action = "conflict";
       } else if (existing !== null && !claim) {
-        const authorization = initializationImports.get(path);
+        const importAuthorization = initializationImports.get(path);
+        const replacementAuthorization = existingTargetReplacements.get(path);
         if (adoptPaths.has(path) && observedDigest === expectedDigest) {
           action = "unchanged";
         } else if (
-          authorization &&
-          authorization.observedDigest === observedDigest &&
-          authorization.targetDigest === expectedDigest &&
-          authorization.observedDigest !== authorization.targetDigest
+          importAuthorization &&
+          importAuthorization.observedDigest === observedDigest &&
+          importAuthorization.targetDigest === expectedDigest &&
+          importAuthorization.observedDigest !== importAuthorization.targetDigest
         ) {
           action = "update";
           usedInitializationImports.add(path);
+        } else if (
+          replacementAuthorization &&
+          replacementAuthorization.observedDigest === observedDigest &&
+          replacementAuthorization.targetDigest === expectedDigest &&
+          replacementAuthorization.observedDigest !==
+            replacementAuthorization.targetDigest
+        ) {
+          action = "update";
+          usedExistingTargetReplacements.add(path);
         } else {
           action = "conflict";
         }
@@ -286,6 +325,24 @@ export class StagedRendererAdapter implements RendererBackend {
           code: "INITIALIZATION_IMPORT_STALE",
           severity: "error",
           message: `Initialization import authorization does not match current bytes at ${path}.`,
+          path,
+        });
+      }
+    }
+
+    for (const path of existingTargetReplacements.keys()) {
+      if (!stagedByPath.has(path)) {
+        diagnostics.push({
+          code: "EXISTING_TARGET_REPLACEMENT_TARGET_MISSING",
+          severity: "error",
+          message: `Existing target replacement authorization has no renderer output at ${path}.`,
+          path,
+        });
+      } else if (!usedExistingTargetReplacements.has(path)) {
+        diagnostics.push({
+          code: "EXISTING_TARGET_REPLACEMENT_STALE",
+          severity: "error",
+          message: `Existing target replacement authorization is unnecessary or does not match current bytes at ${path}.`,
           path,
         });
       }

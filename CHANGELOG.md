@@ -13,6 +13,11 @@ All notable public changes will be recorded in this file. During beta, incompati
   Codex, Claude Code, and Cursor outputs.
 - Add bounded human and JSON `rule list`, `rule show`, `rule add`, `rule
   update`, and `rule remove` commands over globally unique rule ids.
+- Add read-only `onboard` inventory for the three fixed native instruction
+  targets with exact bounded content, digest, ownership disposition, and
+  classification state.
+- Add repeatable exact `--replace-existing <path>=<observed-sha256>` inputs to
+  `diff` and `render` for reviewed whole-file existing-project onboarding.
 - Read optional user-owned Markdown rules from fixed shared, Steward,
   Developer, and Reviewer scope directories.
 - Add an idempotent draft-to-ready procedure after required CI succeeds. It
@@ -48,12 +53,15 @@ All notable public changes will be recorded in this file. During beta, incompati
   path is present. Do not add automatic migration or a dual reader.
 - Reject rule ids longer than 64 ASCII characters and Windows reserved
   basenames so every accepted id remains a portable filename.
+- Allow init to create only an absent valid configuration and return
+  `review-required` when unsupported existing provider content must be
+  onboarded; provider targets and the lock remain unchanged.
 
 ### Removed
 
 - Remove the low-value caller-supplied observation command from the current
-  CLI and runtime. The current command set is `init`, `diff`, `render`,
-  `check`, and the bounded `rule` command family.
+  CLI and runtime. The current command set is `init`, `onboard`, `diff`,
+  `render`, `check`, and the bounded `rule` command family.
 - Remove obsolete research systems and detailed evidence whose conclusions are
   already represented by current architecture decisions or Git history.
 

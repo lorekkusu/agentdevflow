@@ -12,6 +12,7 @@ import type {
   PrivateRuleScope,
 } from "../interface/private-cli-arguments.js";
 import type { PrivateDomainProjectDocumentDiagnostic } from "../interface/private-domain-project-document.js";
+import type { PrivateExistingProjectInventoryResult } from "../onboarding/private-existing-project-inventory.js";
 
 export interface PrivateLocalCliIo {
   readonly stdout: { write(content: string): unknown };
@@ -33,9 +34,13 @@ export type PrivateLocalCliCommand =
   | "check"
   | "diff"
   | "init"
+  | "onboard"
   | "render"
   | "rule";
-type PrivatePlanningCliCommand = Exclude<PrivateLocalCliCommand, "rule">;
+type PrivatePlanningCliCommand = Exclude<
+  PrivateLocalCliCommand,
+  "onboard" | "rule"
+>;
 
 export interface PrivateRuleSummary {
   readonly id: string;
@@ -298,6 +303,70 @@ function ruleContentLines(content: string): string[] {
   ];
 }
 
+function inventoryContentLines(content: string | null): string[] {
+  if (content === null) {
+    return ["  content: <absent>"];
+  }
+  const hasFinalNewline = content.endsWith("\n");
+  const contentLines = content.split("\n");
+  if (hasFinalNewline) {
+    contentLines.pop();
+  }
+  const width = String(Math.max(1, contentLines.length)).length;
+  return [
+    "  content:",
+    ...contentLines.map(
+      (line, index) =>
+        `    ${String(index + 1).padStart(width)} | ${safeHumanContentLine(line)}`,
+    ),
+    `  content-final-newline: ${hasFinalNewline ? "yes" : "no"}`,
+  ];
+}
+
+export function formatExistingProjectInventory(
+  result: PrivateExistingProjectInventoryResult,
+  format: PrivateCliOutputFormat = "human",
+): string {
+  const diagnostics = [...result.diagnostics].sort(compareDisplayDiagnostics);
+  const lines = [
+    `agentdevflow onboard: ${result.outcome}`,
+    ...formatDiagnostics(diagnostics),
+  ];
+  if (result.outcome === "blocked") {
+    lines.push("targets: unavailable");
+    return selectedOutput(format, lines.join("\n"), {
+      command: "onboard",
+      outcome: result.outcome,
+      exitCode: result.exitCode,
+      diagnostics,
+      targets: null,
+    });
+  }
+  lines.push(`targets: ${result.targets.length}`);
+  for (const [index, target] of result.targets.entries()) {
+    lines.push(
+      `target ${index + 1}:`,
+      `  provider: ${target.provider}`,
+      `  path: ${target.path}`,
+      `  disposition: ${target.disposition}`,
+      `  classification: ${target.classification}`,
+      `  byte-count: ${target.byteCount ?? "absent"}`,
+      `  observed-sha256: ${target.observedDigest ?? "absent"}`,
+      ...inventoryContentLines(target.content),
+    );
+  }
+  lines.push(
+    "next: represent retained content with rule commands, then run diff with one exact --replace-existing path=sha256 input per reviewed unmanaged target",
+  );
+  return selectedOutput(format, lines.join("\n"), {
+    command: "onboard",
+    outcome: result.outcome,
+    exitCode: result.exitCode,
+    diagnostics,
+    targets: result.targets,
+  });
+}
+
 export function formatRuleResult(
   result: PrivateRuleCommandResult,
   format: PrivateCliOutputFormat = "human",
@@ -499,10 +568,12 @@ export function formatInit(options: {
     readonly action: string;
     readonly expectedDigest: string | null;
   }[];
+  readonly diagnostics: readonly DisplayDiagnostic[];
 }, format: PrivateCliOutputFormat = "human"): string {
+  const diagnostics = [...options.diagnostics].sort(compareDisplayDiagnostics);
   const lines = [
     ...resultHeader({ command: "init", ...options }),
-    "diagnostics: none",
+    ...formatDiagnostics(diagnostics),
     `configuration-disposition: ${options.configurationDisposition}`,
     `configuration-path: ${options.configurationPath}`,
     `configuration-content-json: ${JSON.stringify(options.configurationContent)}`,
@@ -516,14 +587,19 @@ export function formatInit(options: {
       `  target-sha256: ${file.expectedDigest ?? "absent"}`,
     );
   }
-  lines.push("next: run diff and review the complete exact plan before render");
+  lines.push(
+    options.outcome === "review-required" &&
+      options.files.some((file) => file.action === "conflict")
+      ? "next: run onboard, represent retained content with rule commands, then run diff with exact --replace-existing inputs"
+      : "next: run diff and review the complete exact plan before render",
+  );
   return selectedOutput(format, lines.join("\n"), {
     command: "init",
     outcome: options.outcome,
     exitCode: options.outcome === "ready" ? 0 : 1,
     exactPlanDigest: options.snapshotDigest,
     rendererPlanDigest: options.planDigest,
-    diagnostics: [],
+    diagnostics,
     configuration: {
       disposition: options.configurationDisposition,
       path: options.configurationPath,
@@ -672,6 +748,31 @@ export function writeBoundedRuleOutput(
     return true;
   }
   writeLine(stream, formatRuleOutputLimitFailure(operation, format));
+  return false;
+}
+
+export function writeBoundedOnboardOutput(
+  stream: PrivateLocalCliIo["stdout"] | PrivateLocalCliIo["stderr"],
+  format: PrivateCliOutputFormat,
+  content: string,
+): boolean {
+  if (Buffer.byteLength(content, "utf8") <= privateCliOutputByteLimit) {
+    writeLine(stream, content);
+    return true;
+  }
+  const failure: PrivateExistingProjectInventoryResult = {
+    outcome: "blocked",
+    exitCode: 2,
+    diagnostics: [
+      {
+        code: "CLI_OUTPUT_TOO_LARGE",
+        level: "error",
+        message: `The command output exceeds ${privateCliOutputByteLimit} UTF-8 bytes. Reduce the supported instruction files before retrying.`,
+      },
+    ],
+    targets: null,
+  };
+  writeLine(stream, formatExistingProjectInventory(failure, format));
   return false;
 }
 

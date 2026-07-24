@@ -23,6 +23,7 @@
     "dist/src/import/",
     "dist/src/interface/",
     "dist/src/lock/",
+    "dist/src/onboarding/",
     "dist/src/policy/",
     "dist/src/project/",
     "dist/src/renderer/",

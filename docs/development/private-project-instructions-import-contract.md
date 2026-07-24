@@ -76,6 +76,7 @@ The analyzer does not support:
 
 Broader import support requires a separately evidenced representation and must preserve every unsupported or lossy construct explicitly.
 
-The accepted next onboarding milestone is tracked in the root `ROADMAP.md`. It
-does not broaden this pure analyzer or reinterpret the current `lossless`
+Manual onboarding is tracked in the root `ROADMAP.md` and ADR 0006. Its exact
+whole-file replacement input is separate from this analyzer; it does not
+broaden the pure equivalence test or reinterpret the current `lossless`
 classification as semantic proof.

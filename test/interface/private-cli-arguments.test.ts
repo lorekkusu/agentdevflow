@@ -37,6 +37,13 @@ test("represents every supported top-level command without filesystem discovery"
       ".agentdevflow/render-lock.json",
     ],
     [
+      "onboard",
+      "--repository",
+      ".",
+      "--lock",
+      ".agentdevflow/render-lock.json",
+    ],
+    [
       "diff",
       "--config",
       "project.jsonc",
@@ -65,7 +72,14 @@ test("represents every supported top-level command without filesystem discovery"
     expectSuccess(result);
     return result.invocation.command;
   });
-  assert.deepEqual(commands, ["check", "diff", "render", "init", "rule"]);
+  assert.deepEqual(commands, [
+    "check",
+    "onboard",
+    "diff",
+    "render",
+    "init",
+    "rule",
+  ]);
 });
 
 test("retains explicit repository, configuration, and lock paths", () => {
@@ -108,8 +122,60 @@ test("binds private render approval to an explicit exact plan snapshot", () => {
     repositoryPath: "repository",
     lockPath: ".state/render-lock.json",
     approvedPlanSnapshotDigest: digest,
+    existingTargetReplacements: [],
     outputFormat: "human",
   });
+});
+
+test("normalizes exact existing-target replacement inputs for diff and render", () => {
+  const agentsDigest = "a".repeat(64);
+  const claudeDigest = "b".repeat(64);
+  for (const [command, additional] of [
+    ["diff", []],
+    ["render", ["--approve-plan", "c".repeat(64)]],
+  ] as const) {
+    const result = parsePrivateCliArguments([
+      command,
+      ...additional,
+      "--replace-existing",
+      `CLAUDE.md=${claudeDigest}`,
+      "--replace-existing",
+      `AGENTS.md=${agentsDigest}`,
+    ]);
+    expectSuccess(result);
+    assert.equal(
+      result.invocation.command === "diff" ||
+        result.invocation.command === "render",
+      true,
+    );
+    if (
+      result.invocation.command !== "diff" &&
+      result.invocation.command !== "render"
+    ) {
+      continue;
+    }
+    assert.deepEqual(result.invocation.existingTargetReplacements, [
+      { path: "AGENTS.md", observedDigest: agentsDigest },
+      { path: "CLAUDE.md", observedDigest: claudeDigest },
+    ]);
+  }
+});
+
+test("rejects malformed or duplicate existing-target replacement inputs", () => {
+  const digest = "a".repeat(64);
+  for (const values of [
+    ["AGENTS.md=not-a-digest"],
+    [`../AGENTS.md=${digest}`],
+    [`nested/../AGENTS.md=${digest}`],
+    [`AGENTS.md=${digest}`, `AGENTS.md=${digest}`],
+  ]) {
+    const result = parsePrivateCliArguments([
+      "diff",
+      ...values.flatMap((value) => ["--replace-existing", value]),
+    ]);
+    expectFailure(result);
+    assert.equal(result.diagnostics[0]?.code, "INVALID_OPTION_VALUE");
+  }
 });
 
 test("maps complete Balanced flags to the active revision-1 local intent", () => {

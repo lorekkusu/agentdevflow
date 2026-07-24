@@ -15,9 +15,10 @@ It does not discover, parse, compile, plan, render, or persist state. It calls t
 
 The application planner supplies an exact plan and responsibility-specific
 materialization for either built-in workflow. With no lock, that plan can
-include exact adoption or analyzer-proven lossless import. Diff remains a
-read-only consumer and does not duplicate configuration, guidance reading,
-lock parsing, staging, or import analysis.
+include exact adoption, analyzer-proven equivalent-content import, or an exact
+whole-file replacement authorized through the CLI planner input. Diff remains
+a read-only consumer and does not duplicate configuration, guidance reading,
+lock parsing, staging, import analysis, or replacement validation.
 
 The private local CLI composes that planner with this service from explicit repository, configuration, and lock paths. It does not accept a caller-supplied compiler result, materialization, plan, snapshot, or lock object.
 
@@ -68,7 +69,9 @@ The service still does not provide a multi-file atomic snapshot. Another process
 
 The workspace interface contains only `read(path)`. The service reads only plan-declared managed paths and the caller-supplied lock path. It does not scan the repository, inspect Git status, or return foreign content when a digest does not match the retained plan.
 
-Exact before and after content is retained only for recognized managed state.
+Exact before and after content is retained only for recognized managed state
+or an explicit replacement whose observed digest matches current unmanaged
+bytes.
 The current beta formatter emits the complete snapshot digest as
 `exact-plan-digest`, the lower-level renderer digest separately, and complete
 recognized before and after text as numbered human-readable lines. It marks

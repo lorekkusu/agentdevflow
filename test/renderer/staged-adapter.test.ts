@@ -46,6 +46,7 @@ function request(
   ownership: Readonly<Record<string, OwnershipClaim>> = {},
   adoptPaths: readonly string[] = [],
   initializationImports: RenderRequest["initializationImports"] = [],
+  existingTargetReplacements: RenderRequest["existingTargetReplacements"] = [],
 ): RenderRequest {
   return {
     inputDigest: "fixture-input",
@@ -56,6 +57,7 @@ function request(
     ownership,
     adoptPaths,
     initializationImports,
+    existingTargetReplacements,
   };
 }
 
@@ -153,6 +155,44 @@ test("authorizes initialization import only for exact observed and target digest
     stale.diagnostics.map((diagnostic) => diagnostic.code),
     [
       "INITIALIZATION_IMPORT_STALE",
+      "OWNERSHIP_CONFLICT",
+      "TRACEABILITY_UNAVAILABLE",
+    ],
+  );
+});
+
+test("authorizes explicit whole-file replacement only for exact unmanaged bytes", async () => {
+  const workspace = new MemoryWorkspace({ "AGENTS.md": "Existing policy.\n" });
+  const adapter = new StagedRendererAdapter(
+    backend({
+      files: [{ path: "AGENTS.md", content: "Generated policy.\n" }],
+      diagnostics: [],
+    }),
+  );
+  const authorization = {
+    path: "AGENTS.md",
+    observedDigest: digest("Existing policy.\n"),
+    targetDigest: digest("Generated policy.\n"),
+  };
+  const exact = await adapter.plan(
+    request({}, [], [], [authorization]),
+    workspace,
+  );
+  assert.equal(exact.safeToApply, true);
+  assert.equal(exact.files[0]?.action, "update");
+
+  const stale = await adapter.plan(
+    request({}, [], [], [
+      { ...authorization, observedDigest: digest("Changed policy.\n") },
+    ]),
+    workspace,
+  );
+  assert.equal(stale.safeToApply, false);
+  assert.equal(stale.files[0]?.action, "conflict");
+  assert.deepEqual(
+    stale.diagnostics.map((diagnostic) => diagnostic.code),
+    [
+      "EXISTING_TARGET_REPLACEMENT_STALE",
       "OWNERSHIP_CONFLICT",
       "TRACEABILITY_UNAVAILABLE",
     ],

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -73,6 +74,33 @@ function localIntent(): PrivateDomainProjectIntent {
   };
 }
 
+function codexOnlyIntent(): PrivateDomainProjectIntent {
+  return {
+    ...localIntent(),
+    providers: [{ id: "codex-primary", product: "codex" }],
+    roles: {
+      steward: "codex-primary",
+      developer: "codex-primary",
+      reviewer: "codex-primary",
+    },
+  };
+}
+
+function codexAndClaudeIntent(): PrivateDomainProjectIntent {
+  return {
+    ...codexOnlyIntent(),
+    providers: [
+      { id: "codex-primary", product: "codex" },
+      { id: "claude-reviewer", product: "claude-code" },
+    ],
+    roles: {
+      steward: "codex-primary",
+      developer: "codex-primary",
+      reviewer: "claude-reviewer",
+    },
+  };
+}
+
 function issueIntent(): PrivateDomainProjectIntent {
   return {
     ...localIntent(),
@@ -144,6 +172,62 @@ function invoke(
     stdout: result.stdout,
     stderr: result.stderr,
   };
+}
+
+function invokeWithReplacements(
+  command: "diff" | "render",
+  project: TestProject,
+  replacements: Readonly<Record<string, string>>,
+  approvedPlanDigest?: string,
+): CommandResult {
+  const args = [
+    entryPoint,
+    command,
+    "--repository",
+    project.repository,
+    "--config",
+    "project.jsonc",
+    "--lock",
+    lockPath,
+  ];
+  for (const [path, observedDigest] of Object.entries(replacements).sort(
+    ([left], [right]) => left.localeCompare(right),
+  )) {
+    args.push("--replace-existing", `${path}=${observedDigest}`);
+  }
+  if (command === "render" && approvedPlanDigest !== undefined) {
+    args.push("--approve-plan", approvedPlanDigest);
+  }
+  const result = spawnSync(process.execPath, args, { encoding: "utf8" });
+  assert.equal(result.error, undefined);
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
+function invokeOnboard(project: TestProject, json = false): CommandResult {
+  const args = [
+    entryPoint,
+    "onboard",
+    "--repository",
+    project.repository,
+    "--lock",
+    lockPath,
+  ];
+  if (json) args.push("--json");
+  const result = spawnSync(process.execPath, args, { encoding: "utf8" });
+  assert.equal(result.error, undefined);
+  return {
+    status: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
+}
+
+function sha256(content: string): string {
+  return createHash("sha256").update(content).digest("hex");
 }
 
 function invokeInit(
@@ -346,7 +430,7 @@ test("reproduces the offline init, diff, render, check, and empty-diff path", as
   );
 });
 
-test("reports exact adopt, lossless import, and abort initialization outcomes", async (t) => {
+test("reports exact adopt, lossless import, and onboarding-required initialization outcomes", async (t) => {
   const exactProject = await testProject(t);
   const exactWorkspace = await PrivateFilesystemWorkspace.openReadOnly(
     exactProject.repository,
@@ -451,10 +535,275 @@ test("reports exact adopt, lossless import, and abort initialization outcomes", 
   const foreign = "PRIVATE FOREIGN INIT CONTENT\n";
   await writeFile(join(blockedProject.repository, "AGENTS.md"), foreign, "utf8");
   const blocked = invokeInit(blockedProject);
-  assert.equal(blocked.status, 2);
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stdout, /^agentdevflow init: review-required\n/u);
   assert.match(blocked.stdout, /INITIALIZATION_IMPORT_UNSUPPORTED/u);
   assert.equal(blocked.stdout.includes(foreign.trim()), false);
-  await assert.rejects(() => readFile(blockedProject.configuration, "utf8"));
+  assert.deepEqual(
+    JSON.parse(await readFile(blockedProject.configuration, "utf8")).providers.map(
+      (provider: { readonly id: string }) => provider.id,
+    ),
+    ["claude-reviewer", "codex-steward", "cursor-developer"],
+  );
+  assert.equal(
+    await readFile(join(blockedProject.repository, "AGENTS.md"), "utf8"),
+    foreign,
+  );
+  await assert.rejects(() =>
+    readFile(join(blockedProject.repository, lockPath), "utf8"),
+  );
+});
+
+test("onboards exact whole-file dispositions without silent content loss", async (t) => {
+  const project = await testProject(t);
+  const existing = {
+    "AGENTS.md":
+      "Retain shared legacy policy.\nCodex-only stewardship.\nDo not run tests.\n",
+    "CLAUDE.md":
+      "Retain shared legacy policy.\nReviewer-only verification.\nSkip independent review.\n",
+    ".cursor/rules/agentdevflow.mdc":
+      "Retain shared legacy policy.\nDeveloper-only implementation.\n",
+  } as const;
+  for (const [path, content] of Object.entries(existing)) {
+    await mkdir(join(project.repository, path, ".."), { recursive: true });
+    await writeFile(join(project.repository, path), content, "utf8");
+  }
+
+  const inventory = invokeOnboard(project, true);
+  assert.equal(inventory.status, 0);
+  const inventoryReport = JSON.parse(inventory.stdout);
+  assert.deepEqual(
+    inventoryReport.targets.map(
+      (target: {
+        readonly path: string;
+        readonly disposition: string;
+        readonly classification: string;
+      }) => ({
+        path: target.path,
+        disposition: target.disposition,
+        classification: target.classification,
+      }),
+    ),
+    [
+      {
+        path: ".cursor/rules/agentdevflow.mdc",
+        disposition: "unmanaged-existing",
+        classification: "unclassified",
+      },
+      {
+        path: "AGENTS.md",
+        disposition: "unmanaged-existing",
+        classification: "unclassified",
+      },
+      {
+        path: "CLAUDE.md",
+        disposition: "unmanaged-existing",
+        classification: "unclassified",
+      },
+    ],
+  );
+  assert.equal(inventoryReport.targets[1]?.content, existing["AGENTS.md"]);
+
+  const initialized = invokeInit(project);
+  assert.equal(initialized.status, 1);
+  assert.match(initialized.stdout, /next: run onboard/u);
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "retained-shared-policy",
+        "--scope",
+        "shared",
+        "--stdin",
+      ],
+      "Retain shared legacy policy.\n",
+    ).status,
+    0,
+  );
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "codex-stewardship",
+        "--scope",
+        "steward",
+        "--stdin",
+      ],
+      "Codex-only stewardship.\n",
+    ).status,
+    0,
+  );
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "reviewer-verification",
+        "--scope",
+        "reviewer",
+        "--stdin",
+      ],
+      "Reviewer-only verification.\n",
+    ).status,
+    0,
+  );
+  assert.equal(
+    invokeRule(
+      project,
+      [
+        "add",
+        "developer-implementation",
+        "--scope",
+        "developer",
+        "--stdin",
+      ],
+      "Developer-only implementation.\n",
+    ).status,
+    0,
+  );
+
+  const blockedDiff = invoke("diff", project);
+  assert.equal(blockedDiff.status, 2);
+  assert.match(blockedDiff.stdout, /OWNERSHIP_CONFLICT/u);
+  assert.equal(blockedDiff.stdout.includes("Do not run tests."), false);
+
+  const replacements = Object.fromEntries(
+    Object.entries(existing).map(([path, content]) => [path, sha256(content)]),
+  );
+  const reviewed = invokeWithReplacements("diff", project, replacements);
+  assert.equal(reviewed.status, 1);
+  for (const content of Object.values(existing)) {
+    for (const line of content.trim().split("\n")) {
+      assert.equal(reviewed.stdout.includes(line), true, line);
+    }
+  }
+  assert.match(reviewed.stdout, /Retain shared legacy policy/u);
+
+  await writeFile(
+    join(project.repository, "AGENTS.md"),
+    `${existing["AGENTS.md"]}Intervening edit.\n`,
+    "utf8",
+  );
+  const staleTarget = invokeWithReplacements(
+    "render",
+    project,
+    replacements,
+    exactPlanDigest(reviewed),
+  );
+  assert.equal(staleTarget.status, 2);
+  assert.match(
+    staleTarget.stdout,
+    /EXISTING_TARGET_REPLACEMENT_STALE|CLI_PLAN_APPROVAL_MISMATCH/u,
+  );
+  await writeFile(
+    join(project.repository, "AGENTS.md"),
+    existing["AGENTS.md"],
+    "utf8",
+  );
+
+  const current = invokeWithReplacements("diff", project, replacements);
+  assert.equal(current.status, 1);
+  const rendered = invokeWithReplacements(
+    "render",
+    project,
+    replacements,
+    exactPlanDigest(current),
+  );
+  assert.equal(rendered.status, 0);
+  assert.equal(invoke("check", project).status, 0);
+
+  const generatedAgents = await readFile(
+    join(project.repository, "AGENTS.md"),
+    "utf8",
+  );
+  assert.match(generatedAgents, /Retain shared legacy policy/u);
+  assert.match(generatedAgents, /Codex-only stewardship/u);
+  assert.equal(generatedAgents.includes("Do not run tests."), false);
+
+  const managedInventory = JSON.parse(invokeOnboard(project, true).stdout);
+  assert.deepEqual(
+    managedInventory.targets.map(
+      (target: { readonly disposition: string }) => target.disposition,
+    ),
+    ["managed-exact", "managed-exact", "managed-exact"],
+  );
+});
+
+test("onboards a new unmanaged provider target after other targets are managed", async (t) => {
+  const project = await testProject(t);
+  await writeConfiguration(project, codexOnlyIntent());
+  const initialDiff = invoke("diff", project);
+  assert.equal(initialDiff.status, 1);
+  assert.equal(
+    invoke("render", project, lockPath, exactPlanDigest(initialDiff)).status,
+    0,
+  );
+  assert.equal(invoke("check", project).status, 0);
+
+  const existingClaude =
+    "Legacy Claude review policy intentionally replaced after classification.\n";
+  await writeFile(
+    join(project.repository, "CLAUDE.md"),
+    existingClaude,
+    "utf8",
+  );
+  await writeConfiguration(project, codexAndClaudeIntent());
+  const replacements = { "CLAUDE.md": sha256(existingClaude) };
+  const reviewed = invokeWithReplacements("diff", project, replacements);
+  assert.equal(reviewed.status, 1);
+  assert.match(reviewed.stdout, /Legacy Claude review policy/u);
+
+  const rendered = invokeWithReplacements(
+    "render",
+    project,
+    replacements,
+    exactPlanDigest(reviewed),
+  );
+  assert.equal(rendered.status, 0);
+  assert.equal(invoke("check", project).status, 0);
+  const managedReplacement = invokeWithReplacements(
+    "diff",
+    project,
+    replacements,
+  );
+  assert.equal(managedReplacement.status, 2);
+  assert.match(
+    managedReplacement.stdout,
+    /EXISTING_TARGET_REPLACEMENT_MANAGED_STATE/u,
+  );
+
+  const inventory = JSON.parse(invokeOnboard(project, true).stdout);
+  const claude = inventory.targets.find(
+    (target: { readonly path: string }) => target.path === "CLAUDE.md",
+  );
+  assert.equal(claude?.disposition, "managed-exact");
+});
+
+test("blocks onboarding inventory without partial target disclosure", async (t) => {
+  const project = await testProject(t);
+  const outside = join(project.container, "outside.md");
+  await writeFile(outside, "Outside target.\n", "utf8");
+  await writeFile(
+    join(project.repository, "AGENTS.md"),
+    "Visible unmanaged content.\n",
+    "utf8",
+  );
+  await symlink(outside, join(project.repository, "CLAUDE.md"));
+
+  const result = invokeOnboard(project, true);
+  assert.equal(result.status, 2);
+  const report = JSON.parse(result.stdout);
+  assert.equal(report.targets, null);
+  assert.equal(
+    report.diagnostics.some(
+      (diagnostic: { readonly code: string }) =>
+        diagnostic.code === "ONBOARD_TARGET_READ_FAILED",
+    ),
+    true,
+  );
+  assert.equal(result.stdout.includes("Visible unmanaged content."), false);
 });
 
 test("executes initial check and exact diff without mutating the repository", async (t) => {
@@ -599,6 +948,64 @@ test("resumes an interrupted before-or-after plan with its original approval", a
   assert.match(resumed.stdout, new RegExp(`exact-plan-digest: ${approvedDigest}`, "u"));
   assert.match(resumed.stdout, /written: CLAUDE\.md/u);
   assert.match(resumed.stdout, /lock-published: yes\n$/u);
+  assert.equal(invoke("check", project).status, 0);
+});
+
+test("resumes an explicitly replaced target before lock publication", async (t) => {
+  const project = await testProject(t);
+  const existing = "Legacy policy selected for replacement.\n";
+  await writeFile(join(project.repository, "AGENTS.md"), existing, "utf8");
+  assert.equal(invokeInit(project).status, 1);
+  assert.equal(
+    invokeRule(
+      project,
+      ["add", "legacy-policy", "--scope", "shared", "--stdin"],
+      existing,
+    ).status,
+    0,
+  );
+  const replacements = { "AGENTS.md": sha256(existing) };
+  const reviewed = invokeWithReplacements("diff", project, replacements);
+  assert.equal(reviewed.status, 1);
+  const approvedDigest = exactPlanDigest(reviewed);
+
+  const configuration = await readFile(project.configuration, "utf8");
+  const workspace = await PrivateFilesystemWorkspace.open(project.repository);
+  const prepared = await preparePrivateDomainProjectPlan({
+    content: configuration,
+    lockPath,
+    workspace,
+    existingTargetReplacements: [
+      { path: "AGENTS.md", observedDigest: replacements["AGENTS.md"] },
+    ],
+  });
+  assert.equal(prepared.ok, true);
+  if (!prepared.ok) return;
+  assert.equal(prepared.snapshot.digest, approvedDigest);
+  await assert.rejects(
+    () =>
+      executePrivateRenderCommand({
+        materialization: prepared.materialization,
+        snapshot: prepared.snapshot,
+        baseLock: prepared.baseLock,
+        lockPath,
+        workspace,
+        faultInjector(event) {
+          if (event.kind === "render-applied") {
+            throw new Error("Injected interruption before lock publication.");
+          }
+        },
+      }),
+    /Injected interruption before lock publication/u,
+  );
+
+  const resumed = invokeWithReplacements(
+    "render",
+    project,
+    replacements,
+    approvedDigest,
+  );
+  assert.equal(resumed.status, 0);
   assert.equal(invoke("check", project).status, 0);
 });
 
