@@ -249,8 +249,9 @@ Manual is a read-only exact inventory and supports `--json`. Codex starts one
 foreground session that analyzes the inventory, proposes a rule organization,
 accepts natural-language revisions, and asks whether to continue. After the
 user accepts, that same session operates the normal rule, diff, render, and
-check commands, so the analysis is not repeated. The parent agentdevflow
-process independently runs the existing `check` before reporting success.
+check commands, so the analysis is not repeated. After Codex reports a clean
+check, exit that Codex session. The parent agentdevflow process then
+independently runs the existing `check` before reporting success.
 
 `--agent codex --yes` skips the in-session confirmation and authorizes one
 non-interactive onboarding operation. It does not create durable approval
@@ -259,9 +260,9 @@ configuration, permission behavior, hooks, MCP servers, and session behavior
 without inspecting or overriding them. Project content can be sent to the
 user's configured Codex service and provider usage costs can apply.
 
-The current candidate implements only the Codex external onboarding operator;
-it must pass the item 3 qualification gates before release. Other launcher
-names are not menu choices or accepted `--agent` values. The manual inventory
+Codex is the only qualified external onboarding operator in the current
+candidate. Other launcher names are not menu choices or accepted `--agent`
+values until separately implemented and qualified. The manual inventory
 remains required even when every supported provider target is absent. Both
 paths refuse to inspect targets or start Codex until the selected configuration
 is present and valid. If `init` returned `review-required` after creating the
@@ -270,9 +271,10 @@ changed.
 
 If Codex exits, is cancelled, or times out after completing one or more rule
 commands, those canonical changes remain. There is no rollback or partial-
-progress store. Run `rule list`, reobserve the targets with
-`onboard --agent manual`, and run `diff` and `check` to review the exact current
-state. Continue manually or retry only after that review.
+progress store. Run `rule list`, inspect every listed id with
+`rule show <rule-id>`, reobserve the targets with `onboard --agent manual`,
+and run `diff` and `check` to review the exact current state. Continue manually
+or retry only after that review.
 
 ## Add canonical project guidance
 

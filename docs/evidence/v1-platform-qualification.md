@@ -1,6 +1,6 @@
 # V1 platform qualification
 
-Snapshot updated: 2026-07-23.
+Snapshot updated: 2026-07-24.
 
 ## Historical hosted result
 
@@ -9,14 +9,17 @@ passed the original V1 matrix on Ubuntu 24.04 x64, macOS 15 arm64, and Windows
 2025 x64 with Node.js 22 and 24. That run qualified the published beta.2
 candidate and is historical evidence, not proof for later working-tree changes.
 
-## Most recent merged-tree result
+## Most recent behavior-bearing hosted result
 
 GitHub Actions run
-[30067879491](https://github.com/lorekkusu/agentdevflow/actions/runs/30067879491)
-passed pull request 15 on all six cells at head commit
-`340f484bdf8ef69bfb022dd58bc08f1d4fe4bc01`. That commit and merged `main`
-commit `dc9ee9b19f7b860809d40458b9c25acadd582a7e` have the same Git tree
-`4278390982303bda5a0218fc681ed18b9c39eb65`.
+[30094426342](https://github.com/lorekkusu/agentdevflow/actions/runs/30094426342)
+passed pull request 18 on all six cells at head commit
+`e9fda0e33f816df88ba4c76cdfb322d0e91bd4cb`, Git tree
+`253b55fd3c792de54dc500a4cfdc3b185ea322f0`. That commit contains the
+reviewed runtime prompt, deterministic prompt tests, pre-existing-rule
+installed-package fixture, and public qualification evidence. The
+milestone-only documentation commit remains guarded by the same pull request's
+final required checks before merge.
 
 Every cell passed the platform probe, zero-skip qualification, installed
 package entrypoint exercise, and tracked-file cleanliness check. Later commits

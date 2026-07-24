@@ -205,6 +205,22 @@ try {
     codexOnboardingProjectRoot,
     [1],
   );
+  const preexistingCanonicalRule =
+    "Keep the existing canonical project rule.\n";
+  run(
+    binPath,
+    [
+      "rule",
+      "add",
+      "existing-canonical-rule",
+      "--scope",
+      "shared",
+      "--stdin",
+    ],
+    codexOnboardingProjectRoot,
+    [0],
+    preexistingCanonicalRule,
+  );
   await mkdir(fakeCodexBinRoot);
   const fakeCodexImplementationPath = join(
     fakeCodexBinRoot,
@@ -221,7 +237,13 @@ process.stdin.on("data", (chunk) => {
 });
 process.stdin.on("end", () => {
 const invocation = process.argv.slice(2).join(" ");
-if ((invocation !== "exec -" && invocation !== "-") || !prompt.includes("onboard --agent manual")) {
+if (
+  (invocation !== "exec -" && invocation !== "-") ||
+  !prompt.includes("onboard --agent manual") ||
+  !prompt.includes("rule add <rule-id> --scope <shared|steward|developer|reviewer> --stdin") ||
+  !prompt.includes("rule show <rule-id>") ||
+  prompt.includes("exit this Codex session")
+) {
   process.exit(91);
 }
 const prefixMatch = prompt.match(/The exact agentdevflow argv prefix for every agentdevflow command is:\\n(\\[[^\\n]+\\])/u);
@@ -254,6 +276,20 @@ if (
   typeof existingTarget.observedDigest !== "string"
 ) {
   process.exit(95);
+}
+const existingRules = JSON.parse(invoke(["rule", "list", "--json"]));
+if (
+  !existingRules.rules?.some((rule) => rule.id === "existing-canonical-rule")
+) {
+  process.exit(96);
+}
+const existingRule = JSON.parse(
+  invoke(["rule", "show", "existing-canonical-rule", "--json"]),
+);
+if (
+  existingRule.rule?.content !== ${JSON.stringify(preexistingCanonicalRule)}
+) {
+  process.exit(97);
 }
 invoke(
   ["rule", "add", "run-tests-before-handoff", "--scope", "developer", "--stdin"],
@@ -324,6 +360,21 @@ invoke(["check"]);
   if (codexOnboardingRule !== codexExistingAgents) {
     throw new Error(
       "Packed Codex-operated onboarding did not preserve existing guidance as a canonical rule.",
+    );
+  }
+  const retainedCanonicalRule = await readFile(
+    join(
+      codexOnboardingProjectRoot,
+      ".agentdevflow",
+      "rules",
+      "shared",
+      "existing-canonical-rule.md",
+    ),
+    "utf8",
+  );
+  if (retainedCanonicalRule !== preexistingCanonicalRule) {
+    throw new Error(
+      "Packed Codex-operated onboarding did not preserve the pre-existing canonical rule.",
     );
   }
   await mkdir(onboardingProjectRoot);
