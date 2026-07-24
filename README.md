@@ -175,8 +175,9 @@ rule organization, and asks whether to proceed. Natural-language revisions stay
 in that same session, so accepting the proposal does not repeat the analysis.
 After acceptance, Codex uses only the exact currently running agentdevflow
 entrypoint to update canonical rules and approve the current exact render plan.
-The parent agentdevflow process then independently runs the existing `check`
-command before reporting success.
+When Codex reports a clean check, exit that Codex session to return control to
+the parent agentdevflow process. The parent then independently runs the
+existing `check` command before reporting success.
 
 For unattended use, `--yes` authorizes that one onboarding operation without
 the in-session question:
@@ -185,18 +186,21 @@ the in-session question:
 npx agentdevflow onboard --agent codex --yes
 ```
 
-The current candidate implements only the Codex external onboarding operator;
-it must pass the item 3 qualification gates before release. The launcher uses
-the user's existing Codex authentication, configuration, permission behavior,
-hooks, MCP servers, and session behavior without inspecting or overriding
-them. The operation can send project content to the user's configured Codex
-service and can incur provider usage costs. Use `--agent manual` when that is
-not appropriate.
+Codex is the only implemented external onboarding operator in the current
+candidate. Item 3 remains in qualification until the exact current tree passes
+its remaining review and hosted gates. The launcher uses the user's existing
+Codex authentication,
+configuration, permission behavior, hooks, MCP servers, and session behavior
+without inspecting or overriding them. The operation can send project content
+to the user's configured Codex service and can incur provider usage costs. Use
+`--agent manual` when that is not appropriate. Other launchers remain
+unsupported until separately implemented and qualified.
 
 If Codex stops after changing canonical rules, those completed rule operations
-remain; agentdevflow does not roll them back. Run `rule list`, use
-`onboard --agent manual` to reobserve existing targets, then run `diff` and
-`check` to review the current state before continuing manually or retrying.
+remain; agentdevflow does not roll them back. Run `rule list` and `rule show`
+for the listed ids, use `onboard --agent manual` to reobserve existing targets,
+then run `diff` and `check` to review the current state before continuing
+manually or retrying.
 
 ## Add project rules
 

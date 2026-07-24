@@ -1,6 +1,6 @@
 # V1 platform qualification
 
-Snapshot updated: 2026-07-23.
+Snapshot updated: 2026-07-24.
 
 ## Historical hosted result
 
@@ -12,11 +12,11 @@ candidate and is historical evidence, not proof for later working-tree changes.
 ## Most recent merged-tree result
 
 GitHub Actions run
-[30067879491](https://github.com/lorekkusu/agentdevflow/actions/runs/30067879491)
-passed pull request 15 on all six cells at head commit
-`340f484bdf8ef69bfb022dd58bc08f1d4fe4bc01`. That commit and merged `main`
-commit `dc9ee9b19f7b860809d40458b9c25acadd582a7e` have the same Git tree
-`4278390982303bda5a0218fc681ed18b9c39eb65`.
+[30076653722](https://github.com/lorekkusu/agentdevflow/actions/runs/30076653722)
+passed pull request 17 on all six cells at head commit
+`a6e3950da546ca94911750ac576691f82e8100dd`. That commit and merged `main`
+commit `9d11e102f11484de805d75f3495a44863ad2027f` have the same Git tree
+`26214a0ee14cd2dea6f5647de2829f71e4b93143`.
 
 Every cell passed the platform probe, zero-skip qualification, installed
 package entrypoint exercise, and tracked-file cleanliness check. Later commits

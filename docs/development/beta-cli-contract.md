@@ -2,10 +2,11 @@
 
 ## Status
 
-This document describes the current unreleased working-tree candidate. It does
-not claim that the candidate has been published or qualified through external
-dogfood. The published `0.1.0-beta.2` package is an earlier historical
-snapshot.
+This document describes the current unreleased working-tree candidate. Its
+Codex-first onboarding operator has passed authenticated dogfood but remains
+under roadmap item 3 qualification until the exact current tree passes the
+remaining review and hosted gates. The candidate has not been published. The
+published `0.1.0-beta.2` package is an earlier historical snapshot.
 
 Configuration, guidance filenames, lock bytes, diagnostics, and JSON fields
 remain beta surfaces and may change through documented migration before 1.0.
@@ -107,6 +108,15 @@ second provider process or proposal transfer. `--yes` uses one non-interactive
 `codex exec` process and authorizes that operation without the question.
 `--json` is not supported for Codex-operated onboarding because provider
 terminal output is not an agentdevflow JSON contract.
+
+The runtime instruction requires Codex to list and show all existing canonical
+rules before proposal or mutation so a retry can inspect retained partial
+progress. It supplies the closed rule-id syntax and bounded rule command forms.
+
+After Codex reports a clean check in the interactive path, the user exits that
+Codex session to return control to the parent process. The reviewed runtime
+instruction explicitly gives that handoff. The launcher does not parse
+provider prose or add a second interactive transport.
 
 The launcher does not override or inspect Codex authentication,
 configuration, permissions, hooks, MCP servers, persistence, or provider

@@ -58,8 +58,9 @@ The current unreleased candidate supports:
 
 This is the current unreleased implementation, not the complete accepted
 adoption experience. The authoritative [product roadmap](../ROADMAP.md) keeps
-the Codex-first adapter in item 3 until qualification and review are complete,
-then retains an interactive wizard and Strict before the next beta release.
+the Codex-first adapter in item 3 until the exact current tree passes
+qualification and review, then retains an interactive wizard and Strict before
+the next beta release.
 
 The non-interactive first-use journey is fixed rather than user-selectable:
 

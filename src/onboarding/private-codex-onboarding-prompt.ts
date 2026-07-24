@@ -21,6 +21,9 @@ export function createPrivateCodexOnboardingPrompt(
   const confirmation = options.acceptWithoutConfirmation
     ? `The user invoked agentdevflow with --yes. This authorizes this one onboarding operation. Analyze the current inventory, then proceed without asking for another agentdevflow confirmation.`
     : `Before changing canonical rules, show the user a concise proposed rule organization and any unresolved content. Ask whether to proceed in this same Codex session. If the user requests changes in natural language, revise the proposal in this session and ask again. Do not mutate canonical rules or managed outputs until the user accepts.`;
+  const completionHandoff = options.acceptWithoutConfirmation
+    ? ""
+    : ` After reporting a concise result, explicitly tell the user to exit this Codex session so the parent agentdevflow process can run its independent final check.`;
 
   return `You are operating agentdevflow onboarding for one local project.
 
@@ -45,6 +48,14 @@ onboard --agent manual --repository ${json(options.repositoryPath)} --config ${j
 
 Analyze every supported existing target. Preserve intended guidance, identify duplication or conflict, propose globally unique rule ids and the narrowest valid shared, steward, developer, or reviewer scope, and report anything ambiguous or unresolved.
 
+Rule ids must be globally unique lowercase ASCII slugs of at most 64 characters matching [a-z0-9]+(?:-[a-z0-9]+)* and must not use Windows reserved basenames. Before proposing or mutating rules, run rule list and rule show for every existing id so current canonical content is preserved or deliberately updated. Use these exact rule command forms:
+- rule list
+- rule show <rule-id>
+- rule add <rule-id> --scope <shared|steward|developer|reviewer> --stdin
+- rule update <rule-id> --stdin
+- rule remove <rule-id>
+Provide Markdown content for add or update through stdin. Include the stated repository and config arguments in every form.
+
 ${confirmation}
 
 After acceptance:
@@ -57,5 +68,5 @@ After acceptance:
 
 Do not edit generated provider files or the ownership lock directly. Do not run Git commands. Do not create a proposal store, transcript, backup, or repository snapshot. Stop and explain the unresolved issue if content cannot be represented without ambiguity or if any agentdevflow command blocks.
 
-Report success only when the final agentdevflow check is clean.`;
+Report success only when the final agentdevflow check is clean.${completionHandoff}`;
 }

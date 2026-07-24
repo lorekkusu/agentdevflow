@@ -24,7 +24,18 @@ test("builds a reviewed interactive Codex onboarding request", () => {
   assert.match(prompt, /onboard --agent manual/u);
   assert.match(prompt, /same Codex session/u);
   assert.match(prompt, /Do not mutate canonical rules/u);
-  assert.match(prompt, /rule commands/u);
+  assert.match(
+    prompt,
+    /matching \[a-z0-9\]\+\(\?:-\[a-z0-9\]\+\)\*/u,
+  );
+  assert.match(
+    prompt,
+    /rule add <rule-id> --scope <shared\|steward\|developer\|reviewer> --stdin/u,
+  );
+  assert.match(prompt, /rule show <rule-id>/u);
+  assert.match(prompt, /rule show for every existing id/u);
+  assert.match(prompt, /rule update <rule-id> --stdin/u);
+  assert.match(prompt, /Provide Markdown content.*through stdin/u);
   assert.match(prompt, /Run agentdevflow diff/u);
   assert.match(prompt, /Run agentdevflow render/u);
   assert.match(prompt, /Run agentdevflow check/u);
@@ -36,6 +47,10 @@ test("builds a reviewed interactive Codex onboarding request", () => {
     /Pass the stated repository and config to every agentdevflow command/u,
   );
   assert.match(prompt, /Do not fall back to default project paths/u);
+  assert.match(
+    prompt,
+    /tell the user to exit this Codex session.*independent final check/u,
+  );
   assert.doesNotMatch(prompt, /propose mode|apply mode|version allowlist/iu);
 });
 
@@ -48,4 +63,5 @@ test("turns --yes into one-operation authorization without a second mode", () =>
   assert.match(prompt, /invoked agentdevflow with --yes/u);
   assert.match(prompt, /proceed without asking/u);
   assert.doesNotMatch(prompt, /Ask whether to proceed/u);
+  assert.doesNotMatch(prompt, /exit this Codex session/u);
 });

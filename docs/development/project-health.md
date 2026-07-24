@@ -22,6 +22,17 @@ journey before reading implementation. The coordinating review verified
 material claims against the repository and retained only sanitized
 conclusions.
 
+After that review, the initial item 3 implementation passed an isolated
+complete-change review, merged through
+[PR #17](https://github.com/lorekkusu/agentdevflow/pull/17), and passed the
+hosted Node.js 22/24 matrix on Ubuntu, macOS, and Windows. A subsequent
+installed-artifact interactive Codex dogfood completed proposal,
+natural-language correction, confirmation, exact replacement, render, and the
+parent-run final check. The resulting prompt and documentation follow-up still
+requires its own exact-tree review and hosted qualification before item 3 can
+be complete. The original review measurements remain identified as
+measurements of its pre-merge review target.
+
 This was a product and maintainability review, not a security audit,
 normal-user adoption study, or hostile-process assessment.
 
@@ -54,10 +65,11 @@ workflow roles.
 ## Roadmap alignment
 
 - Items 1 and 2 remain complete and match executable behavior.
-- Item 3 has an accepted Codex-first contract and an implemented candidate.
-  Local deterministic verification, installed-package exercise, authenticated
-  Codex dogfood, and this triggered health review have passed. Complete-change
-  review and hosted pull-request qualification remain before completion.
+- Item 3 has passed local deterministic verification, installed-package
+  exercise, authenticated non-interactive and interactive Codex dogfood, its
+  triggered health review, and PR #17 review and hosted qualification. The
+  exact prompt and documentation follow-up tree still requires review and
+  hosted qualification before completion.
 - Item 4 remains the next product milestone after item 3. The bounded
   Manual/Codex onboarding picker is part of item 3 and is not the broader
   initialization wizard.
@@ -197,8 +209,9 @@ public human or JSON output requires a separate accepted decision.
   three native targets, policy compiler, planner, one renderer writer,
   lock-last publication, manual onboarding, and the bounded Codex item 3
   adapter.
-- **Invest:** finish item 3 qualification, keep CLI and package scenarios
-  reviewable, and derive the item 4 interface from its full user journey.
+- **Invest:** finish exact-tree review and hosted qualification for the item 3
+  follow-up, keep CLI and package scenarios reviewable, and derive the item 4
+  interface from its full user journey afterward.
 - **Freeze:** historical beta evidence, ADR 0004, unavailable Strict
   recognition, provider target set, and current mutation model.
 - **Defer:** additional launchers, wizard implementation until item 3
@@ -209,10 +222,10 @@ public human or JSON output requires a separate accepted decision.
 
 ## Next milestone
 
-Finish item 3 without expanding its scope: complete the isolated full-change
-review, verify any material findings, run the final required commands, and
-qualify the pull request on the hosted matrix. Item 3 can become complete only
-when the exact reviewed tree passes those gates.
+Finish item 3 without expanding its scope: verify the current prompt and
+documentation follow-up, run the final required commands, and qualify the
+exact pull-request tree on the hosted matrix. Item 3 can become complete only
+when that exact reviewed tree passes.
 
 After item 3 is merged and cleaned up, item 4 is next. Its proposal must begin
 from the full initialization and onboarding journey rather than treating the
@@ -220,16 +233,16 @@ current onboarding-method picker as a general wizard design.
 
 ## Stop conditions
 
-- Do not mark item 3 complete before full-change review and hosted
-  qualification pass for the exact tree.
+- Do not mark item 3 complete before the follow-up exact tree passes
+  complete-change review and hosted qualification.
 - Do not start the wizard, Strict, item 6 dogfood expansion, or release work
   ahead of the roadmap.
 - Do not add another launcher, general command runner, broad provider adapter
   framework, provider SDK, credential subsystem, background process, retries,
   agent chain, second writer, approval store, transaction, rollback system,
   Git manager, or onboarding state model.
-- Do not claim authenticated interactive-mode dogfood or cross-platform Codex
-  compatibility beyond the evidence actually obtained.
+- Do not claim Codex compatibility beyond the installed macOS dogfood and
+  deterministic hosted process and package evidence actually obtained.
 
 ## Decision requests
 
@@ -244,10 +257,13 @@ implementation.
 ## Limitations
 
 The review did not test hostile local writers, power-loss durability, live
-trackers, normal-user adoption, or the published registry package. Authenticated
-dogfood covered the non-interactive `--yes` path with Codex CLI 0.145.0 on
-macOS and discarded raw provider material; it does not qualify every Codex
-version, platform, installation method, permission configuration, hook, MCP
-server, or interactive user correction path. Deterministic tests and official
-CLI documentation cover the fixed interactive and non-interactive argv, while
-hosted pull-request qualification remains required for the exact final tree.
+trackers, normal-user adoption, or the published registry package.
+Authenticated dogfood covered both the non-interactive `--yes` path and the
+interactive proposal, correction, confirmation, and execution path with Codex
+CLI 0.145.0 on macOS and discarded raw provider material. It does not qualify
+every Codex version, installation method, permission configuration, hook, or
+MCP server. Hosted tests qualify deterministic process and package behavior
+across the supported Node.js and operating-system matrix; they do not run real
+authenticated Codex sessions on every platform. Changes after PR #17 require
+their own protected CI pass before the current follow-up can cite exact-tree
+hosted qualification.
