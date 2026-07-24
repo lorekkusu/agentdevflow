@@ -76,103 +76,8 @@ different entry orders.
 
 ## Current sequence
 
-Items 1 and 2 are complete and compressed in the completion summary. The
+Items 1 through 3 are complete and compressed in the completion summary. The
 remaining numbers preserve the accepted dependency order.
-
-### 3. External-agent-operated onboarding
-
-Status: **In progress**
-
-This item depends on the completed rule, manual onboarding, and repository-wide
-health-review outcomes. The public Codex-first interaction contract is accepted
-and implemented. The exact prompt and documentation follow-up tree remains in
-qualification.
-
-External-agent operation begins only after the same required `init -> onboard`
-entry. It does not introduce a pre-init inventory path or a second first-use
-state model.
-
-#### User outcome
-
-The user may select an already installed and authenticated coding-agent CLI to
-act as their operator during onboarding. The initial public surface is:
-
-```text
-agentdevflow onboard
-agentdevflow onboard --agent manual
-agentdevflow onboard --agent codex
-agentdevflow onboard --agent codex --yes
-```
-
-Bare `onboard` presents the currently implemented Manual and Codex choices in
-an interactive terminal. Non-interactive use requires `--agent`. Manual keeps
-the exact read-only inventory and supports `--json`.
-
-Codex onboarding launches one foreground Codex session with a reviewed
-product-owned instruction. The interactive path analyzes the current exact
-inventory and every existing canonical rule, explains a proposed rule
-organization, accepts natural-language correction, and asks before mutation.
-After acceptance, the same session operates `rule`, `diff`, exact-approved
-`render`, and `check`; the user then exits that session so the parent can run
-an independent final `check`. `--yes` authorizes the same one operation through
-one non-interactive Codex process without the confirmation or exit handoff.
-
-Codex CLI is the only initial launcher. Other launchers remain unsupported and
-absent from the picker until separately implemented and qualified. The
-launcher invokes the user's installed `codex` executable without a proactive
-version allowlist or authentication detector.
-
-#### Acceptance criteria
-
-- The valid selected configuration is required before the picker, provider
-  inventory, canonical rules, or Codex process is opened.
-- Manual remains the accepted exact read-only inventory.
-- Interactive Codex keeps proposal, correction, confirmation, and execution in
-  one session; `--yes` authorizes one non-interactive operation.
-- The external agent lists and shows existing canonical rules, follows the
-  closed rule-id and rule-command contract, and stops on unresolved content.
-- One fixed executable, argv, stdin when non-interactive, and working directory
-  are used without shell interpolation or an arbitrary executable option.
-- The user's existing Codex authentication, configuration, permission
-  behavior, hooks, MCP servers, and session behavior are inherited without
-  inspection, copying, storage, override, provisioning, or diagnosis.
-- Public documentation discloses project-content processing and possible
-  provider cost without adding a separate runtime warning workflow.
-- The exact current Node executable and agentdevflow entrypoint are passed to
-  Codex; `npx`, package installation, PATH lookup, and another agentdevflow
-  version are forbidden for the operation.
-- Canonical rules, the exact current plan, renderer-owned outputs and lock, and
-  a parent-run final `check` determine success rather than provider prose or
-  exit status.
-- The visible English runtime instruction is intentionally packaged and
-  deterministically tested, including a pre-existing canonical-rule scenario.
-- One internal 15-minute timeout and bounded cancellation, missing-executable,
-  launch, non-zero-exit, and non-clean final-check diagnostics are retained.
-- There is no public timeout, version catalog, authentication or permission
-  classifier, provider-output or proposal schema, transcript store, second
-  writer, retry system, background process, or general runner.
-
-#### Evidence
-
-PR [#17](https://github.com/lorekkusu/agentdevflow/pull/17) merged the bounded
-adapter after isolated complete-change and triggered project-health reviews.
-Its exact tree passed the hosted Node.js 22/24 matrix on Ubuntu, macOS, and
-Windows, recorded in `docs/evidence/v1-platform-qualification.md`.
-
-Authenticated installed-artifact macOS dogfood with Codex CLI 0.145.0 covered
-both non-interactive and interactive paths. The interactive path preserved
-source bytes through proposal and natural-language correction, then represented
-two unmanaged provider instructions as Shared, Developer, and Reviewer rules
-before exact replacement, render, ownership-lock publication, and a clean
-parent check. Raw provider material was discarded.
-
-The dogfood exposed missing rule syntax and interactive exit guidance. This
-follow-up adds those instructions, pre-existing-rule installed-package
-coverage, and aligned public documentation. Local `npm run check`,
-`npm run check:v1-qualification`, `npm run check:package-entrypoint`,
-`npm run test:v1-recovery`, and `npm pack --dry-run --json` pass. The exact
-follow-up tree still requires final complete-change review and hosted
-qualification before item 3 is complete.
 
 ### 4. Interactive first-use wizard
 
@@ -450,3 +355,4 @@ test, and evidence documents.
 | Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, responsibility-filtered composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |
 | Fixed init-first manual existing-project onboarding requires a valid selected configuration before exact native-target inventory, keeps classification with the user, permits only exact digest-bound whole-file replacement through the normal diff, render, forward-convergence, and ownership-lock path, and finishes with a clean managed state without adding an alternate entry order, repository analyzer, second writer, or approval store | `docs/decisions/0006-manual-existing-project-onboarding.md`; `src/cli/private-local-cli.ts`; `src/onboarding/private-existing-project-inventory.ts`; `src/application/private-domain-project-plan.ts`; `test/cli/private-local-cli.test.ts`; `scripts/verify-package-entrypoint.mjs`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |
 | Repository-wide health review mapped every accepted ADR, completed outcome, command, production module, public journey, package entry, and retained dependency; repaired stale ADR and package evidence; removed unsupported compiler artifacts and a no-value test; and completed independent product, implementation-cost, and zero-context installed-package perspectives | `docs/development/project-health.md`; `docs/decisions/0001-native-project-instructions-renderer.md`; `docs/decisions/0006-manual-existing-project-onboarding.md`; `docs/evidence/private-package-qualification.md`; `docs/evidence/v1-platform-qualification.md`; `npm run check`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery` |
+| Codex-first external-agent-operated onboarding preserves the fixed init-first journey and offers a bounded Manual/Codex picker, explicit Manual or Codex selection, and one-operation `--yes`. One foreground installed Codex CLI receives the exact current agentdevflow entrypoint, inspects existing canonical rules, and operates the existing rule, exact diff, render, and check path; the parent independently establishes the final clean state. Deterministic process, cancellation, package, pre-existing-rule, unmanaged-instruction, and exact-replacement tests passed. Authenticated installed-artifact macOS dogfood covered both non-interactive and interactive Codex CLI 0.145.0 paths; the interactive path preserved source bytes through proposal and natural-language correction, then represented two unmanaged provider instructions as Shared, Developer, and Reviewer rules before a clean parent check. Independent complete-change and triggered project-health reviews passed. PR #17 qualified the initial adapter and PR #18 qualified the dogfood follow-up on the hosted Node.js 22/24 Ubuntu, macOS, and Windows matrix. Other launchers, provider SDKs, credential handling, retries, background work, output schemas, and generic runner infrastructure remain unsupported. Raw provider material was discarded. | `docs/decisions/0005-external-agent-operated-onboarding.md`; `src/onboarding/private-codex-onboarding-prompt.ts`; `src/onboarding/private-codex-onboarding-process.ts`; `src/cli/private-onboarding-operator.ts`; `test/onboarding/`; `scripts/verify-package-entrypoint.mjs`; `docs/development/project-health.md`; `docs/evidence/v1-platform-qualification.md`; [PR #17](https://github.com/lorekkusu/agentdevflow/pull/17); [PR #18](https://github.com/lorekkusu/agentdevflow/pull/18); `npm run check`; `npm run check:v1-qualification`; `npm run check:package-entrypoint`; `npm run test:v1-recovery`; `npm pack --dry-run --json` |

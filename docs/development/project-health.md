@@ -28,10 +28,11 @@ complete-change review, merged through
 hosted Node.js 22/24 matrix on Ubuntu, macOS, and Windows. A subsequent
 installed-artifact interactive Codex dogfood completed proposal,
 natural-language correction, confirmation, exact replacement, render, and the
-parent-run final check. The resulting prompt and documentation follow-up still
-requires its own exact-tree review and hosted qualification before item 3 can
-be complete. The original review measurements remain identified as
-measurements of its pre-merge review target.
+parent-run final check. The resulting prompt and documentation follow-up passed
+an isolated complete-change review and the hosted matrix through
+[PR #18](https://github.com/lorekkusu/agentdevflow/pull/18). The original
+review measurements remain identified as measurements of its pre-merge review
+target.
 
 This was a product and maintainability review, not a security audit,
 normal-user adoption study, or hostile-process assessment.
@@ -50,9 +51,9 @@ represent retained guidance as canonical per-rule Markdown, review a complete
 deterministic plan, render through one owned convergent writer, and verify a
 clean managed state.
 
-For onboarding, Manual remains a local read-only exact inventory. The item 3
-candidate also offers one bounded Codex operator: bare `onboard` presents the
-current Manual/Codex choices in a terminal, `--agent codex` keeps analysis,
+For onboarding, Manual remains a local read-only exact inventory. The qualified
+item 3 outcome also offers one bounded Codex operator: bare `onboard` presents
+the current Manual/Codex choices in a terminal, `--agent codex` keeps analysis,
 natural-language correction, confirmation, and accepted execution in one
 interactive Codex session, and `--agent codex --yes` authorizes one
 non-interactive operation. The parent process independently runs the existing
@@ -64,15 +65,14 @@ workflow roles.
 
 ## Roadmap alignment
 
-- Items 1 and 2 remain complete and match executable behavior.
-- Item 3 has passed local deterministic verification, installed-package
-  exercise, authenticated non-interactive and interactive Codex dogfood, its
-  triggered health review, and PR #17 review and hosted qualification. The
-  exact prompt and documentation follow-up tree still requires review and
-  hosted qualification before completion.
-- Item 4 remains the next product milestone after item 3. The bounded
-  Manual/Codex onboarding picker is part of item 3 and is not the broader
-  initialization wizard.
+- Items 1 through 3 are complete and match executable behavior.
+- Item 3 passed local deterministic verification, installed-package exercise,
+  authenticated non-interactive and interactive Codex dogfood,
+  complete-change review, the triggered health review, and hosted
+  qualification.
+- Item 4 is the next product milestone. The bounded Manual/Codex onboarding
+  picker is part of completed item 3 and is not the broader initialization
+  wizard.
 - Strict remains committed but requires its exact finite safety properties.
 - Exact-candidate dogfood expansion and the next beta remain later gates.
 
@@ -209,34 +209,30 @@ public human or JSON output requires a separate accepted decision.
   three native targets, policy compiler, planner, one renderer writer,
   lock-last publication, manual onboarding, and the bounded Codex item 3
   adapter.
-- **Invest:** finish exact-tree review and hosted qualification for the item 3
-  follow-up, keep CLI and package scenarios reviewable, and derive the item 4
-  interface from its full user journey afterward.
+- **Invest:** keep CLI and package scenarios reviewable, and derive the item 4
+  interface from its full user journey.
 - **Freeze:** historical beta evidence, ADR 0004, unavailable Strict
   recognition, provider target set, and current mutation model.
-- **Defer:** additional launchers, wizard implementation until item 3
-  completes, executable Strict behavior, item 6 dogfood expansion, and release
-  work.
+- **Defer:** additional launchers, executable Strict behavior, item 6 dogfood
+  expansion, and release work. Item 4 is next but remains behind its own
+  public-interface decision gate.
 - **Removal candidate:** public `renderer-plan-digest` and redundant ownership
   conflict presentation, pending explicit public-output decisions.
 
 ## Next milestone
 
-Finish item 3 without expanding its scope: verify the current prompt and
-documentation follow-up, run the final required commands, and qualify the
-exact pull-request tree on the hosted matrix. Item 3 can become complete only
-when that exact reviewed tree passes.
-
-After item 3 is merged and cleaned up, item 4 is next. Its proposal must begin
-from the full initialization and onboarding journey rather than treating the
-current onboarding-method picker as a general wizard design.
+Item 4 is next. Its proposal must begin from the full initialization and
+onboarding journey rather than treating the current onboarding-method picker
+as a general wizard design. The exact public invocation, question sequence,
+confirmation boundary, cancellation behavior, and equivalence with
+non-interactive configuration remain decision-gated before implementation.
 
 ## Stop conditions
 
-- Do not mark item 3 complete before the follow-up exact tree passes
-  complete-change review and hosted qualification.
-- Do not start the wizard, Strict, item 6 dogfood expansion, or release work
-  ahead of the roadmap.
+- Do not implement the item 4 public interface before its bounded journey and
+  unresolved contract choices receive explicit approval.
+- Do not start Strict, item 6 dogfood expansion, or release work ahead of the
+  roadmap.
 - Do not add another launcher, general command runner, broad provider adapter
   framework, provider SDK, credential subsystem, background process, retries,
   agent chain, second writer, approval store, transaction, rollback system,
@@ -264,6 +260,5 @@ CLI 0.145.0 on macOS and discarded raw provider material. It does not qualify
 every Codex version, installation method, permission configuration, hook, or
 MCP server. Hosted tests qualify deterministic process and package behavior
 across the supported Node.js and operating-system matrix; they do not run real
-authenticated Codex sessions on every platform. Changes after PR #17 require
-their own protected CI pass before the current follow-up can cite exact-tree
-hosted qualification.
+authenticated Codex sessions on every platform. PR #18 supplies the protected
+final-tree CI gate for the milestone state before merge.

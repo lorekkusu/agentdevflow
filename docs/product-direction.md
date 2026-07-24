@@ -50,17 +50,16 @@ The current unreleased candidate supports:
 - bounded manual existing-project onboarding for the three native target files,
   entered only after `init`, with exact reviewed whole-file replacement through
   the normal plan;
-- a Codex-first external onboarding candidate that uses one foreground
-  installed Codex CLI as the operator of the same rule, diff, render, and check
+- a qualified Codex-first external onboarding operator that uses one
+  foreground installed Codex CLI on the same rule, diff, render, and check
   path;
 - complete deterministic planning, exact digest approval, whole-file
   ownership, safe existing-file adoption, and drift checking.
 
 This is the current unreleased implementation, not the complete accepted
-adoption experience. The authoritative [product roadmap](../ROADMAP.md) keeps
-the Codex-first adapter in item 3 until the exact current tree passes
-qualification and review, then retains an interactive wizard and Strict before
-the next beta release.
+adoption experience. The authoritative [product roadmap](../ROADMAP.md)
+records the completed Codex-first adapter and retains an interactive wizard
+and Strict before the next beta release.
 
 The non-interactive first-use journey is fixed rather than user-selectable:
 

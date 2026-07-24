@@ -260,11 +260,9 @@ configuration, permission behavior, hooks, MCP servers, and session behavior
 without inspecting or overriding them. Project content can be sent to the
 user's configured Codex service and provider usage costs can apply.
 
-Codex is the only implemented external onboarding operator in the current
-candidate. Item 3 remains in qualification until the exact current tree passes
-its remaining review and hosted gates. Other launcher names are not menu
-choices or accepted `--agent` values until separately implemented and
-qualified. The manual inventory
+Codex is the only qualified external onboarding operator in the current
+candidate. Other launcher names are not menu choices or accepted `--agent`
+values until separately implemented and qualified. The manual inventory
 remains required even when every supported provider target is absent. Both
 paths refuse to inspect targets or start Codex until the selected configuration
 is present and valid. If `init` returned `review-required` after creating the

@@ -3,10 +3,9 @@
 ## Status
 
 This document describes the current unreleased working-tree candidate. Its
-Codex-first onboarding operator has passed authenticated dogfood but remains
-under roadmap item 3 qualification until the exact current tree passes the
-remaining review and hosted gates. The candidate has not been published. The
-published `0.1.0-beta.2` package is an earlier historical snapshot.
+Codex-first onboarding operator has completed the roadmap item 3 qualification
+gates, but the candidate has not been published. The published
+`0.1.0-beta.2` package is an earlier historical snapshot.
 
 Configuration, guidance filenames, lock bytes, diagnostics, and JSON fields
 remain beta surfaces and may change through documented migration before 1.0.
@@ -304,9 +303,9 @@ merge option, general instruction scanner, semantic classifier, or onboarding
 proposal store.
 
 This list describes the current executable contract. The root
-[product roadmap](../../ROADMAP.md) keeps the implemented Codex-first
-onboarding adapter in qualification and retains a later wizard and Strict.
-Only the latter two remain absent from the current CLI surface.
+[product roadmap](../../ROADMAP.md) records the qualified Codex-first
+onboarding adapter and retains a later wizard and Strict. The latter two remain
+absent from the current CLI surface.
 
 ## Historical release boundary
 

@@ -186,10 +186,8 @@ the in-session question:
 npx agentdevflow onboard --agent codex --yes
 ```
 
-Codex is the only implemented external onboarding operator in the current
-candidate. Item 3 remains in qualification until the exact current tree passes
-its remaining review and hosted gates. The launcher uses the user's existing
-Codex authentication,
+Codex is the only qualified external onboarding operator in the current
+candidate. The launcher uses the user's existing Codex authentication,
 configuration, permission behavior, hooks, MCP servers, and session behavior
 without inspecting or overriding them. The operation can send project content
 to the user's configured Codex service and can incur provider usage costs. Use
