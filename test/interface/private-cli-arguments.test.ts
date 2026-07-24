@@ -117,11 +117,51 @@ test("retains the selected configuration path for onboard", () => {
   expectSuccess(result);
   assert.deepEqual(result.invocation, {
     command: "onboard",
+    agent: null,
+    acceptWithoutConfirmation: false,
     projectConfigPath: "project.jsonc",
     repositoryPath: "repository",
     lockPath: ".state/render-lock.json",
     outputFormat: "human",
   });
+});
+
+test("parses bounded manual and Codex onboarding selections", () => {
+  const manual = parsePrivateCliArguments([
+    "onboard",
+    "--agent",
+    "manual",
+    "--json",
+  ]);
+  expectSuccess(manual);
+  assert.equal(manual.invocation.command, "onboard");
+  assert.equal(manual.invocation.agent, "manual");
+  assert.equal(manual.invocation.acceptWithoutConfirmation, false);
+  assert.equal(manual.invocation.outputFormat, "json");
+
+  const codex = parsePrivateCliArguments([
+    "onboard",
+    "--agent",
+    "codex",
+    "--yes",
+  ]);
+  expectSuccess(codex);
+  assert.equal(codex.invocation.command, "onboard");
+  assert.equal(codex.invocation.agent, "codex");
+  assert.equal(codex.invocation.acceptWithoutConfirmation, true);
+});
+
+test("rejects ambiguous or unsupported onboarding selections", () => {
+  for (const args of [
+    ["onboard", "--agent", "claude"],
+    ["onboard", "--yes"],
+    ["onboard", "--agent", "manual", "--yes"],
+    ["onboard", "--agent", "codex", "--json"],
+    ["onboard", "--json"],
+  ]) {
+    const result = parsePrivateCliArguments(args);
+    assert.equal(result.ok, false, args.join(" "));
+  }
 });
 
 test("binds private render approval to an explicit exact plan snapshot", () => {

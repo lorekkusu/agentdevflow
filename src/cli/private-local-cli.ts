@@ -61,6 +61,7 @@ import {
   formatArgumentFailure,
   formatCheck,
   formatCleanRenderPlan,
+  formatDiagnostics,
   formatDiff,
   formatInit,
   formatExistingProjectInventory,
@@ -79,11 +80,15 @@ import {
   readPrivateRuleInputStream,
   type PrivateRuleInputStream,
 } from "./private-rule-input.js";
+import {
+  createPrivateOnboardingOperator,
+  type PrivateOnboardingOperator,
+} from "./private-onboarding-operator.js";
 
 const usage = `Usage:
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow local-reviewed-change --preset <fast|balanced> --tracker <local|none> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
   agentdevflow init [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --workflow issue-to-reviewed-pull-request --preset <fast|balanced> --tracker <linear|github-issues> --pull-request-state <draft|ready> --pull-request-host <id> --ci <id> --provider <id,product>... --steward <id> --developer <id> --reviewer <id> [--json]
-  agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+  agentdevflow onboard [--agent <manual|codex>] [--yes] [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
   agentdevflow rule list [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule show <id> [--repository <path>] [--config <relative-path>] [--json]
   agentdevflow rule add <id> --scope <shared|steward|developer|reviewer> (--file <repository-relative-path> | --stdin) [--repository <path>] [--config <relative-path>] [--json]
@@ -94,7 +99,8 @@ const usage = `Usage:
   agentdevflow check [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
 
 Init creates an absent revision-1 configuration or accepts byte-identical existing configuration after validating provider-file dispositions.
-Onboard requires the valid configuration created by init, then reads a bounded inventory of supported existing provider targets.
+Onboard requires the valid configuration created by init. It selects Manual or Codex interactively unless --agent is provided.
+Manual reads a bounded inventory of supported existing provider targets. Codex uses the user's installed CLI in one foreground session.
 Rule commands require the valid selected configuration and read or mutate only canonical project-rule files; provider outputs still require diff and render.
 Diff and check are read-only. Render requires an exact plan digest from diff.
 Issue workflows compile advisory procedures; agentdevflow does not contact trackers, pull-request hosts, or CI services.
@@ -123,11 +129,15 @@ Check is read-only. Exit 0 is clean, exit 1 means reviewable changes are require
 Diff is read-only. Review its complete recognized target and copy exact-plan-digest into render --approve-plan. Exit 1 is expected when changes are required.
 Each --replace-existing input states that the exact complete unmanaged target was reviewed, retained content is represented in current canonical rules, and omitted remainder is intentional.`,
   onboard: `Usage:
-  agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+  agentdevflow onboard [--repository <path>] [--config <relative-path>] [--lock <relative-path>]
+  agentdevflow onboard --agent manual [--repository <path>] [--config <relative-path>] [--lock <relative-path>] [--json]
+  agentdevflow onboard --agent codex [--yes] [--repository <path>] [--config <relative-path>] [--lock <relative-path>]
 
 Run init before onboard. Onboard refuses to inspect provider targets until the selected configuration is present and valid.
-It then performs a read-only inventory of AGENTS.md, CLAUDE.md, and .cursor/rules/agentdevflow.mdc.
-It reports exact bounded content, digests, ownership dispositions, and whether unmanaged content remains unclassified.`,
+Without --agent, an interactive terminal selects Codex or Manual. Non-interactive use requires --agent.
+Manual performs a read-only inventory of AGENTS.md, CLAUDE.md, and .cursor/rules/agentdevflow.mdc.
+Codex starts the user's installed Codex CLI in one foreground session. The agent proposes rules, asks the user in that session, then operates rule, diff, render, and check after acceptance. --yes skips that question.
+Codex provider output remains provider-owned terminal output; use --json only with --agent manual.`,
   render: `Usage:
   agentdevflow render [--repository <path>] [--config <relative-path>] [--lock <relative-path>] --approve-plan <exact-plan-digest> [--replace-existing <path=observed-sha256>]... [--json]
 
@@ -857,6 +867,8 @@ function writeOnboardResult(
 async function runPrivateOnboard(
   invocation: Extract<PrivateCliInvocation, { readonly command: "onboard" }>,
   io: PrivateLocalCliIo,
+  stdin: PrivateRuleInputStream,
+  operator: PrivateOnboardingOperator,
 ): Promise<0 | 2> {
   let workspace: Awaited<
     ReturnType<typeof PrivateFilesystemWorkspace.openReadOnly>
@@ -897,6 +909,76 @@ async function runPrivateOnboard(
       io,
     );
   }
+  const selectedAgent =
+    invocation.agent ??
+    (operator.canSelectInteractively ? await operator.selectAgent() : null);
+  if (selectedAgent === null) {
+    const interactiveRequired = !operator.canSelectInteractively;
+    return writeOnboardResult(
+      blockedOnboardResult([
+        {
+          code: interactiveRequired
+            ? "CLI_ONBOARD_AGENT_REQUIRED"
+            : "CLI_ONBOARD_SELECTION_CANCELLED",
+          level: "error",
+          message: interactiveRequired
+            ? "Non-interactive onboarding requires --agent manual or --agent codex."
+            : "Onboarding method selection was cancelled.",
+        },
+      ]),
+      invocation,
+      io,
+    );
+  }
+  if (selectedAgent === "codex") {
+    let codexResult: Awaited<ReturnType<PrivateOnboardingOperator["runCodex"]>>;
+    try {
+      codexResult = await operator.runCodex({
+        acceptWithoutConfirmation: invocation.acceptWithoutConfirmation,
+        projectConfigPath: invocation.projectConfigPath,
+        repositoryPath: invocation.repositoryPath,
+        renderLockPath: invocation.lockPath,
+      });
+    } catch {
+      codexResult = {
+        outcome: "blocked",
+        code: "CLI_ONBOARD_CODEX_FAILED",
+        message: "Codex onboarding could not be started.",
+      };
+    }
+    if (codexResult.outcome === "blocked") {
+      writeLine(
+        io.stdout,
+        [
+          "agentdevflow onboard: blocked",
+          ...formatDiagnostics([
+            {
+              code: codexResult.code,
+              level: "error",
+              message: codexResult.message,
+            },
+          ]),
+        ].join("\n"),
+      );
+      return 2;
+    }
+    const checkArgs = [
+      "check",
+      "--repository",
+      invocation.repositoryPath,
+      "--config",
+      invocation.projectConfigPath,
+      "--lock",
+      invocation.lockPath,
+    ];
+    const checkExitCode = await runPrivateLocalCli(
+      checkArgs,
+      io,
+      stdin,
+      operator,
+    );
+    return checkExitCode === 0 ? 0 : 2;
+  }
   const result = await executePrivateExistingProjectInventory({
     lockPath: invocation.lockPath,
     workspace,
@@ -908,6 +990,8 @@ export async function runPrivateLocalCli(
   args: readonly string[],
   io: PrivateLocalCliIo = { stdout: process.stdout, stderr: process.stderr },
   stdin: PrivateRuleInputStream = process.stdin,
+  onboardingOperator: PrivateOnboardingOperator =
+    createPrivateOnboardingOperator(),
 ): Promise<0 | 1 | 2> {
   if (
     args.length === 1 &&
@@ -980,7 +1064,12 @@ export async function runPrivateLocalCli(
     return 2;
   }
   if (invocation.command === "onboard") {
-    return await runPrivateOnboard(invocation, io);
+    return await runPrivateOnboard(
+      invocation,
+      io,
+      stdin,
+      onboardingOperator,
+    );
   }
   try {
     if (invocation.command === "init") {

@@ -131,12 +131,12 @@ validated project configuration
   -> normal check
 ```
 
-A selected external coding agent may eventually act as the user's operator and
-invoke the exact current `agentdevflow` executable. The accepted but
-unimplemented boundary requires a provider-specific process adapter to map the
-bounded task to one foreground executable, argv, stdin, working directory, and
-exit result. It may inherit an existing user login without inspecting or
-managing credentials.
+A selected external coding agent may act as the user's operator and invoke the
+exact current `agentdevflow` executable. The initial Codex-specific process
+adapter maps the bounded task to one foreground executable, argv, stdin when
+non-interactive, working directory, timeout, and exit result. It uses the
+user's installed Codex CLI behavior without inspecting or managing
+authentication, configuration, permissions, hooks, MCP servers, or sessions.
 
 The external agent is not a second writer or source of trusted workflow
 evidence. It may supply semantic judgment and operate the CLI, but successful
@@ -144,10 +144,12 @@ onboarding is determined by valid canonical rules, the complete current render
 plan, the renderer-owned outputs and lock, and a clean final check. The manual
 path remains available when no compatible external agent is installed.
 
-Proposal mode stops before mutation. Explicitly selecting apply delegates
-canonical-rule decisions and exact render approval to the selected agent for
-one operation; the plan digest still binds freshness rather than semantic
-approval.
+Interactive Codex onboarding keeps analysis, natural-language correction,
+confirmation, and execution in one provider session. `--yes` authorizes the
+same single operation without the confirmation question. There is no separate
+propose/apply mode, proposal handoff, provider-output schema, or proactive
+provider-version allowlist. The plan digest still binds freshness rather than
+semantic approval.
 
 The manual boundary is executable. `onboard` first requires the valid selected
 revision-1 configuration and fails without reading the lock or provider

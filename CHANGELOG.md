@@ -16,6 +16,10 @@ All notable public changes will be recorded in this file. During beta, incompati
 - Add read-only `onboard` inventory for the three fixed native instruction
   targets with exact bounded content, digest, ownership disposition, and
   classification state.
+- Add Codex-operated onboarding through `onboard --agent codex`, with one
+  interactive proposal, revision, confirmation, and execution session or one
+  non-interactive operation authorized by `--yes`. The parent CLI independently
+  runs the existing final check.
 - Add repeatable exact `--replace-existing <path>=<observed-sha256>` inputs to
   `diff` and `render` for reviewed whole-file existing-project onboarding.
 - Read optional user-owned Markdown rules from fixed shared, Steward,
@@ -42,8 +46,8 @@ All notable public changes will be recorded in this file. During beta, incompati
   responsibility section for each applicable workflow task. This remains
   advisory text, not identity, permission, session, or authority isolation.
 - Treat every issue-workflow external capability as an advisory compiled
-  procedure. The CLI does not connect to trackers, pull-request hosts, CI, or
-  coding-agent processes.
+  procedure. The CLI does not connect to trackers, pull-request hosts, or CI,
+  and the bounded onboarding launcher does not run configured workflow roles.
 - Fix auxiliary review to disabled and merge method to squash in the current
   issue-workflow CLI surface.
 - Reject multiple configured ids for one provider product because its single

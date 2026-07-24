@@ -27,18 +27,22 @@ Manual onboarding follows one fixed public sequence:
 init -> onboard -> rule as needed -> diff -> render -> check
 ```
 
-`init` is the only first-use entry. `agentdevflow onboard` accepts the selected
-configuration path and requires that file to contain a valid revision-1
-project configuration. When the configuration is absent, unreadable, or
-invalid, the command fails before reading the ownership lock or any provider
-target and reports no partial inventory.
+`init` is the only first-use entry. The manual path is selected with
+`agentdevflow onboard --agent manual`; interactive bare `onboard` may select
+the same operation. It accepts the selected configuration path and requires
+that file to contain a valid revision-1 project configuration. When the
+configuration is absent, unreadable, or invalid, the command fails before
+reading the ownership lock or any provider target and reports no partial
+inventory.
 
 Every canonical `rule` operation accepts the same selected configuration path
 and requires that file to remain valid. This prevents rule management from
-becoming a second pre-init entry. `onboard` remains read-only, so no separate
-onboarding-complete marker or state model is created.
+becoming a second pre-init entry. The manual onboarding operation remains
+read-only, so no separate onboarding-complete marker or state model is
+created.
 
-After that prerequisite, `onboard` is a read-only inventory of exactly:
+After that prerequisite, manual onboarding is a read-only inventory of
+exactly:
 
 - `AGENTS.md`;
 - `CLAUDE.md`; and
@@ -156,5 +160,6 @@ prove semantic correctness.
 ## Supersedes
 
 This amendment supersedes the earlier config-independent, onboard-first entry
-ordering within this record. It does not supersede ADR 0005; external-agent
-operation remains downstream of the same fixed init-first path.
+ordering within this record. ADR 0005 later adds a Codex-operated selection to
+the same `onboard` command without changing this manual inventory or the fixed
+init-first path.

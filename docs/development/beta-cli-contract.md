@@ -17,8 +17,8 @@ The current command set is:
 - `init`: validate explicit non-interactive choices, create an absent
   configuration or accept byte-identical existing configuration, and never
   overwrite different bytes;
-- `onboard`: require the valid selected configuration, then read the bounded
-  exact inventory of supported existing provider targets without mutation;
+- `onboard`: require the valid selected configuration, then select bounded
+  manual inventory or Codex-operated onboarding;
 - `diff`: read the repository and show the complete recognized target;
 - `render`: apply only the current plan whose exact digest was reviewed;
 - `check`: report clean, changes-required, or blocked state without mutation;
@@ -28,8 +28,9 @@ The current command set is:
   configuration, then mutate only one canonical project-rule file per
   invocation.
 
-No command runs agents, calls external services, probes credentials, or manages
-Git.
+Only `onboard --agent codex` runs an external agent. No command embeds a
+provider SDK, calls trackers or repository hosts, probes credentials, or
+manages Git.
 
 The fixed non-interactive first-use order is:
 
@@ -44,13 +45,18 @@ unreadable, or invalid.
 
 ## Existing-project onboarding
 
-`onboard` observes exactly `AGENTS.md`, `CLAUDE.md`, and
-`.cursor/rules/agentdevflow.mdc`. It accepts `--repository`, `--config`,
-`--lock`, and `--json`. Before reading the lock or any provider target, it
+`onboard` accepts `--agent manual|codex`, `--repository`, `--config`, and
+`--lock`. Without `--agent`, an interactive terminal presents the Manual and
+Codex choices; non-interactive use requires an explicit agent. Before opening
+the picker, reading the lock or any provider target, or launching Codex, it
 requires the selected configuration to be a readable, valid revision-1 project
 document. Missing, unreadable, or invalid configuration returns status `2`,
-reports `targets: null`, and discloses no target content. The command does not
-search parent, nested, or alternate provider instruction paths.
+reports no target content, and launches no provider process.
+
+`--agent manual` observes exactly `AGENTS.md`, `CLAUDE.md`, and
+`.cursor/rules/agentdevflow.mdc`. It accepts `--json` and retains the following
+exact inventory contract. It does not search parent, nested, or alternate
+provider instruction paths.
 
 Each complete target file is one content unit. Human and JSON output report:
 
@@ -86,6 +92,34 @@ An `init` invocation whose only provider failures are unsupported existing
 content and its ownership conflict may create the absent valid configuration,
 return `review-required`, and leave all provider targets and the lock
 unchanged. The next command remains `onboard`.
+
+### Codex-operated onboarding
+
+`--agent codex` starts the user's installed `codex` executable in one
+foreground interactive session. A packaged English instruction supplies the
+exact current Node executable and agentdevflow entrypoint, selected repository,
+configuration, and lock paths, and the required
+`onboard --agent manual -> rule -> diff -> render -> check` operation.
+
+Codex explains a rule proposal and asks the user in that same session before
+mutation. The user may accept or correct it in natural language without a
+second provider process or proposal transfer. `--yes` uses one non-interactive
+`codex exec` process and authorizes that operation without the question.
+`--json` is not supported for Codex-operated onboarding because provider
+terminal output is not an agentdevflow JSON contract.
+
+The launcher does not override or inspect Codex authentication,
+configuration, permissions, hooks, MCP servers, persistence, or provider
+output. It maintains no Codex version allowlist and performs no authentication
+or permission diagnosis. The fixed 15-minute foreground timeout, cancellation,
+missing executable, launch failure, and non-zero exit produce bounded process
+diagnostics.
+
+After the Codex process ends, the parent command independently runs the
+existing `check` path. Success requires that final check to be clean. Codex
+prose and exit status alone are insufficient. `agentdevflow` does not retain a
+proposal, transcript, provider event stream, raw response, credential, or
+private reasoning.
 
 ## Repository and paths
 
@@ -260,9 +294,9 @@ merge option, general instruction scanner, semantic classifier, or onboarding
 proposal store.
 
 This list describes the current executable contract. The root
-[product roadmap](../../ROADMAP.md) accepts external-agent operation, a wizard,
-and Strict. Those items are not current CLI claims until their acceptance
-criteria pass.
+[product roadmap](../../ROADMAP.md) keeps the implemented Codex-first
+onboarding adapter in qualification and retains a later wizard and Strict.
+Only the latter two remain absent from the current CLI surface.
 
 ## Historical release boundary
 

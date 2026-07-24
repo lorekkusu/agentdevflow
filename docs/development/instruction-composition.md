@@ -132,27 +132,26 @@ The accepted slice does not provide:
 - a composite source/provider transaction;
 - a second digest, approval store, authorization ledger, backup, journal,
   lease, or Git manager;
-- natural-language merge, semantic deduplication, or agent-assisted
-  classification;
+- natural-language merge or automatic semantic deduplication;
 - automatic import of arbitrary existing provider instructions.
 
 These absences are intentional boundaries. Manual existing-project onboarding
 is built on this rule surface after `init` establishes the valid selected
 configuration, followed by exact whole-file inventory and replacement
-disposition. Optional operation by one user-selected external coding-agent CLI
-remains a later roadmap item.
+disposition. The current item 3 candidate may instead launch the user's
+installed Codex CLI as a bounded operator of the same public commands.
 
 Rule commands require the valid selected project configuration and mutate only
-canonical rule files. A later external-agent
-onboarding path may propose rule organization and operate the exact current
-`agentdevflow` executable, including rule, diff, render, and check commands.
-Provider outputs and the ownership lock remain under the existing render
-command.
+canonical rule files. Codex onboarding uses one interactive session to propose
+rule organization, accept natural-language corrections, ask before mutation,
+and then operate the exact current `agentdevflow` rule, diff, render, and check
+commands. `--yes` authorizes the same one non-interactive operation. Provider
+outputs and the ownership lock remain under the existing render command, and
+the parent process independently runs the final check.
 
 Unreleased aggregate inputs are never silently ignored or deleted; they block
-with manual remediation. The later external-agent proposal mode stops before
-mutation, while apply mode requires explicit one-operation delegation by the
-user.
+with manual remediation. There is no separate propose/apply mode, proposal
+handoff, or proposal store.
 
 The accepted outcome does not revive the removed index, per-rule authorization
 ledger, source/provider composite transaction, second approval model, managed

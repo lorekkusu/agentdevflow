@@ -50,14 +50,16 @@ The current unreleased candidate supports:
 - bounded manual existing-project onboarding for the three native target files,
   entered only after `init`, with exact reviewed whole-file replacement through
   the normal plan;
+- a Codex-first external onboarding candidate that uses one foreground
+  installed Codex CLI as the operator of the same rule, diff, render, and check
+  path;
 - complete deterministic planning, exact digest approval, whole-file
   ownership, safe existing-file adoption, and drift checking.
 
 This is the current unreleased implementation, not the complete accepted
-adoption experience. The repository-wide health review is complete. The
-authoritative [product roadmap](../ROADMAP.md) now requires the remaining
-external-agent public-contract decisions, then retains an interactive wizard
-and Strict before the next beta release.
+adoption experience. The authoritative [product roadmap](../ROADMAP.md) keeps
+the Codex-first adapter in item 3 until qualification and review are complete,
+then retains an interactive wizard and Strict before the next beta release.
 
 The non-interactive first-use journey is fixed rather than user-selectable:
 
@@ -214,10 +216,12 @@ operator: it proposes canonical rules and may invoke the exact current
 manage credentials, provide a provider SDK, trust the agent's prose as
 evidence, or become an orchestration runtime.
 
-Proposal mode stops before mutation. Apply mode is a one-operation delegation
-in which the user authorizes the selected agent to make canonical-rule
-decisions and approve the exact current render plan on the user's behalf.
-Digest freshness does not itself provide that semantic authorization.
+The initial public launcher is Codex. One interactive Codex session retains the
+proposal, natural-language correction, confirmation, and execution context.
+`--yes` authorizes the same one operation without the confirmation question.
+There is no separate propose/apply mode, proposal handoff, provider-output
+schema, or proactive Codex version allowlist. Digest freshness remains a
+staleness binding rather than semantic authorization.
 
 Reusable procedures and skills may later expose `plan-task`,
 `implement-task`, `review-change`, and `record-progress`. They should remain

@@ -81,13 +81,12 @@ remaining numbers preserve the accepted dependency order.
 
 ### 3. External-agent-operated onboarding
 
-Status: **Decision required**
+Status: **In progress**
 
 This item depends on the accepted rule and manual onboarding contracts in items
 1 and 2, which are complete. The repository-wide health review gate is also
-complete. The outcome and architecture boundary remain accepted, but the exact
-public invocation, first support tier, and installed-version qualification
-policy require explicit approval before implementation.
+complete. The public Codex-first interaction contract was accepted on
+2026-07-24. Implementation and qualification are active.
 
 External-agent operation begins only after the same required `init -> onboard`
 entry. It must not introduce a pre-init inventory path or a second first-use
@@ -100,83 +99,74 @@ act as their operator during onboarding. The external agent supplies semantic
 judgment, proposes a rule organization, and operates the same `agentdevflow`
 commands that a user would operate manually.
 
-The following invocation is an unresolved sketch, not an accepted public
-contract:
+The accepted initial public surface is:
 
 ```text
-agentdevflow onboard --agent <agent>
+agentdevflow onboard
+agentdevflow onboard --agent manual
+agentdevflow onboard --agent codex
+agentdevflow onboard --agent codex --yes
 ```
 
-Propose and apply semantics are accepted, but their exact command and flag
-syntax remains open:
+Without `--agent`, an interactive terminal presents the currently supported
+Manual and Codex choices. Non-interactive use requires `--agent`. Manual keeps
+the existing exact read-only inventory and supports `--json`.
 
-```text
-propose
-  -> launch one selected local coding-agent process
-  -> analyze supported existing instruction files
-  -> emit a bounded rule proposal and unresolved-content report
-  -> stop before any rule or provider mutation
-
-apply
-  -> the user explicitly delegates canonical-rule decisions and render
-     approval for this one onboarding operation
-  -> launch one selected local coding-agent process
-  -> analyze and explain supported existing instruction files
-  -> use agentdevflow rule commands
-  -> run agentdevflow diff with the accepted replacement inputs
-  -> approve and run agentdevflow render for that exact plan
-  -> run agentdevflow check
-  -> report applied rules, unresolved content, and failures
-```
-
-Selecting apply is the semantic authorization for the chosen external agent to
-operate on the user's behalf; copying a plan digest is only the existing
-staleness binding. Apply does not require a second approval system or an
-unconditional intermediate human pause. Ambiguous or unresolved content must
-stop rather than be silently omitted.
+Codex onboarding launches one foreground Codex session with a reviewed
+product-owned instruction. In the normal interactive path, Codex analyzes the
+current exact inventory, explains a proposed rule organization, and asks the
+user in that same session before mutation. Natural-language corrections remain
+in that session, preserving context without a proposal handoff or second Codex
+process. After acceptance, Codex operates `rule`, `diff`, exact-approved
+`render`, and `check`. `--yes` authorizes the same one operation without the
+interactive question and uses one non-interactive Codex process.
 
 The launcher passes the exact current `agentdevflow` executable to the external
 agent. It must not resolve a different package version during the same
 onboarding operation.
 
-#### Initial launcher candidates
-
-- Codex CLI;
-- Claude Code;
-- Cursor CLI;
-- OpenCode.
-
-Each launcher is a thin, replaceable process adapter. Only adapters that pass
-direct installed-version qualification and end-to-end dogfood may be described
-as supported. Unsupported or incompatible installed versions fail with an
-actionable diagnostic and retain the manual onboarding path.
-
-OpenCode is an initial launcher candidate only. It is not an initial provider
-renderer target.
+Codex CLI is the only initial public launcher. Other launchers remain possible
+later additions, but they are unsupported and do not appear in the picker
+until separately implemented and qualified. The Codex adapter invokes the
+user's current installed `codex` executable without maintaining a proactive
+version allowlist or promising version detection. Missing executables, actual
+launch failures, timeouts, cancellation, non-zero exits, and a non-clean final
+check fail with bounded diagnostics and retain the manual path. A reproduced
+compatibility failure may justify a later targeted version check.
 
 #### Acceptance criteria
 
-- The user explicitly selects the external agent and propose or apply mode.
-  Apply permission cannot be inferred from project configuration or a previous
-  run.
+- Bare `onboard` uses a bounded interactive Manual/Codex picker only when a
+  terminal is available. Non-interactive use requires `--agent`.
+- `--agent manual` preserves the accepted exact read-only inventory.
+- `--agent codex` launches one interactive Codex session. The user reviews,
+  corrects, and accepts the proposal in that same session before mutation.
+- `--agent codex --yes` explicitly authorizes one non-interactive operation
+  without an additional agentdevflow confirmation.
 - The launcher uses a fixed executable plus argv and stdin without shell
-  interpolation.
-- It inherits the user's existing CLI authentication without reading, copying,
-  storing, printing, or refreshing credentials.
-- It discloses that selected project instruction content may be sent to the
-  chosen external provider and may incur provider usage cost.
+  interpolation or an arbitrary executable option.
+- It uses the user's installed Codex CLI with that CLI's existing
+  authentication, configuration, permission behavior, hooks, MCP servers, and
+  session behavior. `agentdevflow` does not inspect, copy, store, print,
+  override, refresh, provision, or diagnose those facilities.
+- Public documentation states that the selected external CLI may process
+  project content and incur provider usage. The launcher does not add a
+  separate runtime warning or cost workflow.
 - The external agent is instructed to use the rule, diff, render, and check
   commands rather than edit generated provider files.
-- Provider-specific permission controls are used when available, but the
-  product does not claim hostile-process confinement.
+- The exact current Node executable and installed agentdevflow entrypoint are
+  included in the reviewed request. The agent must not use `npx`, package
+  installation, PATH lookup, or another agentdevflow version.
 - Product correctness is determined by the resulting canonical rules, exact
-  render plan, ownership state, and final `check`, not by the agent's prose or
-  exit code alone.
+  render plan, ownership state, and an independent parent-run final `check`,
+  not by the agent's prose or exit code alone.
 - A reviewed, visible, English product-owned runtime instruction template is
-  versioned, packaged, and tested as source. Expanded requests containing
-  project content and provider responses remain runtime data.
-- Cancellation, timeout, missing executable, missing authentication, malformed
-  output, permission rejection, and non-zero exit produce bounded diagnostics.
+  packaged and tested as source.
+- The foreground process has one internal 15-minute timeout. Cancellation,
+  timeout, missing executable, launch failure, non-zero exit, and non-clean
+  final state produce bounded process or check diagnostics. There is no public
+  timeout flag, version allowlist, authentication detector, permission
+  classifier, provider-output schema, or proposal schema.
 - No expanded request, raw transcript, credential, private reasoning, or raw
   provider session is written into the user's repository or retained as
   project evidence.
@@ -190,15 +180,24 @@ review, CI, or merge evidence.
 
 #### Evidence
 
-Official CLI contracts support bounded non-interactive execution and require
-provider-specific adapters:
+The working-tree candidate includes the bounded Codex process adapter, visible
+runtime instruction, parser and CLI integration, deterministic process and
+prompt tests, and installed-package coverage. `npm run check`,
+`npm run check:v1-qualification`, `npm run check:package-entrypoint`,
+`npm run test:v1-recovery`, and `npm pack --dry-run --json` pass locally.
 
-- <https://learn.chatgpt.com/docs/non-interactive-mode>
-- <https://code.claude.com/docs/en/cli-usage>
-- <https://docs.cursor.com/en/cli/headless>
-- <https://opencode.ai/docs/cli/#run>
+Bounded authenticated dogfood with installed Codex CLI 0.145.0 on macOS
+converted two unmanaged project instructions into canonical Developer rules,
+rendered through the normal exact replacement path, and ended with both the
+parent command and an independent subsequent `check` clean. Raw provider
+material was discarded and is not retained as evidence.
 
-Local compatibility fixtures and dogfood evidence are pending.
+Independent project-health perspectives found the adapter inside the accepted
+boundary and found no premature wizard, Strict, broad-launcher, or release
+work. They identified documentation drift, partial-progress recovery guidance,
+deterministic cancellation coverage, and an installed existing-instruction
+scenario for repair in this change. Complete-change review and hosted pull-
+request qualification remain pending, so item 3 remains in progress.
 
 ### 4. Interactive first-use wizard
 
@@ -429,9 +428,7 @@ Only the following current decisions remain open:
    Balanced;
 2. the final interactive wizard questions and whether no-argument invocation or
    an explicit command is the primary entry point;
-3. the final launcher command and mode flags, qualified version ranges, and
-   public support tier for each external-agent launcher; and
-4. the next beta version after the implemented public scope is fixed.
+3. the next beta version after the implemented public scope is fixed.
 
 These decisions must be resolved before their corresponding public contracts
 are finalized. They do not reopen the accepted outcomes or reorder the current
