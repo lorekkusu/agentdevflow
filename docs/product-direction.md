@@ -54,10 +54,10 @@ The current unreleased candidate supports:
   ownership, safe existing-file adoption, and drift checking.
 
 This is the current unreleased implementation, not the complete accepted
-adoption experience. The authoritative [product roadmap](../ROADMAP.md)
-requires a repository-wide health review before item 3 resumes, then retains
-user-selected external-agent operation, an interactive wizard, and Strict
-before the next beta release.
+adoption experience. The repository-wide health review is complete. The
+authoritative [product roadmap](../ROADMAP.md) now requires the remaining
+external-agent public-contract decisions, then retains an interactive wizard
+and Strict before the next beta release.
 
 The non-interactive first-use journey is fixed rather than user-selectable:
 

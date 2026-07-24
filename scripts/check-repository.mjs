@@ -342,6 +342,30 @@ async function inspectPackageBoundary() {
   }
   const manifest = JSON.parse(content);
   const diagnostics = [];
+  try {
+    const compiler = JSON.parse(
+      await readFile(join(root, "tsconfig.json"), "utf8"),
+    );
+    if (
+      compiler.compilerOptions?.declaration !== false ||
+      compiler.compilerOptions?.sourceMap !== false
+    ) {
+      diagnostics.push({
+        path: "tsconfig.json",
+        line: 1,
+        code: "PACKAGE_PRIVATE_COMPILER_ARTIFACTS_ENABLED",
+        message:
+          "Keep declaration and sourceMap disabled while the package exposes only the CLI entrypoint.",
+      });
+    }
+  } catch {
+    diagnostics.push({
+      path: "tsconfig.json",
+      line: 1,
+      code: "PACKAGE_TYPESCRIPT_CONFIGURATION_INVALID",
+      message: "Keep a readable JSON TypeScript configuration.",
+    });
+  }
   let licenseDigest = null;
   try {
     const license = await readFile(join(root, "LICENSE"));

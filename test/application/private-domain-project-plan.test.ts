@@ -238,7 +238,7 @@ test("feeds the exact plan into check, diff, render, and clean recheck", async (
     ],
   );
 
-  const rendered = await executePrivateRenderCommand({
+  await executePrivateRenderCommand({
     ...initial,
     baseLock: null,
     lockPath,

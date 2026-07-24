@@ -10,7 +10,7 @@ import {
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, posix } from "node:path";
 
 const root = process.cwd();
 const manifest = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
@@ -63,6 +63,39 @@ try {
     ["pack", "--pack-destination", temporaryRoot, "--ignore-scripts=false"],
     root,
   );
+  const packageListing = JSON.parse(
+    run(
+      npmCommand,
+      ["pack", "--dry-run", "--ignore-scripts", "--json"],
+      root,
+    ).stdout,
+  );
+  const privateCompilerArtifact = packageListing[0]?.files?.find(
+    ({ path }) => path.endsWith(".d.ts") || path.endsWith(".js.map"),
+  );
+  if (privateCompilerArtifact !== undefined) {
+    throw new Error(
+      `CLI-only package contains a private compiler artifact: ${privateCompilerArtifact.path}`,
+    );
+  }
+  const packagePaths = new Set(
+    packageListing[0]?.files?.map(({ path }) => path) ?? [],
+  );
+  for (const markdownPath of ["README.md", "docs/getting-started.md"]) {
+    const markdown = await readFile(join(root, markdownPath), "utf8");
+    for (const link of markdown.matchAll(/\]\(([^)]+)\)/gu)) {
+      const target = link[1] ?? "";
+      if (/^(?:#|https?:|mailto:)/u.test(target)) continue;
+      const targetPath = posix.normalize(
+        posix.join(posix.dirname(markdownPath), target.split("#")[0] ?? ""),
+      );
+      if (!packagePaths.has(targetPath)) {
+        throw new Error(
+          `Packaged ${markdownPath} links to omitted package path: ${targetPath}`,
+        );
+      }
+    }
+  }
   await mkdir(installRoot);
   const tarball = join(temporaryRoot, packageBaseName);
   const dependencyTarballs = [];

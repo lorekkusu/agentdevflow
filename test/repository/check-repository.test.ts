@@ -293,6 +293,26 @@ test("requires the accepted release-candidate package boundary", async () => {
     assert.match(result.stderr, /PACKAGE_ENTRYPOINT_CHECK_INVALID/u);
     assert.match(result.stderr, /PACKAGE_GETTING_STARTED_MISSING/u);
     assert.match(result.stderr, /PACKAGE_ALLOWLIST_TOO_BROAD/u);
+    assert.match(
+      result.stderr,
+      /PACKAGE_TYPESCRIPT_CONFIGURATION_INVALID/u,
+    );
+
+    await writeFile(
+      join(root, "tsconfig.json"),
+      `${JSON.stringify({
+        compilerOptions: { declaration: true, sourceMap: true },
+      })}\n`,
+    );
+    const compilerArtifacts = spawnSync(process.execPath, [script], {
+      cwd: root,
+      encoding: "utf8",
+    });
+    assert.equal(compilerArtifacts.status, 1);
+    assert.match(
+      compilerArtifacts.stderr,
+      /PACKAGE_PRIVATE_COMPILER_ARTIFACTS_ENABLED/u,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }

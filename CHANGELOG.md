@@ -25,6 +25,15 @@ All notable public changes will be recorded in this file. During beta, incompati
 
 ### Changed
 
+- Fix the non-interactive first-use order as
+  `init -> onboard -> rule as needed -> diff -> render -> check`. `onboard`
+  and every rule operation now require the valid selected configuration, so
+  neither can become a pre-init entry.
+- Make the smallest one-provider configuration explicit in package-facing
+  guidance and order the README and global help by the executable first-use
+  journey.
+- Exclude TypeScript declarations and source maps from the CLI-only build
+  because the package exposes no programmatic entrypoint.
 - Make every generated provider projection declare its target coding-agent
   product and provider id. A nonmatching runtime is instructed to ignore the
   entire projection, including shared guidance, after Cursor discovery overlap

@@ -131,10 +131,11 @@ validated project configuration
   -> normal check
 ```
 
-A selected external coding agent may act as the user's operator and invoke the
-exact current `agentdevflow` executable. Provider-specific process adapters map
-the bounded task to one foreground executable, argv, stdin, working directory,
-and exit result. They inherit an existing user login without inspecting or
+A selected external coding agent may eventually act as the user's operator and
+invoke the exact current `agentdevflow` executable. The accepted but
+unimplemented boundary requires a provider-specific process adapter to map the
+bounded task to one foreground executable, argv, stdin, working directory, and
+exit result. It may inherit an existing user login without inspecting or
 managing credentials.
 
 The external agent is not a second writer or source of trusted workflow
