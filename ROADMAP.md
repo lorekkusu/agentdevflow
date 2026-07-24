@@ -23,9 +23,10 @@ alone because they drift.
 
 `agentdevflow` is a local-first Node.js and TypeScript configurator and policy
 compiler for repeatable coding-agent development flows. A project owns its
-configuration and rules. The product compiles them into deterministic,
-responsibility-specific instructions for coding-agent products and preserves a
-reviewable path from source changes to generated outputs.
+configuration and rules. The product compiles them into deterministic
+provider-target views whose procedure and rule sections are filtered by
+configured responsibility, while preserving a reviewable path from source
+changes to generated outputs.
 
 The core user outcome is:
 
@@ -33,7 +34,7 @@ The core user outcome is:
 choose a workflow and responsibilities
   -> manage project-owned rules
   -> onboard new or existing projects
-  -> generate distinct Steward, Developer, and Reviewer instructions
+  -> generate provider-target views filtered by configured responsibilities
   -> review the complete diff
   -> render through one owned write path
   -> verify a clean managed state
@@ -358,9 +359,11 @@ This begins only after items 1 through 5 have executable candidate behavior.
 
 #### Required scenarios
 
-1. A clean private repository completes interactive initialization, role-aware
-   rule management, diff, render, check, and fresh Codex, Claude Code, and
-   Cursor role-comprehension checks.
+1. A clean private repository completes interactive initialization,
+   responsibility-scoped rule management, diff, render, check, and bounded
+   Codex, Claude Code, and Cursor role-response checks. These checks evaluate
+   expected and prohibited actions without treating a provider response as
+   proof of identity, authority, clean context, or role isolation.
 2. An existing private repository with overlapping `AGENTS.md`, `CLAUDE.md`,
    and Cursor guidance completes manual onboarding without undisclosed content
    loss.
@@ -381,8 +384,9 @@ This begins only after items 1 through 5 have executable candidate behavior.
 - Public evidence contains only sanitized scope, versions, outcomes,
   limitations, and reproducible non-sensitive fixtures.
 - Independent zero-context reviewers can explain the product, choose a
-  workflow, onboard an existing project, manage a rule, identify each role, and
-  state what the product does not automate.
+  workflow, onboard an existing project, manage a rule, distinguish the
+  generated responsibility sections, and state what the product does not
+  automate or isolate.
 - Maintainer dogfood is described as maintainer evidence, not normal-user
   adoption.
 
@@ -505,8 +509,9 @@ sequence.
 Recommend a pivot or stop rather than adding infrastructure if exact-candidate
 dogfood shows that:
 
-- distinct role instructions do not improve responsibility or handoff
-  understanding;
+- responsibility-filtered instructions do not produce useful and repeatable
+  responsibility or handoff differences compared with a shared-instruction
+  baseline;
 - existing projects cannot be onboarded without unacceptable content loss or
   manual reconstruction;
 - external-agent operation adds more maintenance and failure modes than the
@@ -530,11 +535,11 @@ test, and evidence documents.
 | Phase 0 Gate 6 proved bounded finite-state policy safety with cycles, typed artifacts, invalidation, deterministic counterexamples, and guard-blind diagnostics | `src/policy/validator.ts`; `test/policy/validator.test.ts`; `docs/evidence/policy-safety.md` |
 | Node.js 22/24, npm, ESM TypeScript, strict checking, `node:test`, Zod/JSONC boundaries, and the current source layout were selected | `package.json`; `tsconfig.json`; `docs/development/tooling.md`; `docs/decisions/0003-private-jsonc-zod-boundary.md` |
 | Non-interactive `init`, `diff`, `render`, and `check` operate through the installed npm bin | `src/cli/private-local-cli.ts`; `test/cli/cli-bin-mode.test.ts`; `scripts/verify-package-entrypoint.mjs` |
-| Provider-neutral Steward, Developer, and Reviewer responsibilities render into materially distinct Codex, Claude Code, and Cursor instructions | `src/renderer/native/`; `test/renderer/native-project-instructions.test.ts`; `docs/development/maintainer-dogfood.md` |
+| Provider-neutral Steward, Developer, and Reviewer procedures and canonical rules are deterministically filtered into provider target files; each target declares product applicability, and automated tests prove assigned sections are included while unassigned sections are omitted. This is text composition, not runtime role isolation. | `src/guidance/private-project-guidance.ts`; `src/renderer/native/`; `test/guidance/private-project-guidance.test.ts`; `test/renderer/native-project-instructions.test.ts`; `docs/development/maintainer-dogfood.md` |
 | Built-in local-reviewed-change and issue-to-reviewed-pull-request workflows support Linear or GitHub Issues intent, draft or ready pull requests, Fast or Balanced policy, current CI repair, fresh review, and squash merge procedures | `src/workflows/`; `test/workflows/private-domain-workflows.test.ts`; `docs/development/issue-to-reviewed-pull-request.md` |
 | Complete diff, exact plan approval, whole-file ownership, stale-plan rejection, forward-convergent apply, lock-last publication, and clean-state checking are implemented | `src/commands/`; `src/renderer/private-convergent-apply.ts`; `src/lock/private-render-lock.ts`; `docs/decisions/0002-v1-forward-convergent-render-apply.md` |
 | The public repository, Apache-2.0 license, contribution and security policies, protected publication workflow, provenance, repository hardening, and dependency review are established | `LICENSE`; `CONTRIBUTING.md`; `SECURITY.md`; `.github/workflows/`; `docs/evidence/initial-beta-publication.md` |
-| Bounded maintainer dogfood exercised distinct roles, Linear, Cursor delegation, CI failure repair, fresh review after rework, squash merge, issue closure, and branch cleanup | `docs/development/maintainer-dogfood.md` |
+| A bounded maintainer-operated sequence exercised role-labelled procedures, Linear, Cursor delegation, CI failure repair, fresh review after rework, squash merge, issue closure, and branch cleanup. The observation did not prove provider identity, authority, clean-context authenticity, or role isolation. | `docs/development/maintainer-dogfood.md` |
 | Overbuilt transaction, recovery, execution-transport, old-schema, second-writer, and indexed-rule mechanisms were removed while their useful conclusions were retained | `docs/development/engineering-boundary.md`; `docs/development/project-health.md`; Git history |
 | Root roadmap authority, update rules, completion evidence, and the known former duplicate-path check established | `ROADMAP.md`; `AGENTS.md`; `scripts/check-repository.mjs`; `test/repository/check-repository.test.ts` |
-| Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, role-specific composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |
+| Minimal per-rule management supports bounded human and JSON `list/show/add/update/remove`, portable globally unique ids, fixed shared and responsibility scopes, responsibility-filtered composition, stale-plan rejection, and fail-closed manual remediation for unpublished aggregate paths without adding a migration subsystem | `src/commands/private-rule-command-service.ts`; `src/guidance/private-project-guidance.ts`; `test/cli/private-local-cli.test.ts`; `test/guidance/private-project-guidance.test.ts`; `scripts/verify-package-entrypoint.mjs`; `docs/development/instruction-composition.md` |

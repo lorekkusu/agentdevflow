@@ -9,14 +9,14 @@ qualified release.
 ## Purpose
 
 Projects need one editable source for their own rules while Codex, Claude Code,
-and Cursor receive instructions focused on their configured
-responsibilities.
+and Cursor receive provider-native targets with procedure and rule sections
+filtered by configured responsibility.
 
 ```mermaid
 flowchart LR
     A["User-owned Markdown under .agentdevflow/rules"] --> B["Bounded read"]
     B --> C["Shared and responsibility composition"]
-    C --> D["Role-specific provider views"]
+    C --> D["Responsibility-filtered provider views"]
     D --> E["Existing diff"]
     E --> F["Exact approved render"]
     F --> G["Provider files and ownership lock"]
@@ -58,22 +58,36 @@ dual reader, journal, backup, or Git operation.
 
 Every generated provider view contains:
 
-1. shared workflow facts and stop conditions;
-2. optional shared user guidance;
-3. only the responsibilities assigned to that provider id;
-4. an operational procedure for each assigned responsibility;
-5. operational procedures, capability targets, and stop conditions for the
-   assigned responsibilities;
-6. optional user guidance for each assigned responsibility.
+1. an explicit target coding-agent product and configured provider id;
+2. a whole-projection applicability rule for matching and nonmatching runtimes;
+3. shared workflow facts, stop conditions, and optional shared user guidance;
+4. only the responsibility procedures and user rules assigned to that provider
+   id; and
+5. capability targets and stop conditions for the assigned responsibilities.
 
-This makes a Cursor Developer view materially different from a Claude Code
-Reviewer view. When one provider id holds several responsibilities, its file
-contains separately labeled role sections and requires the agent to identify
-the active responsibility before acting.
+Different configured assignments can therefore produce byte-different views. A
+Cursor target assigned Developer omits Steward and Reviewer procedure and rule
+sections, while a Claude Code target assigned Reviewer omits Steward and
+Developer sections.
+
+When one provider id holds several responsibilities, its target contains every
+assigned responsibility as a separately labelled section and instructs the
+agent to select exactly one section for the current task. All of those sections
+remain visible to the same provider target. Section labels do not select or
+isolate an execution context, identity, permission set, or authority.
+
+Native discovery surfaces can overlap. Current
+[Cursor CLI documentation](https://cursor.com/docs/cli/using) describes project
+context that includes root instruction files and Cursor rules, and a bounded
+local observation reproduced simultaneous visibility of `AGENTS.md`,
+`CLAUDE.md`, and `.cursor/rules/agentdevflow.mdc`. Each generated projection
+therefore makes all its contents inapplicable when its declared product does
+not match the current runtime. This is an advisory disambiguation rule, not
+mechanical isolation or a compatibility guarantee.
 
 Codex, Claude Code, and Cursor each have one project-wide native output path.
-Two ids for the same product are rejected because one target cannot isolate
-their identities. One id may still hold multiple roles.
+Two ids for the same product are rejected because one target cannot represent
+them separately. One id may still hold multiple roles.
 
 ## Ownership and update flow
 
@@ -145,8 +159,11 @@ regions, backup system, semantic merge authority, or Git manager. See
 The slice is ready for a release candidate only when installed-package tests
 prove:
 
-- absent guidance still produces responsibility-specific provider views;
-- shared and role files reach only their declared outputs;
+- absent guidance still produces responsibility-filtered provider views;
+- every installed output declares its exact target product and provider id,
+  and makes the entire projection inapplicable to nonmatching products;
+- composition includes shared and responsibility rules only in target bytes
+  whose provider id has the corresponding scope;
 - source edits produce a deterministic new diff and stale the old approval;
 - exact-approved render converges to clean `check` and clean repeated `diff`;
 - direct generated-file edits remain blocked drift;

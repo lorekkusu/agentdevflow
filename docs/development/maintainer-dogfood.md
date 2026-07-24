@@ -1,23 +1,25 @@
 # Maintainer dogfood observation
 
-Snapshot date: 2026-07-23.
+Snapshot period: 2026-07-23 to 2026-07-24.
 
 ## Verdict
 
-**Pass for an earlier pre-closure working-tree candidate as one bounded,
-usable product slice.** An exact local tarball from that snapshot configured a
-synthetic private repository,
-projected materially different responsibility-specific instructions, and
-converged through:
+**Pass for an earlier pre-closure working-tree candidate as one bounded
+maintainer observation.** An exact local tarball from that snapshot configured
+a synthetic private repository, produced byte-different
+responsibility-filtered targets, and converged through:
 
 ```text
 init -> changing diff -> exact approved render -> clean check
 ```
 
-Fresh headless Codex, Claude Code, and Cursor Agent contexts understood their
-assigned responsibilities and handoff boundaries. The representative
-tracker-backed flow then completed a real issue, ready pull request, CI repair,
-fresh review, squash merge, issue closure, and branch cleanup.
+Fresh headless Codex, Claude Code, and Cursor Agent invocations returned
+responses consistent with the responsibility sections supplied to them and
+named the expected handoffs. This was a point-in-time behavioral observation,
+not proof of understanding, identity, authority, clean context, or role
+isolation. Maintainers then followed the representative tracker-backed
+procedure through a real issue, ready pull request, CI repair, fresh review,
+squash merge, issue closure, and branch cleanup.
 
 This is maintainer evidence, not public compatibility qualification. Later
 closure changes altered configuration bytes, policy projection, and mutation
@@ -42,11 +44,12 @@ support matrix.
 The private repository contained only synthetic content. Canonical guidance
 came from the optional user-owned files under `.agentdevflow/rules/`.
 
-The renderer exercise covered Codex, Claude Code, and Cursor with distinct
-Steward, Developer, and Reviewer assignments. Their generated project files
-were materially different by responsibility, and clean headless contexts
-identified the expected duties, handoffs, stop conditions, and prohibited
-actions.
+The renderer exercise covered Codex, Claude Code, and Cursor with different
+Steward, Developer, and Reviewer assignments. The generated targets were
+byte-different where assignments differed. In bounded one-shot checks, provider
+responses restated the expected duties, handoffs, stop conditions, and
+prohibited actions. The checks did not authenticate the provider context or
+establish persistent compliance.
 
 The final representative configuration used:
 
@@ -62,10 +65,13 @@ The final representative configuration used:
 | Auxiliary review | Disabled |
 | Merge method | Squash |
 
-One Codex provider assignment contained both Steward and Reviewer
-responsibilities as separate generated sections. Fresh contexts selected only
-the responsibility relevant to the current workflow step. The Developer
-projection did not receive Steward or Reviewer authority.
+One Codex provider assignment contained both Steward and Reviewer sections in
+the same generated target. Separate invocations were prompted to follow the
+section relevant to the current step, and their observed responses did so.
+Because both sections were visible in the same `AGENTS.md`, the target did not
+isolate responsibilities, identity, permissions, or authority. The Developer
+target omitted Steward and Reviewer procedure sections; that was content
+filtering, not an authorization boundary.
 
 The exact tarball completed initialization, a reviewed diff, exact-approved
 rendering, and a clean check. The resulting lock and provider outputs remained
@@ -89,9 +95,10 @@ The following bounded sequence exercised the generated procedures:
 6. The pull request was squash-merged, the issue was closed, and the local and
    remote working branches were deleted.
 
-The exercise confirms that the compiled procedures can guide role-separated
-work through failure, repair, invalidated review evidence, and fresh approval.
-It does not claim that instruction text mechanically enforced any step.
+In this maintainer-run sequence, participants followed the compiled procedures
+through failure, repair, invalidated review evidence, and fresh approval. The
+observation does not establish general provider compliance or mechanical role
+separation.
 
 ## Tracker-native delegation follow-up
 
@@ -108,10 +115,35 @@ the pull request, deleted the remote work branch, and moved the issue through
 review to completion.
 
 The tracker did not automatically move the issue from implementation through
-review and completion. This confirms a useful responsibility boundary:
-delegation can start and return Developer work, while the Steward procedure
-still owns CI observation, independent review, merge, branch cleanup, and
-tracker-state closure.
+review and completion. In this observation, delegation started and returned
+Developer work, while maintainers continued to follow the Steward procedure
+for CI observation, review, merge, branch cleanup, and tracker-state closure.
+`agentdevflow` did not enforce ownership of those steps.
+
+## Provider cross-loading follow-up
+
+On 2026-07-24, a direct synthetic marker probe with Cursor Agent
+`2026.07.20-8cc9c0b` exposed content from root `AGENTS.md`, root `CLAUDE.md`,
+and `.cursor/rules/agentdevflow.mdc` in one invocation. This behavior is
+consistent with the current
+[Cursor CLI context documentation](https://cursor.com/docs/cli/using).
+
+A second probe used exact provider files generated by the pre-correction
+working-tree CLI. Cursor selected the Developer procedure based on product and
+provider labels, but reported that the three visible projections were facially
+conflicting and contained no explicit product-applicability rule. This
+identified an instruction-contract defect rather than a need for a new
+renderer, launcher, provider configuration, or runtime detector.
+
+The corrected candidate makes every projection declare its target product and
+provider id, makes the entire projection inapplicable to a nonmatching runtime,
+and forbids combining responsibilities across products. Automated tests verify
+those bytes and native target mappings. In a clean rerun against the exact
+corrected output, the same Cursor Agent version selected `cursor-developer` and
+the Developer responsibility, marked the other products' responsibilities
+inapplicable, refused to combine them, and reported no unresolved ambiguity.
+This remains point-in-time comprehension evidence; the text does not
+mechanically prevent a product from loading or disregarding another file.
 
 ## External-system boundary
 
@@ -129,6 +161,13 @@ not a claim that the CLI can supply or verify the capability.
   issue, pull request, and review history.
 - Headless comprehension is a point-in-time observation of the listed provider
   versions, not a deterministic provider guarantee.
+- A fresh process invocation was observed but not authenticated as a distinct
+  identity, principal, permission set, or clean context.
+- A provider target assigned multiple responsibilities exposed every assigned
+  section to the same invocation; role selection remained advisory.
+- Raw provider transcripts were intentionally not retained, so response
+  observations are not independently reproducible public compatibility
+  evidence.
 - The external exercise covered the representative ready-pull-request path.
   It did not repeat the same remote lifecycle with a draft pull request.
 - The native delegation observation depends on the tracker's current repository

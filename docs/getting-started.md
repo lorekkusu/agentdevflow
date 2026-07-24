@@ -58,7 +58,7 @@ npx agentdevflow init \
   --reviewer claude-main
 ```
 
-The generated responsibilities are:
+The generated responsibility procedures are:
 
 - Steward prepares and hands off an explicit plan.
 - Developer implements the accepted plan, verifies it, and never approves its
@@ -117,14 +117,16 @@ npx agentdevflow init \
 The current issue-workflow CLI fixes auxiliary review to `disabled` and merge
 method to `squash`.
 
-The compiled Steward procedure plans, creates a tracker work item, delegates
-implementation, observes the pull request and current CI result, and routes
-failed CI back to the Developer. For a draft-configured flow, it then ensures
-the pull request is ready after CI succeeds and marks it ready only when it is
-still a draft. It starts the Reviewer responsibility and allows squash merge
-only after current evidence satisfies the policy. Balanced requires
-clean-context reviewer-isolation evidence; Fast does not. A ready-configured
-flow skips only the ensure-ready step.
+The compiled Steward procedure instructs the active participant to plan, create
+a tracker work item, delegate implementation, observe the pull request and
+current CI result, and route failed CI back to the Developer. For a
+draft-configured flow, it instructs the Steward to ensure the pull request is
+ready after CI succeeds and mark it ready only when it is still a draft. It
+then instructs the Steward to start the Reviewer responsibility and permits
+squash merge in the compiled policy only after the required current artifacts
+are present. Balanced adds a declared clean-context evidence requirement; Fast
+does not. The CLI does not acquire or authenticate that evidence. A
+ready-configured flow skips only the ensure-ready step.
 
 These are advisory instructions. `agentdevflow` does not call Linear, GitHub,
 CI, or a coding-agent process. Each active agent uses tools already available
@@ -140,13 +142,22 @@ Declare each provider as `id,product`:
 - `id` is a project-local identifier;
 - `product` is `codex`, `claude-code`, or `cursor`.
 
-`--steward`, `--developer`, and `--reviewer` must reference declared ids.
-Roles describe workflow responsibility; they do not authenticate a user,
-provider account, or clean execution context.
+`--steward`, `--developer`, and `--reviewer` must reference declared ids. Roles
+describe workflow responsibilities and control which procedure and rule
+sections appear in a provider target. They do not authenticate a user, provider
+account, execution context, permission set, or authority.
 
 One provider id may hold several responsibilities. Its generated file contains
-separate sections for each assigned role and instructs the agent to select the
-active responsibility for the current task.
+every assigned responsibility as a separate section and instructs the agent to
+select the section relevant to the current task. All assigned sections remain
+visible in the same target; sectioning is not runtime isolation.
+
+Native instruction discovery can overlap. In particular, current
+[Cursor CLI documentation](https://cursor.com/docs/cli/using) describes
+project context that can include root instruction files and Cursor rules.
+Every generated target therefore declares its coding-agent product and makes
+the entire projection inapplicable to a nonmatching runtime. This is advisory
+disambiguation, not mechanical enforcement.
 
 Each provider product has one project-wide native target. The current
 candidate therefore rejects two configured ids for the same product because it
@@ -159,7 +170,7 @@ Steward and Reviewer instead of separate `codex-steward` and
 | Preset | Current behavior |
 | --- | --- |
 | `fast` | Requires the workflow's current review verdict before completion without a clean-context evidence gate. |
-| `balanced` | Adds explicit clean-context reviewer-isolation evidence and forbids completion while a blocking finding remains. |
+| `balanced` | Compiles a valid `ReviewerIsolationEvidence` requirement and forbids acceptance while a valid blocking finding remains. The CLI does not acquire or authenticate either artifact. |
 
 The issue workflow retains its current-revision CI, Reviewer handoff, and
 merge-authorization requirements under either preset. A preset does not choose

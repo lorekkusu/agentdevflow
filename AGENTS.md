@@ -11,14 +11,13 @@ Cursor are the initial renderer targets, not workflow roles.
 
 Follow:
 
-- `ROADMAP.md` for the authoritative accepted sequence, open decisions,
-  acceptance criteria, and completion evidence;
+- `ROADMAP.md` for accepted sequence, open decisions, exit criteria, and evidence;
 - `docs/product-direction.md` for retained product intent;
 - `docs/architecture.md` for current component boundaries;
 - `docs/development/engineering-boundary.md` for complexity admission;
 - `docs/development/project-health.md` for current disposition;
-- `docs/development/beta-cli-contract.md` for the current working-tree surface;
-- ADR 0004 only for the historical first-beta boundary.
+- `docs/development/beta-cli-contract.md` for the current unreleased working-tree CLI surface;
+- `docs/decisions/0004-initial-beta-public-surface.md` only for the historical first-beta boundary.
 
 Do not add a public workflow DSL, scheduler, runtime, marketplace, broad
 provider matrix, GUI, SaaS service, automatic merge/release system, or
@@ -46,8 +45,8 @@ accepted decisions, sanitized findings, and reproducible evidence only.
 A reviewed English product-owned runtime instruction template required by an
 accepted feature is source code, not private development history. Keep it
 visible, bounded, packaged intentionally, and tested. Never retain a
-project-expanded request, provider transcript, or private reasoning as
-repository evidence. Follow `docs/development/public-information-policy.md`.
+project-expanded request, provider transcript, or private reasoning as repository
+evidence. Follow `docs/development/public-information-policy.md`; route security-sensitive findings through `SECURITY.md`.
 
 ## Current architecture
 
@@ -74,8 +73,9 @@ repository evidence. Follow `docs/development/public-information-policy.md`.
   and the single forward-convergent file executor. Publish the ownership lock
   last. The accepted rule commands may mutate only canonical user-owned rule
   sources; they must not create a second provider writer.
-- Never authorize mutation from repository-wide Git cleanliness. Never reset,
-  clean, stash, commit, branch, or roll back user work automatically.
+- `agentdevflow` must not use repository-wide Git cleanliness as write authorization
+  or run Git reset, clean, stash, commit, branch, or rollback operations. This does
+  not prohibit explicitly authorized Git work by maintainers or coding agents.
 - Treat generated provider files as whole-file, single-owner projections.
   Current existing-file behavior is create, exact adopt, bounded equivalent
   import, or abort. The accepted onboarding milestone may add an explicitly
@@ -91,9 +91,8 @@ repository evidence. Follow `docs/development/public-information-policy.md`.
 
 ## Canonical guidance
 
-Follow `docs/development/instruction-composition.md`.
-
-The current candidate stores one Markdown file per globally unique rule id
+Canonical guidance follows `docs/development/instruction-composition.md`. The
+current implementation stores one Markdown file per globally unique rule id
 under fixed shared, Steward, Developer, and Reviewer scope directories. The
 bounded `rule list/show/add/update/remove` command family may mutate one
 canonical rule file per invocation. Provider outputs and the ownership lock
@@ -113,6 +112,11 @@ reproducible replacement-authorization input and output boundary are accepted.
 Generate only the roles assigned to each provider id. One provider id may hold
 multiple roles with separate sections. Reject multiple ids for one provider
 product while its native project target cannot isolate them.
+
+Treat native instruction discovery as potentially overlapping. Every generated
+projection must declare its target coding-agent product, make the whole
+projection inapplicable to nonmatching products, and avoid claiming session,
+identity, permission, or authority isolation.
 
 ## Development commands
 
@@ -146,14 +150,25 @@ assumptions.
 Create an ADR only for a material, evidence-backed decision. Mark it Accepted
 only after explicit approval. Label candidates and open questions honestly.
 
-Run independent project-health reviews only at the triggers in
-`docs/development/project-health-review.md`. Initial reviewers must be
-read-only, context-isolated, and unaware of the current health conclusion.
-Publish only verified sanitized findings.
+Before finalizing any repository change, have a separate read-only context review
+the complete change, including staged, unstaged, and relevant untracked files.
+The reviewer must not have implemented the change or received prior findings or
+conclusions; a subagent qualifies only if it meets this boundary. If none does,
+report the review as incomplete rather than substituting self-review. Review
+engineering-boundary compliance and implementation correctness in proportion to
+risk. For this file, also review clarity, concision, disclosure safety,
+source-of-truth conflicts, actual commands and paths, and honest enforcement
+claims. Verify material findings directly.
 
-Instructions in this file are advisory. Put mechanically checkable rules in
-code, tests, scripts, CI, hooks, or platform controls, and describe their actual
-enforcement and bypass authority honestly.
+Run independent project-health reviews only at the documented triggers. Initial
+reviewers must be read-only, context-isolated, and unaware of the current health
+conclusion. Publish only verified sanitized findings. Ordinary change review does
+not replace or trigger a project-health review. Follow
+`docs/development/project-health-review.md`.
+
+Instructions in this file are advisory. Put mechanically checkable rules in code,
+tests, scripts, CI, hooks, or platform controls; describe enforcement and bypass
+authority honestly.
 
 ## Roadmap governance
 
@@ -176,12 +191,9 @@ Keep the roadmap decision-ready:
 - keep completed outcomes compressed in the bottom completion summary;
 - distinguish retained user outcomes from superseded implementation
   mechanisms;
-- exclude private development prompts, expanded runtime requests, transcripts,
-  private chronology, identities, credentials, routine retries, and ordinary
-  Git bookkeeping; and
+- apply the repository disclosure rules; and
 - keep exactly one authoritative roadmap.
 
-Pull requests must update `ROADMAP.md` or explain why the change has no roadmap
-impact. Repository checks enforce the presence of the root roadmap and reject
-the known former `docs/development/roadmap.md` path. The broader one-authority
-rule and prose accuracy require human review.
+Pull requests must update `ROADMAP.md` or explain why they have no roadmap impact.
+Checks require the root roadmap and reject `docs/development/roadmap.md`; human
+review remains responsible for one-authority and prose accuracy.

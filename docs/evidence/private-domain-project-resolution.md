@@ -46,7 +46,8 @@ The current issue workflow omits auxiliary review.
 
 The application planner provides the issue workflow with the complete closed
 set of advisory `compiled-procedure` observations. It therefore produces
-role-specific instructions instead of failing for absent live adapters.
+responsibility-filtered instruction text instead of failing for absent live
+adapters.
 
 This does not claim that any adapter is installed. External ids remain opaque
 configuration references. The planner performs no network access, credential
@@ -65,9 +66,10 @@ The application planner combines:
 - current lock bytes;
 - current provider target bytes.
 
-It resolves one provider view per product, with only the roles assigned to that
-provider id. It rejects multiple ids for one product because one native target
-cannot isolate them.
+It resolves one provider view per product containing only the procedure and
+rule sections assigned to that provider id. It rejects multiple ids for one
+product because one native target cannot represent them separately. This
+content filtering does not isolate execution contexts or identities.
 
 The same input bytes produce the same normalized intent, workflow compilation,
 project resolution, provider materialization, and render plan. Changing a role

@@ -1,12 +1,12 @@
 # Working-tree package qualification
 
-Snapshot date: 2026-07-23.
+Snapshot date: 2026-07-24.
 
 ## Verdict
 
 **Pass for the current working-tree package candidate on the tested local
 environment.** The packed and installed CLI exercises the bounded product
-surface, including responsibility-specific guidance and both accepted workflow
+surface, including responsibility-filtered guidance and both accepted workflow
 families.
 
 This is not publication authorization, registry-installation evidence, a new
@@ -34,8 +34,8 @@ npm run check
 npm run check:v1-qualification
 ```
 
-Both commands passed. The complete automated test set contained 205 tests with
-205 passes, zero failures, zero skips, and zero todos. The V1 qualification
+Both commands passed. The complete automated test set contained 231 tests with
+231 passes, zero failures, zero skips, and zero todos. The V1 qualification
 selector discovered the full current test set, required the retained recovery
 tests, and produced the same result.
 
@@ -51,7 +51,10 @@ the tarball into isolated temporary projects, and invoked the installed
 - a GitHub Issues-backed draft-pull-request workflow;
 - idempotent draft-to-ready procedure generation;
 - optional canonical guidance under `.agentdevflow/rules/`;
-- materially different Codex, Claude Code, and Cursor outputs;
+- byte-different Codex, Claude Code, and Cursor outputs whose procedure and
+  rule sections matched the configured responsibilities;
+- exact target-product and provider-id declarations plus whole-projection
+  nonmatching-product applicability instructions in every generated target;
 - generated-file drift, deletion diagnostics, and ownership-only cleanup when
   an obsolete output is already absent;
 - symbolic-link refusal; and
@@ -66,11 +69,11 @@ trackers, GitHub, provider services, credentials, or a network.
 
 | Property | Observation |
 | --- | --- |
-| Compressed size | 108,180 bytes |
-| Unpacked size | 551,090 bytes |
-| Entry count | 116 |
-| SHA-1 | `b905a1ca6420cf8ad10db5a9da988e6e74ddf885` |
-| npm integrity | `sha512-yy9pI+QUh1y7XXX0kSJhX2cYJe80TA+rpGHWSNpCg90h5HlN94sahilHbDOPQeDFQbq7mAoaZ0fIVm0QiupK8w==` |
+| Compressed size | 123,957 bytes |
+| Unpacked size | 637,128 bytes |
+| Entry count | 122 |
+| SHA-1 | `07f6ecdc99838afdda3eeb402c74229f138063da` |
+| npm integrity | `sha512-8yyYna/eRjFrHUcTPOTtQmrllJ1QDQx4LpEakO7i9ihs9MNOt4eUgiHzHY4lycVTftuOsT9wzfL1+sqTG4fknQ==` |
 | CLI target mode | `0755` |
 
 The package uses a manifest allowlist. It contains the runtime guidance,
