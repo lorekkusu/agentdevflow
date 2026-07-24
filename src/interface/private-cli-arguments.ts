@@ -1,4 +1,4 @@
-import { isAbsolute, win32 } from "node:path";
+import { isAbsolute, posix, win32 } from "node:path";
 import { parseArgs } from "node:util";
 
 import {
@@ -25,6 +25,7 @@ export const privateCliCommands = [
   "check",
   "diff",
   "init",
+  "onboard",
   "render",
   "rule",
 ] as const;
@@ -54,6 +55,11 @@ export const defaultProjectConfigPath = "agentdevflow.config.jsonc";
 export const defaultRenderLockPath = ".agentdevflow/lock.json";
 export const defaultRepositoryPath = ".";
 
+export interface PrivateExistingTargetReplacementInput {
+  readonly path: string;
+  readonly observedDigest: string;
+}
+
 export type PrivateCliDiagnosticCode =
   | "DUPLICATE_OPTION"
   | "INVALID_ARGUMENTS"
@@ -75,10 +81,18 @@ export interface PrivateCliDiagnostic {
 
 export type PrivateCliInvocation =
   | {
-      readonly command: "check" | "diff";
+      readonly command: "check";
       readonly projectConfigPath: string;
       readonly repositoryPath: string;
       readonly lockPath: string;
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "diff";
+      readonly projectConfigPath: string;
+      readonly repositoryPath: string;
+      readonly lockPath: string;
+      readonly existingTargetReplacements: readonly PrivateExistingTargetReplacementInput[];
       readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
@@ -87,6 +101,13 @@ export type PrivateCliInvocation =
       readonly repositoryPath: string;
       readonly lockPath: string;
       readonly approvedPlanSnapshotDigest: string;
+      readonly existingTargetReplacements: readonly PrivateExistingTargetReplacementInput[];
+      readonly outputFormat: PrivateCliOutputFormat;
+    }
+  | {
+      readonly command: "onboard";
+      readonly repositoryPath: string;
+      readonly lockPath: string;
       readonly outputFormat: PrivateCliOutputFormat;
     }
   | {
@@ -491,16 +512,39 @@ function parseConfigCommand(
   command: "check" | "diff",
   args: readonly string[],
 ): PrivateCliArgumentResult {
-  const parsed = parseCommandOptions(args, {
-    config: stringOption,
-    json: booleanOption,
-    lock: stringOption,
-    repository: stringOption,
-  });
+  const parsed = parseCommandOptions(
+    args,
+    {
+      config: stringOption,
+      json: booleanOption,
+      lock: stringOption,
+      repository: stringOption,
+      ...(command === "diff"
+        ? { "replace-existing": multipleStringOption }
+        : {}),
+    },
+    command === "diff" ? new Set(["replace-existing"]) : new Set(),
+  );
   if (!parsed.ok) return parsed.result;
   const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
   const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
   const lockPath = stringValue(parsed.values, "lock") ?? defaultRenderLockPath;
+  if (command === "check") {
+    return {
+      ok: true,
+      invocation: {
+        command,
+        projectConfigPath: configPath,
+        repositoryPath,
+        lockPath,
+        outputFormat: outputFormat(parsed.values),
+      },
+    };
+  }
+  const replacements = parseExistingTargetReplacements(
+    stringValues(parsed.values, "replace-existing"),
+  );
+  if ("ok" in replacements) return replacements;
   return {
     ok: true,
     invocation: {
@@ -508,19 +552,65 @@ function parseConfigCommand(
       projectConfigPath: configPath,
       repositoryPath,
       lockPath,
+      existingTargetReplacements: replacements,
       outputFormat: outputFormat(parsed.values),
     },
   };
 }
 
+function parseExistingTargetReplacements(
+  values: readonly string[],
+): readonly PrivateExistingTargetReplacementInput[] | PrivateCliFailure {
+  const replacements: PrivateExistingTargetReplacementInput[] = [];
+  const seen = new Set<string>();
+  for (const value of values) {
+    const separator = value.lastIndexOf("=");
+    const path = value.slice(0, separator);
+    const observedDigest = value.slice(separator + 1);
+    if (
+      separator <= 0 ||
+      path.length === 0 ||
+      path.includes("\\") ||
+      isAbsolute(path) ||
+      win32.isAbsolute(path) ||
+      path === "." ||
+      path === ".." ||
+      path.startsWith("../") ||
+      posix.normalize(path) !== path ||
+      !sha256Pattern.test(observedDigest)
+    ) {
+      return failure(
+        "INVALID_OPTION_VALUE",
+        "Option --replace-existing must use repository-relative-path=lowercase-sha256 form.",
+        "--replace-existing",
+      );
+    }
+    if (seen.has(path)) {
+      return failure(
+        "INVALID_OPTION_VALUE",
+        `Option --replace-existing duplicates target path: ${path}.`,
+        "--replace-existing",
+      );
+    }
+    seen.add(path);
+    replacements.push({ path, observedDigest });
+  }
+  return replacements.sort((left, right) => left.path.localeCompare(right.path));
+}
+
 function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult {
-  const parsed = parseCommandOptions(args, {
-    "approve-plan": stringOption,
-    config: stringOption,
-    json: booleanOption,
-    lock: stringOption,
-    repository: stringOption,
-  });
+  const parsed = parseCommandOptions(
+    args,
+    {
+      "approve-plan": stringOption,
+      config: stringOption,
+      json: booleanOption,
+      lock: stringOption,
+      "replace-existing": multipleStringOption,
+      repository: stringOption,
+    },
+    new Set(["replace-existing"]),
+  );
   if (!parsed.ok) return parsed.result;
   const configPath = stringValue(parsed.values, "config") ?? defaultProjectConfigPath;
   const repositoryPath = stringValue(parsed.values, "repository") ?? defaultRepositoryPath;
@@ -537,6 +627,10 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
       "--approve-plan",
     );
   }
+  const replacements = parseExistingTargetReplacements(
+    stringValues(parsed.values, "replace-existing"),
+  );
+  if ("ok" in replacements) return replacements;
   return {
     ok: true,
     invocation: {
@@ -545,6 +639,26 @@ function parseRenderArguments(args: readonly string[]): PrivateCliArgumentResult
       repositoryPath,
       lockPath,
       approvedPlanSnapshotDigest,
+      existingTargetReplacements: replacements,
+      outputFormat: outputFormat(parsed.values),
+    },
+  };
+}
+
+function parseOnboardArguments(args: readonly string[]): PrivateCliArgumentResult {
+  const parsed = parseCommandOptions(args, {
+    json: booleanOption,
+    lock: stringOption,
+    repository: stringOption,
+  });
+  if (!parsed.ok) return parsed.result;
+  return {
+    ok: true,
+    invocation: {
+      command: "onboard",
+      repositoryPath:
+        stringValue(parsed.values, "repository") ?? defaultRepositoryPath,
+      lockPath: stringValue(parsed.values, "lock") ?? defaultRenderLockPath,
       outputFormat: outputFormat(parsed.values),
     },
   };
@@ -789,6 +903,8 @@ export function parsePrivateCliArguments(
       return parseConfigCommand(command, commandArgs);
     case "init":
       return parseInitArguments(commandArgs);
+    case "onboard":
+      return parseOnboardArguments(commandArgs);
     case "render":
       return parseRenderArguments(commandArgs);
     case "rule":

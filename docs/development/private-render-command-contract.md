@@ -26,8 +26,9 @@ The CLI accepts explicit repository, revision-1 configuration, lock, and
 approval values. The value passed to `--approve-plan` is the complete private
 plan-snapshot digest, not the narrower renderer plan digest. Preparation also
 reads canonical guidance. When the lock is absent, it stages native targets
-and binds exact adoption or proven lossless-import authorization into that
-snapshot. Unsupported existing bytes keep the plan blocked.
+and binds exact adoption, proven equivalent-content import, or explicit
+whole-file replacement into that snapshot. Unsupported existing bytes keep the
+plan blocked unless a matching replacement input is present.
 
 The CLI sequence is:
 
@@ -79,6 +80,12 @@ If execution stops after some outputs change but before lock publication, the ex
 The CLI does not persist a second snapshot or journal. While the base lock or explicit absence remains authoritative, it reconstructs the originally approved all-before actions when an interrupted path is already at its exact target. Only an exact target observation can replace a conflict or post-delete absence with its base observation; unrelated conflicts remain blocked. The reconstructed snapshot must equal the original approval, and this service then rechecks every actual before-or-target digest. A completed target-lock state is handled as a newly clean exact plan.
 
 An interrupted initialization import has a narrower recovery claim. Once its different original before-bytes have been replaced, a digest-only CLI approval cannot reconstruct that lost observation. The stale import approval fails; a new diff may classify the exact target as adoption and requires a new explicit approval before completing lock publication. This is safe forward convergence with renewed review, not original-plan replay.
+
+An explicit whole-file replacement retains its original observed digest in the
+repeated planner input. If the target is already at the exact generated digest
+and the lock remains absent, the CLI can reconstruct the approved update
+action. The reconstructed snapshot must equal the supplied approval before the
+normal convergent service may publish the lock.
 
 A foreign lock fails before output mutation. A target lock with incomplete outputs fails as contradictory state. The service does not silently repair or overwrite either condition.
 

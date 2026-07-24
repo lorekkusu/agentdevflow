@@ -23,6 +23,12 @@ without the ownership lock, a new plan observes an exact target rather than
 the original import. Recovery therefore requires a fresh diff and approval;
 the earlier import approval must fail instead of being reinterpreted.
 
+An explicit onboarding replacement differs because the repeated planner input
+retains the original observed target digest. When the target is already at the
+exact generated digest and the lock is still absent, the CLI may reconstruct
+the original approved update. The reconstructed exact snapshot must match the
+original approval before lock publication continues.
+
 ## Single-file replacement
 
 Writes use a same-directory temporary file whose name is derived from the plan digest, target path, and target digest. The temporary file is synchronized before rename replacement. A regular file at that exact reserved path is treated as resumable staging owned by the exact plan, removed, and recreated exclusively; a symbolic link or non-file entry fails closed, as does a competing creation.
@@ -49,6 +55,8 @@ Local automated fixtures cover:
 - exact-plan rerun from mixed before and after files;
 - fresh diff and approval after an interrupted lossless initialization import
   changes the observed disposition;
+- exact approved rerun after an explicit onboarding replacement reaches target
+  bytes before lock publication;
 - deterministic cleanup of reserved regular temporary files;
 - refusal of symbolic-link temporary paths and foreign managed-path digests;
 - no-op repeated apply.

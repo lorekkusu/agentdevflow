@@ -78,9 +78,9 @@ evidence. Follow `docs/development/public-information-policy.md`; route security
   not prohibit explicitly authorized Git work by maintainers or coding agents.
 - Treat generated provider files as whole-file, single-owner projections.
   Current existing-file behavior is create, exact adopt, bounded equivalent
-  import, or abort. The accepted onboarding milestone may add an explicitly
-  reviewed complete-file replacement only after selected content is represented
-  in canonical rules and the normal plan approval remains current.
+  import, explicit exact onboarding replacement, or abort. Onboarding
+  replacement requires selected content to be represented in canonical rules,
+  an exact per-target observed digest, and a current normal plan approval.
 - Treat digests as byte and staleness bindings, not authentication. Treat the
   render lock as ownership state, not a mutex, lease, or security boundary.
 - Keep package contents allowlisted in `package.json`. Tests, fixtures,
@@ -106,8 +106,8 @@ never silently ignore, delete, or automatically migrate them.
 
 External-agent onboarding may supply semantic judgment and operate the public
 CLI, but final managed state must still pass canonical rule validation, the
-complete render plan, and `check`. Do not implement manual onboarding until its
-reproducible replacement-authorization input and output boundary are accepted.
+complete render plan, and `check`. Manual onboarding uses the accepted
+whole-file inventory and exact replacement boundary in ADR 0006.
 
 Generate only the roles assigned to each provider id. One provider id may hold
 multiple roles with separate sections. Reject multiple ids for one provider

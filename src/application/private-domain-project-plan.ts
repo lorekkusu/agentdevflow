@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import {
   createPrivateRenderPlanSnapshot,
   type PrivateRenderPlanSnapshot,
@@ -23,6 +25,7 @@ import {
 } from "../lock/private-render-lock.js";
 import type {
   InitializationImportAuthorization,
+  ExistingTargetReplacementAuthorization,
   OwnershipClaim,
   RenderPlan,
   RenderReadWorkspace,
@@ -41,7 +44,10 @@ import {
   createRenderPlanDigest,
   StagedRendererAdapter,
 } from "../renderer/staged-adapter.js";
-import { nativeProjectInstructionPaths } from "../renderer/native/common.js";
+import {
+  nativeProjectInstructionExistingTargetMaxBytes,
+  nativeProjectInstructionPaths,
+} from "../renderer/native/common.js";
 import type { PrivateFilesystemReadWorkspace } from "../workspace/private-filesystem-workspace.js";
 import { privateLocalReviewedChangeCapabilityObservations } from "../workflows/private-local-reviewed-change.js";
 import { privateIssueToPullRequestCapabilityObservations } from "../workflows/private-issue-to-reviewed-pull-request.js";
@@ -55,6 +61,10 @@ export interface PreparePrivateDomainProjectPlanOptions
       PrivateFilesystemReadWorkspace,
       "listDirectoryBounded" | "readBounded"
     >;
+  readonly existingTargetReplacements?: readonly {
+    readonly path: string;
+    readonly observedDigest: string;
+  }[];
 }
 
 export interface PrivateDomainProjectPlanDiagnostic {
@@ -100,9 +110,29 @@ export function reconstructPrivateDomainProjectConvergentPlan(
 ): PrivateDomainProjectPlanPreparation {
   const baseOwnership = ownershipFromLock(preparation.baseLock);
   const initiallyAdopted = new Set(preparation.request.adoptPaths ?? []);
+  const existingTargetReplacements = new Map(
+    (preparation.request.existingTargetReplacements ?? []).map(
+      (authorization) => [authorization.path, authorization] as const,
+    ),
+  );
   const recoveredPaths = new Set<string>();
   const files = preparation.plan.files.map((file) => {
     const claim = baseOwnership[file.path];
+    const replacement = existingTargetReplacements.get(file.path);
+    if (
+      claim === undefined &&
+      replacement !== undefined &&
+      file.action === "conflict" &&
+      file.observedDigest === file.expectedDigest &&
+      replacement.targetDigest === file.expectedDigest
+    ) {
+      recoveredPaths.add(file.path);
+      return {
+        ...file,
+        action: "update" as const,
+        observedDigest: replacement.observedDigest,
+      };
+    }
     if (file.expectedDigest === null && claim !== undefined) {
       if (file.observedDigest === null) {
         recoveredPaths.add(file.path);
@@ -141,7 +171,8 @@ export function reconstructPrivateDomainProjectConvergentPlan(
   const diagnostics = preparation.plan.diagnostics.filter(
     (diagnostic) =>
       !(
-        diagnostic.code === "OWNERSHIP_CONFLICT" &&
+        (diagnostic.code === "OWNERSHIP_CONFLICT" ||
+          diagnostic.code === "EXISTING_TARGET_REPLACEMENT_STALE") &&
         diagnostic.path !== undefined &&
         recoveredPaths.has(diagnostic.path)
       ),
@@ -197,10 +228,16 @@ function compareDiagnostics(
   );
 }
 
-async function initialRenderRequest(options: {
+async function renderRequestWithExistingTargets(options: {
   readonly project: PrivateResolvedDomainProject;
   readonly materialization: PrivateRendererSourceMaterialization;
-  readonly workspace: RenderReadWorkspace;
+  readonly workspace: RenderReadWorkspace &
+    Pick<PrivateFilesystemReadWorkspace, "readBounded">;
+  readonly ownership: Readonly<Record<string, OwnershipClaim>>;
+  readonly existingTargetReplacements: readonly {
+    readonly path: string;
+    readonly observedDigest: string;
+  }[];
 }): Promise<{
   readonly request: RenderRequest;
   readonly diagnostics: readonly RendererDiagnostic[];
@@ -208,6 +245,7 @@ async function initialRenderRequest(options: {
   const baseRequest = renderRequestFromPrivateDomainProjectMaterialization(
     options.project,
     options.materialization,
+    { ownership: options.ownership },
   );
   const stagingRenderer = new NativeProjectInstructionsRenderer(
     options.materialization,
@@ -225,17 +263,68 @@ async function initialRenderRequest(options: {
   );
   const adoptPaths: string[] = [];
   const initializationImports: InitializationImportAuthorization[] = [];
+  const existingTargetReplacements: ExistingTargetReplacementAuthorization[] = [];
   const diagnostics: RendererDiagnostic[] = [];
+  const supportedPaths = new Set(Object.values(nativeProjectInstructionPaths));
+  const replacementByPath = new Map<string, string>();
+  for (const replacement of options.existingTargetReplacements) {
+    if (
+      !supportedPaths.has(
+        replacement.path as (typeof nativeProjectInstructionPaths)[keyof typeof nativeProjectInstructionPaths],
+      ) ||
+      !/^[a-f0-9]{64}$/u.test(replacement.observedDigest) ||
+      replacementByPath.has(replacement.path)
+    ) {
+      diagnostics.push({
+        code: "EXISTING_TARGET_REPLACEMENT_INVALID",
+        severity: "error",
+        message: `Existing target replacement input is invalid or duplicated at ${replacement.path}.`,
+        path: replacement.path,
+      });
+      continue;
+    }
+    if (options.ownership[replacement.path] !== undefined) {
+      diagnostics.push({
+        code: "EXISTING_TARGET_REPLACEMENT_MANAGED_STATE",
+        severity: "error",
+        message:
+          "Existing target replacement authorization is accepted only for a currently unmanaged target.",
+        path: replacement.path,
+      });
+      continue;
+    }
+    replacementByPath.set(replacement.path, replacement.observedDigest);
+  }
+  const usedReplacementPaths = new Set<string>();
   for (const file of staged.files) {
     const provider = providerByPath.get(file.path);
     if (provider === undefined) {
       continue;
     }
-    const existing = await options.workspace.read(file.path);
+    if (options.ownership[file.path] !== undefined) {
+      continue;
+    }
+    const existing = await options.workspace.readBounded(
+      file.path,
+      nativeProjectInstructionExistingTargetMaxBytes,
+    );
     if (existing === null) {
       continue;
     }
+    const configuredReplacementDigest = replacementByPath.get(file.path);
     if (existing === file.content) {
+      if (
+        configuredReplacementDigest !== undefined &&
+        configuredReplacementDigest !== createHash("sha256").update(existing).digest("hex")
+      ) {
+        existingTargetReplacements.push({
+          path: file.path,
+          observedDigest: configuredReplacementDigest,
+          targetDigest: createHash("sha256").update(file.content).digest("hex"),
+        });
+        usedReplacementPaths.add(file.path);
+        continue;
+      }
       adoptPaths.push(file.path);
       continue;
     }
@@ -256,6 +345,22 @@ async function initialRenderRequest(options: {
       });
       continue;
     }
+    const replacementDigest = configuredReplacementDigest;
+    if (
+      replacementDigest !== undefined &&
+      replacementDigest === assessment.observedDigest
+    ) {
+      existingTargetReplacements.push({
+        path: file.path,
+        observedDigest: replacementDigest,
+        targetDigest: createHash("sha256").update(file.content).digest("hex"),
+      });
+      usedReplacementPaths.add(file.path);
+      continue;
+    }
+    if (replacementDigest !== undefined) {
+      continue;
+    }
     diagnostics.push({
       code: "INITIALIZATION_IMPORT_UNSUPPORTED",
       severity: "error",
@@ -264,12 +369,29 @@ async function initialRenderRequest(options: {
       provider,
     });
   }
+  for (const [path] of replacementByPath) {
+    if (usedReplacementPaths.has(path)) {
+      continue;
+    }
+    diagnostics.push({
+      code: "EXISTING_TARGET_REPLACEMENT_STALE",
+      severity: "error",
+      message:
+        "Existing target replacement input is unnecessary or does not match the current unmanaged target bytes.",
+      path,
+    });
+  }
 
   return {
     request: renderRequestFromPrivateDomainProjectMaterialization(
       options.project,
       options.materialization,
-      { adoptPaths, initializationImports },
+      {
+        ownership: options.ownership,
+        adoptPaths,
+        initializationImports,
+        existingTargetReplacements,
+      },
     ),
     diagnostics: diagnostics.sort(compareDiagnostics),
   };
@@ -364,17 +486,13 @@ export async function preparePrivateDomainProjectPlan(
     project,
     guidanceResult.guidance,
   );
-  const initialization =
-    baseLock === null
-      ? await initialRenderRequest({ project, materialization, workspace: options.workspace })
-      : {
-          request: renderRequestFromPrivateDomainProjectMaterialization(
-            project,
-            materialization,
-            { ownership: ownershipFromLock(baseLock) },
-          ),
-          diagnostics: [] as readonly RendererDiagnostic[],
-        };
+  const initialization = await renderRequestWithExistingTargets({
+    project,
+    materialization,
+    workspace: options.workspace,
+    ownership: ownershipFromLock(baseLock),
+    existingTargetReplacements: options.existingTargetReplacements ?? [],
+  });
   const request = initialization.request;
   const backend = new StagedRendererAdapter(
     new NativeProjectInstructionsRenderer(materialization),

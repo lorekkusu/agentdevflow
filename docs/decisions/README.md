@@ -45,3 +45,4 @@ See the [public information policy](../development/public-information-policy.md)
 - [0003: Private JSONC and runtime-schema boundary](0003-private-jsonc-zod-boundary.md) — Accepted.
 - [0004: Initial beta public surface](0004-initial-beta-public-surface.md) — Accepted.
 - [0005: External agents operate onboarding through the CLI](0005-external-agent-operated-onboarding.md) — Accepted.
+- [0006: Manual existing-project onboarding uses exact whole-file disposition](0006-manual-existing-project-onboarding.md) — Accepted.

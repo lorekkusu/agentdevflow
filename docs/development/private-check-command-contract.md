@@ -22,9 +22,10 @@ The service does not discover, parse, compile, plan, repair, or persist these in
 The application planner prepares these inputs from revision-1 configuration,
 canonical guidance, lock, and repository bytes for either built-in workflow.
 When the lock is absent, the planner also classifies exact adoption and proven
-lossless import before producing the retained plan. This command service
-remains independently testable and does not acquire the planner's parsing,
-staging, or import-analysis responsibilities.
+equivalent-content import and validates any explicit existing-target
+replacement before producing the retained plan. This command service remains
+independently testable and does not acquire the planner's parsing, staging,
+import-analysis, or replacement-authorization responsibilities.
 
 The CLI composes that planner with this service from explicit repository,
 configuration, and lock paths. It opens the repository through the read-only

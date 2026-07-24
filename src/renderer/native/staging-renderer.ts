@@ -15,6 +15,8 @@ import type { ProviderEmission } from "./common.js";
 import { emitCursorProjectInstructions } from "./cursor.js";
 
 export const nativeProjectInstructionsRendererRevision = 1;
+export const nativeProjectInstructionsOwnershipKey =
+  "agentdevflow.renderer.native";
 
 const emitByProvider: Readonly<
   Record<RendererProvider, (body: string) => ProviderEmission>
@@ -46,7 +48,7 @@ function sameValues(
 
 export class NativeProjectInstructionsRenderer implements StagingRenderer {
   readonly name = "agentdevflow-native";
-  readonly ownershipKey = "agentdevflow.renderer.native";
+  readonly ownershipKey = nativeProjectInstructionsOwnershipKey;
   readonly version = String(nativeProjectInstructionsRendererRevision);
 
   constructor(
